@@ -83,26 +83,30 @@ def split_script_into_scenes(raw_text):
                     scenes.append(" ".join(curr))
                 
     return scenes if scenes else [raw_text]
+
 async def call_groq_ai_prompt_engineer(session, scene_text, scene_number):
     api_key = os.environ.get("GROQ_API_KEY", "").strip()
     if not api_key:
         return None
 
     system_prompt = (
-        "You are an Elite Visual Prompt Engineer for YouTube architectural, engineering, and financial explainer videos.\n"
-        "Your task: Read a 3-5 second script line and create a structured Beat Scene Prompt for a 2D hand-drawn educational technical diagram illustration (like Google Flow / graphic novel style).\n\n"
-        "STRICT MASTER PROMPT PATTERN:\n"
-        "2D hand-drawn educational architectural vector illustration, graphic novel technical diagram style, crisp clean black outlines, soft flat color palette, polished YouTube explainer aesthetics.\n\n"
-        "LARGE BOLD TOP TITLE BANNER:\n"
-        "\"[1-3 WORD TOPIC IN BOLD CAPITAL LETTERS AT TOP OF FRAME, e.g. 'GREENS', 'BUNKERS', 'CART PATHS', 'IRRIGATION', 'DRAINAGE', 'EARTHMOVING', 'PERMITS', 'PROFESSIONAL SERVICES']\"\n\n"
-        "SCENE COMPOSITION & TECHNICAL DETAILS:\n"
-        "[Describe panoramic, isometric, or cross-sectional view of the scene. Include detailed technical elements such as soil cutaway layers, water/drainage pipelines, construction machinery like excavators/bulldozers, annotated blueprint callouts with arrows, or glowing cyan property boundary lines].\n\n"
-        "[If prices/numbers appear in script like '$3M', '$75k/acre', or '$1.5M', describe huge bright-red text callouts: Large bright-red text: \"$3,000,000\"].\n\n"
+        "You are an Elite Visual Prompt Engineer specialized in Google Flow AI educational infographic illustration prompts for architectural, engineering, construction, and land investment videos.\n\n"
+        "STUDY THIS EXACT GOOGLE FLOW AI INFOGRAPHIC VISUAL STYLE:\n"
+        "1. TOP HEADER BANNER: A prominent hand-drawn bold title in capital letters at the top center of the frame (e.g. 'GREENS', 'BUNKERS', 'CART PATHS', 'IRRIGATION', 'DRAINAGE', 'EARTHMOVING', 'BEFORE CONSTRUCTION', 'PERMITS').\n"
+        "2. FINANCIAL CALLOUTS: Huge vibrant red and white text overlays for any numbers/prices (e.g. '$75,000 / ACRE', '$13.5 MILLION', '180 ACRES TOTAL AREA').\n"
+        "3. ART STYLE: Hand-drawn technical architectural infographic diagram, graphic novel educational illustration, crisp clean black ink outlines, warm textured earth-tone palette (lush greens, rich brown soils, sky blues).\n"
+        "4. DIAGRAMMATIC DETAILS: Detailed isometric or cross-section cutaway views, annotated blueprint callouts with arrows, subterranean soil layer breakdowns, underground pipes, cyan property boundary outlines, and construction equipment/workers.\n\n"
+        "MASTER PROMPT PATTERN TO GENERATE:\n"
+        "Hand-drawn technical architectural infographic diagram, graphic novel educational illustration style, crisp clean black ink outlines, warm textured earth-tone palette.\n"
+        "TOP TITLE BANNER: Large hand-lettered bold header text at top of frame: \"[1-3 WORD TOPIC IN BOLD CAPITAL LETTERS]\"\n"
+        "SCENE ILLUSTRATION: [Detailed description of isometric land/construction/cutaway scene with blueprint callouts, technical labels, soil layers, and glowing boundary lines matching the script line].\n"
+        "FINANCIAL CALLOUT: [If script mentions money or acres, include: Huge bold bright-red text overlay: \"$X,XXX\"].\n\n"
         "STRICT RULES:\n"
-        "1. Always start with: '2D hand-drawn educational architectural vector illustration, graphic novel technical diagram style, crisp clean black outlines, soft flat color palette, polished YouTube explainer aesthetics.'\n"
-        "2. NEVER include social media handles or channel tags!\n\n"
+        "1. Always start with: 'Hand-drawn technical architectural infographic diagram, graphic novel educational illustration style, crisp clean black ink outlines, warm textured earth-tone palette.'\n"
+        "2. Always include top title banner directive: TOP TITLE BANNER: Large bold text at top: \"[TOPIC]\"\n"
+        "3. NEVER include social media handles, watermarks, or channel tags!\n\n"
         "Respond strictly in JSON format:\n"
-        '{\n  "prompt": "2D hand-drawn educational architectural vector illustration, graphic novel technical diagram style..."\n}'
+        '{\n  "prompt": "Hand-drawn technical architectural infographic diagram, graphic novel educational illustration style..."\n}'
     )
 
     user_prompt = f"Script Line (Beat {scene_number}): \"{scene_text}\""
@@ -138,12 +142,6 @@ async def call_groq_ai_prompt_engineer(session, scene_text, scene_number):
 
 def build_vector_art_scene_prompt_fallback(text):
     words = re.findall(r'\b[a-zA-Z]{3,}\b', text)
-    stopwords = {
-        "that", "have", "with", "this", "from", "they", "will", "would", "there", "their",
-        "were", "been", "some", "into", "than", "more", "like", "over", "okay", "you",
-        "your", "want", "need", "just", "what", "when", "make", "first", "then", "also",
-        "about", "how", "does", "done", "could", "should", "here", "know", "take", "look"
-    }
     filtered = [w.upper() for w in words if w.lower() not in stopwords][:3]
     topic_title = " ".join(filtered) if filtered else "OVERVIEW"
 
