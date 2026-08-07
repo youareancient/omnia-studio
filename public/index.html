@@ -681,16 +681,19 @@
                 <a href="#" id="downloadSrtLink" class="btn-download-single btn-apple-secondary" download>Download Subtitles (.SRT)</a>
             </div>
 
-            <!-- Breakdown Output Card -->
-            <div class="output-card" id="breakdownCard">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
-                    <div style="font-size: 0.88rem; font-weight: 600; color: var(--text-primary);">🎬 16:9 Scene Cuts & Visual Prompts</div>
+            <!-- Breakdown Output Card (Full Width Prompt Grid Gallery) -->
+            <div class="output-card" id="breakdownCard" style="grid-column: 1 / -1; margin-top: 24px; padding: 24px; background: var(--bg-card); border-radius: 20px; border: 1px solid var(--accent-apple); box-shadow: 0 12px 40px rgba(0, 113, 227, 0.25);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+                    <div>
+                        <div style="font-size: 1.15rem; font-weight: 800; color: var(--text-primary);">🎬 16:9 Scene Cuts & Visual Prompts Grid Gallery</div>
+                        <div style="font-size: 0.8rem; color: var(--text-secondary);">Browse, copy prompts, and upload beat images in a responsive scene grid layout.</div>
+                    </div>
                     <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                        <button class="btn-apple btn-apple-secondary" style="min-height:32px; padding:4px 12px; font-size:0.75rem; width:auto;" onclick="copyAllPromptsOnly()">📋 Copy Prompts Only</button>
-                        <button class="btn-apple" style="min-height:32px; padding:4px 12px; font-size:0.75rem; width:auto; background: linear-gradient(135deg, #0071e3, #34c759);" onclick="downloadWordDoc()">📄 Download Word Doc (.docx)</button>
+                        <button class="btn-apple btn-apple-secondary" style="min-height:36px; padding:6px 14px; font-size:0.8rem; width:auto;" onclick="copyAllPromptsOnly()">📋 Copy Prompts Only</button>
+                        <button class="btn-apple" style="min-height:36px; padding:6px 14px; font-size:0.8rem; width:auto; background: linear-gradient(135deg, #0071e3, #34c759);" onclick="downloadWordDoc()">📄 Download Word Doc (.docx)</button>
                     </div>
                 </div>
-                <div id="breakdownContainer"></div>
+                <div id="breakdownContainer" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap:16px; margin-top:16px;"></div>
 
                 <!-- Micro-Clip Video Assembly & Render Section -->
                 <div style="margin-top:24px; padding:18px; background:var(--bg-card-secondary); border:1px solid var(--accent-apple); border-radius:16px; box-shadow:0 8px 30px rgba(0, 113, 227, 0.2);">
