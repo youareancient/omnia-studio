@@ -570,6 +570,13 @@ async def process_video_assembly_async(video_job_id, original_job_id, zip_bytes,
                 if not dur or dur <= 0.1:
                     dur = parse_timestamp_seconds(scene.get("timestamp", ""))
                 image_durations.append(dur)
+        elif len(scenes) > 0 and total_images < len(scenes):
+            for idx in range(total_images - 1):
+                dur = scenes[idx].get("dur_sec") or parse_timestamp_seconds(scenes[idx].get("timestamp", ""))
+                image_durations.append(dur)
+            sum_prev = sum(image_durations)
+            rem = max(0.5, total_audio_duration - sum_prev)
+            image_durations.append(round(rem, 3))
         else:
             per_img_dur = total_audio_duration / total_images
             for _ in range(total_images):
