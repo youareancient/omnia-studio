@@ -487,14 +487,14 @@ def natural_sort_key(s):
 def get_ken_burns_vf(scene_idx):
     preset = int(scene_idx) % 3
     if preset == 0:
-        # Ultra-smooth subtle micro zoom-in (1.000 -> 1.028 max, zero text/header crop)
-        kp = "zoompan=z='min(pzoom+0.0003,1.028)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=125:s=1920x1080:fps=25"
+        # Smooth Float Center Zoom-In (1.000 -> 1.024 max, zero text/header crop, zero shutter jitter)
+        kp = "zoompan=z='1.012+0.012*sin(in_time*1.2)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=125:s=1920x1080:fps=30"
     elif preset == 1:
-        # Butter-smooth subtle floating pan (subpixel float math, zero stutter)
-        kp = "zoompan=z='1.020':x='(iw-iw/zoom)*(0.5+0.25*sin(on/80))':y='ih/2-(ih/zoom/2)':d=125:s=1920x1080:fps=25"
+        # Smooth Float Steady Drift (1.018 steady zoom, centered)
+        kp = "zoompan=z='1.018+0.008*cos(in_time*1.5)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=125:s=1920x1080:fps=30"
     else:
-        # Ultra-smooth subtle micro zoom-out (1.028 -> 1.000)
-        kp = "zoompan=z='max(1.028-0.0003*on,1.0)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=125:s=1920x1080:fps=25"
+        # Smooth Float Reveal Zoom-Out (1.024 -> 1.000)
+        kp = "zoompan=z='1.012-0.012*sin(in_time*1.2)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=125:s=1920x1080:fps=30"
     
     return f"scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2:black,{kp},format=yuv420p"
 
