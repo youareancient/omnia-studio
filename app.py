@@ -55,10 +55,31 @@ def format_timestamp(ms):
 
 def build_scene_prompt(text):
     words = re.findall(r'\b[a-zA-Z]{3,}\b', text)
-    stopwords = {"the", "and", "that", "have", "for", "not", "with", "you", "this", "but", "his", "from", "they", "say", "her", "she", "will", "one", "all", "would", "there", "their"}
-    filtered = [w for w in words if w.lower() not in stopwords][:8]
-    prompt_keywords = " ".join(filtered) if filtered else text[:40]
-    return f"Ultra-detailed 3D cinematic YouTube documentary scene of {prompt_keywords}, dramatic volumetric lighting, high contrast, 8k resolution, photorealistic"
+    stopwords = {"the", "and", "that", "have", "for", "not", "with", "you", "this", "but", "his", "from", "they", "say", "her", "she", "will", "one", "all", "would", "there", "their", "were", "been", "some", "into"}
+    filtered = [w for w in words if w.lower() not in stopwords][:6]
+    prompt_keywords = " ".join(filtered) if filtered else text[:30]
+    return f"Cinematic 8k YouTube documentary visual scene of {prompt_keywords}, dramatic studio lighting, photorealistic detailed shot"
+
+def split_long_text_into_snappy_chunks(text, max_words=7):
+    # Split text by commas, colons, or dashes first
+    sub_clauses = re.split(r'(?<=[,;:—])\s+', text.strip())
+    chunks = []
+    
+    for clause in sub_clauses:
+        clause_words = clause.strip().split()
+        if not clause_words:
+            continue
+            
+        if len(clause_words) <= max_words:
+            chunks.append(" ".join(clause_words))
+        else:
+            # Sub-split into max_words chunks
+            for k in range(0, len(clause_words), max_words):
+                slice_words = clause_words[k:k+max_words]
+                if slice_words:
+                    chunks.append(" ".join(slice_words))
+                    
+    return chunks if chunks else [text]
 
 async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode):
     try:
@@ -110,11 +131,11 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
 
             progress_pct = int((i / total_paras) * 90) + 5
             BACKGROUND_JOBS[job_id]["progress"] = progress_pct
-            BACKGROUND_JOBS[job_id]["status_text"] = f"Analyzing scene beats ({progress_pct}%)..."
+            BACKGROUND_JOBS[job_id]["status_text"] = f"Analyzing scene cuts ({progress_pct}%)..."
 
         if mode == "breakdown":
             BACKGROUND_JOBS[job_id]["progress"] = 96
-            BACKGROUND_JOBS[job_id]["status_text"] = "Computing smart scene timestamps & AI prompts..."
+            BACKGROUND_JOBS[job_id]["status_text"] = "Splitting long lines into snappy 2.5-second visual cuts..."
 
             cues = submaker.cues
             scenes = []
@@ -130,13 +151,13 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
                     curr_words.append(word)
                     end_ms = cue.end
                     
-                    # Cut scene if word count >= 12 OR duration >= 4.0 seconds OR sentence end
+                    # Snappy 2.5-3.0s cuts: max 7 words OR 2.8s duration OR punctuation pause
                     duration_sec = (end_ms - start_ms) / 1000.0
-                    is_sentence_end = bool(re.search(r'[.!?]$', word))
+                    is_punct = bool(re.search(r'[,.!?]$', word))
                     
-                    if (len(curr_words) >= 12 or duration_sec >= 4.0 or (is_sentence_end and len(curr_words) >= 6)):
+                    if (len(curr_words) >= 7 or duration_sec >= 2.8 or (is_punct and len(curr_words) >= 4)):
                         scene_text = " ".join(curr_words)
-                        time_str = f"[{format_timestamp(start_ms)} -> {format_timestamp(end_ms)}]"
+                        time_str = f"{format_timestamp(start_ms)} -> {format_timestamp(end_ms)}"
                         prompt_str = build_scene_prompt(scene_text)
                         
                         scenes.append({
@@ -151,7 +172,7 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
                         
                 if curr_words:
                     scene_text = " ".join(curr_words)
-                    time_str = f"[{format_timestamp(start_ms)} -> {format_timestamp(end_ms)}]"
+                    time_str = f"{format_timestamp(start_ms)} -> {format_timestamp(end_ms)}"
                     prompt_str = build_scene_prompt(scene_text)
                     scenes.append({
                         "scene": scene_num,
@@ -160,14 +181,25 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
                         "prompt": prompt_str
                     })
             else:
-                # Fallback to paragraph scene breakdown
+                # Fallback: Split long paragraphs into snappy 6-7 word chunks
+                scene_num = 1
+                est_time_sec = 0.0
                 for idx, para in enumerate(paragraphs, start=1):
-                    scenes.append({
-                        "scene": idx,
-                        "timestamp": f"Scene #{idx}",
-                        "text": para,
-                        "prompt": build_scene_prompt(para)
-                    })
+                    snappy_chunks = split_long_text_into_snappy_chunks(para, max_words=7)
+                    for chunk in snappy_chunks:
+                        chunk_words = len(chunk.split())
+                        dur = (chunk_words / 150.0) * 60.0
+                        start_str = format_timestamp(int(est_time_sec * 1000))
+                        est_time_sec += dur
+                        end_str = format_timestamp(int(est_time_sec * 1000))
+                        
+                        scenes.append({
+                            "scene": scene_num,
+                            "timestamp": f"{start_str} -> {end_str}",
+                            "text": chunk,
+                            "prompt": build_scene_prompt(chunk)
+                        })
+                        scene_num += 1
 
             for chunk_file in temp_chunks:
                 try:
@@ -178,7 +210,7 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
             BACKGROUND_JOBS[job_id] = {
                 "status": "completed",
                 "progress": 100,
-                "status_text": f"Smart Scene Breakdown generated ({len(scenes)} scenes)!",
+                "status_text": f"Generated {len(scenes)} snappy 2.5s scene cuts!",
                 "mode": "breakdown",
                 "result": {
                     "scenes": scenes
