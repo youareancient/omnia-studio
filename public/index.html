@@ -715,6 +715,33 @@
                 </div>
             </div>
 
+            <!-- Mini-Clips Grid Gallery Studio & Interactive Timeline Editor -->
+            <div class="output-card" id="miniClipsStudioCard" style="grid-column: 1 / -1; margin-top: 24px; padding: 24px; background: var(--bg-card); border-radius: 20px; border: 1px solid var(--accent-apple); box-shadow: 0 12px 40px rgba(0, 113, 227, 0.2); display:none;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+                    <div>
+                        <div style="font-size: 1.2rem; font-weight: 800; color: var(--text-primary);">🎞️ Per-Scene Mini-Clips Grid Gallery</div>
+                        <div style="font-size: 0.8rem; color: var(--text-secondary);">Play and inspect individual 16:9 scene clips. Check boxes to include clips in your video editor timeline.</div>
+                    </div>
+                    <div style="display:flex; gap:10px;">
+                        <button class="btn-apple btn-apple-secondary" style="min-height:36px; padding:6px 14px; font-size:0.8rem; width:auto;" onclick="toggleSelectAllClips(true)">☑️ Select All</button>
+                        <button class="btn-apple btn-apple-secondary" style="min-height:36px; padding:6px 14px; font-size:0.8rem; width:auto;" onclick="toggleSelectAllClips(false)">⬜ Deselect All</button>
+                    </div>
+                </div>
+
+                <!-- Responsive Grid Gallery Container -->
+                <div id="miniClipsGrid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:16px; margin-bottom:24px;"></div>
+
+                <!-- Interactive Video Editor Timeline -->
+                <div style="padding:18px; background:var(--bg-card-secondary); border:1px solid var(--border-subtle); border-radius:16px;">
+                    <div style="font-size: 1rem; font-weight: 800; color: var(--text-primary); margin-bottom: 8px; display:flex; align-items:center; justify-content:space-between;">
+                        <span>🎬 Interactive Video Editor Timeline</span>
+                        <span id="selectedClipsCounter" style="font-size:0.8rem; font-weight:700; color:var(--accent-apple);">0 Clips Selected</span>
+                    </div>
+                    <div id="timelineSequenceStrip" style="display:flex; gap:8px; overflow-x:auto; padding:10px 0; margin-bottom:16px; border-bottom:1px solid var(--border-subtle);"></div>
+                    <button id="exportTimelineBtn" class="btn-apple" style="background:linear-gradient(135deg, #34c759, #0071e3); min-height:50px; font-size:1.05rem; font-weight:800; width:100%; box-shadow:0 6px 24px rgba(52, 199, 89, 0.35);" onclick="exportTimelineMasterVideo()">🚀 Export Final Master Video (.MP4)</button>
+                </div>
+            </div>
+
             <!-- Full Width Cinematic Video Output Card -->
             <div class="output-card" id="videoCard" style="grid-column: 1 / -1; margin-top: 24px; padding: 24px; background: var(--bg-card); border-radius: 20px; border: 1px solid var(--accent-apple); box-shadow: 0 12px 40px rgba(0, 113, 227, 0.25);">
                 <div style="font-size: 1.15rem; font-weight: 800; color: var(--text-primary); margin-bottom: 12px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
@@ -1014,6 +1041,10 @@
                                 qaReportBadge.style.display = 'block';
                             }
 
+                            if (data.result.miniClips && data.result.miniClips.length > 0) {
+                                renderMiniClipsGrid(data.result.miniClips);
+                            }
+
                             videoCard.classList.add('active');
                             videoElement.play();
                             videoCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -1036,23 +1067,118 @@
             }, 1500);
         }
 
-        let perBeatImages = {};
+        let activeMiniClips = [];
 
-        function handlePerBeatImageUpload(beatNum, inputEl) {
-            if (inputEl.files && inputEl.files[0]) {
-                const file = inputEl.files[0];
-                perBeatImages[beatNum] = file;
-                
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const previewBox = document.getElementById(`beatPreview_${beatNum}`);
-                    const previewImg = document.getElementById(`beatImg_${beatNum}`);
-                    if (previewBox && previewImg) {
-                        previewImg.src = e.target.result;
-                        previewBox.style.display = 'block';
+        function renderMiniClipsGrid(clips) {
+            activeMiniClips = clips;
+            const gridContainer = document.getElementById('miniClipsGrid');
+            const studioCard = document.getElementById('miniClipsStudioCard');
+            if (!gridContainer || !studioCard) return;
+
+            gridContainer.innerHTML = '';
+            clips.forEach(c => {
+                const card = document.createElement('div');
+                card.style.cssText = 'background:var(--bg-card-secondary); border:1px solid var(--border-subtle); border-radius:14px; padding:12px; display:flex; flex-direction:column; gap:8px; box-shadow:var(--shadow-card);';
+                card.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-weight:800; font-size:0.85rem; color:var(--accent-apple);"># Beat ${c.sceneIndex}</span>
+                        <span style="font-size:0.72rem; font-weight:700; background:rgba(0,113,227,0.12); color:var(--accent-apple); padding:2px 8px; border-radius:10px;">${c.durSec}s</span>
+                    </div>
+                    <video controls style="width:100%; aspect-ratio:16/9; border-radius:8px; background:#000;" src="${c.url}"></video>
+                    <div style="font-size:0.75rem; color:var(--text-secondary); line-height:1.3; height:32px; overflow:hidden;">"${c.text}"</div>
+                    <label style="display:flex; align-items:center; gap:8px; margin-top:4px; font-size:0.8rem; font-weight:700; color:var(--text-primary); cursor:pointer;">
+                        <input type="checkbox" class="clip-select-checkbox" data-filename="${c.filename}" data-idx="${c.sceneIndex}" data-dur="${c.durSec}" checked onchange="updateTimelineSequence()" />
+                        Include in Video Timeline
+                    </label>
+                `;
+                gridContainer.appendChild(card);
+            });
+
+            studioCard.style.display = 'block';
+            updateTimelineSequence();
+        }
+
+        function toggleSelectAllClips(status) {
+            const checkboxes = document.querySelectorAll('.clip-select-checkbox');
+            checkboxes.forEach(cb => cb.checked = status);
+            updateTimelineSequence();
+        }
+
+        function updateTimelineSequence() {
+            const strip = document.getElementById('timelineSequenceStrip');
+            const counter = document.getElementById('selectedClipsCounter');
+            if (!strip) return;
+
+            const checkboxes = document.querySelectorAll('.clip-select-checkbox:checked');
+            strip.innerHTML = '';
+
+            let totalDur = 0;
+            checkboxes.forEach((cb, i) => {
+                const idx = cb.getAttribute('data-idx');
+                const dur = parseFloat(cb.getAttribute('data-dur')) || 0;
+                totalDur += dur;
+
+                const badge = document.createElement('div');
+                badge.style.cssText = 'flex:0 0 auto; background:var(--bg-input); border:1px solid var(--accent-apple); padding:8px 12px; border-radius:10px; font-size:0.78rem; font-weight:700; color:var(--text-primary); display:flex; align-items:center; gap:6px;';
+                badge.innerHTML = `<span>🎬 #${idx}</span> <span style="color:var(--text-secondary); font-size:0.7rem;">(${dur}s)</span>`;
+                strip.appendChild(badge);
+            });
+
+            if (counter) {
+                counter.textContent = `${checkboxes.length} Clips Selected (${totalDur.toFixed(1)}s Total)`;
+            }
+        }
+
+        async function exportTimelineMasterVideo() {
+            const checkboxes = document.querySelectorAll('.clip-select-checkbox:checked');
+            if (!checkboxes || !checkboxes.length) {
+                alert('Please select at least one mini-clip to export your timeline!');
+                return;
+            }
+
+            const selectedFilenames = Array.from(checkboxes).map(cb => cb.getAttribute('data-filename'));
+            const exportBtn = document.getElementById('exportTimelineBtn');
+            if (exportBtn) {
+                exportBtn.disabled = true;
+                exportBtn.innerHTML = '⏳ Exporting Master Video Timeline...';
+            }
+
+            try {
+                const res = await fetch('/api/export-timeline', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ clip_filenames: selectedFilenames })
+                });
+
+                const data = await res.json();
+                if (data.status === 'success') {
+                    const videoElement = document.getElementById('videoElement');
+                    const downloadVideoLink = document.getElementById('downloadVideoLink');
+                    const videoCard = document.getElementById('videoCard');
+                    const qaReportBadge = document.getElementById('qaReportBadge');
+
+                    videoElement.src = data.videoUrl;
+                    downloadVideoLink.href = data.videoUrl;
+                    downloadVideoLink.download = data.videoFilename;
+
+                    if (qaReportBadge) {
+                        qaReportBadge.textContent = data.qaReport;
+                        qaReportBadge.style.display = 'block';
                     }
-                };
-                reader.readAsDataURL(file);
+
+                    videoCard.classList.add('active');
+                    videoElement.play();
+                    videoCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                } else {
+                    alert(data.error || 'Failed to export timeline video.');
+                }
+            } catch (e) {
+                alert('Error exporting timeline: ' + e.message);
+            } finally {
+                if (exportBtn) {
+                    exportBtn.disabled = false;
+                    exportBtn.innerHTML = '🚀 Export Final Master Video (.MP4)';
+                }
             }
         }
 

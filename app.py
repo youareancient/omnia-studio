@@ -589,6 +589,49 @@ async def process_video_assembly_async(video_job_id, original_job_id, zip_bytes,
         elif len(image_durations) == 1:
             image_durations[0] = round(total_audio_duration, 3)
 
+        # Render Per-Scene Individual Mini-Clips for Grid Gallery & Previewing
+        BACKGROUND_JOBS[video_job_id]["progress"] = 50
+        BACKGROUND_JOBS[video_job_id]["status_text"] = f"🎬 Synthesizing {total_images} per-scene 16:9 mini-clips for Grid Gallery..."
+
+        mini_clips_data = []
+        for idx, (img_path, dur) in enumerate(zip(extracted_imgs, image_durations), start=1):
+            mini_filename = f"mini_clip_{video_job_id[:6]}_{idx:02d}.mp4"
+            mini_filepath = os.path.join(DOWNLOADS_DIR, mini_filename)
+            
+            # Extract line audio segment if scenes available, otherwise fallback
+            seg_audio_path = os.path.join(temp_img_dir, f"seg_{idx}.mp3")
+            
+            if idx <= len(scenes):
+                sc = scenes[idx - 1]
+                st_sec = sc.get("start_ms", 0) / 1000.0
+            else:
+                st_sec = (idx - 1) * (total_audio_duration / total_images)
+
+            ffmpeg_mini = [
+                "ffmpeg", "-y",
+                "-ss", f"{st_sec:.3f}", "-t", f"{dur:.3f}", "-i", audio_filepath,
+                "-loop", "1", "-i", img_path,
+                "-vf", "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2:black,format=yuv420p",
+                "-c:v", "libx264", "-preset", "fast", "-crf", "22",
+                "-c:a", "aac", "-b:a", "192k",
+                "-shortest",
+                mini_filepath
+            ]
+
+            proc_mini = await asyncio.create_subprocess_exec(
+                *ffmpeg_mini, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+            )
+            await proc_mini.communicate()
+            
+            scene_text = scenes[idx - 1].get("text", f"Beat #{idx}") if idx <= len(scenes) else f"Beat #{idx}"
+            mini_clips_data.append({
+                "sceneIndex": idx,
+                "filename": mini_filename,
+                "url": f"/static/generated/{mini_filename}",
+                "durSec": dur,
+                "text": scene_text
+            })
+
         concat_filepath = os.path.join(temp_img_dir, "input_concat.txt")
         
         with open(concat_filepath, "w", encoding="utf-8") as f:
@@ -604,8 +647,8 @@ async def process_video_assembly_async(video_job_id, original_job_id, zip_bytes,
         out_video_filename = f"video_{video_job_id[:6]}.mp4"
         out_video_filepath = os.path.join(DOWNLOADS_DIR, out_video_filename)
 
-        BACKGROUND_JOBS[video_job_id]["progress"] = 60
-        BACKGROUND_JOBS[video_job_id]["status_text"] = f"Rendering 1080p MP4 video with all {total_images} images..."
+        BACKGROUND_JOBS[video_job_id]["progress"] = 75
+        BACKGROUND_JOBS[video_job_id]["status_text"] = f"Merging full master video with {total_images} scenes..."
 
         ffmpeg_cmd = [
             "ffmpeg", "-y",
@@ -631,7 +674,7 @@ async def process_video_assembly_async(video_job_id, original_job_id, zip_bytes,
             raise Exception("FFmpeg video rendering failed. Please check image formats.")
 
         # Phase 2: Quality Verification Agent Audit
-        BACKGROUND_JOBS[video_job_id]["progress"] = 90
+        BACKGROUND_JOBS[video_job_id]["progress"] = 95
         BACKGROUND_JOBS[video_job_id]["status_text"] = "🕵️‍♂️ Quality Verification Agent: Auditing rendered MP4 streams & audio sync..."
 
         video_duration = await get_media_duration_sec(out_video_filepath)
@@ -658,7 +701,8 @@ async def process_video_assembly_async(video_job_id, original_job_id, zip_bytes,
                 "videoUrl": f"/static/generated/{out_video_filename}",
                 "qaReport": qa_report,
                 "imagesRendered": total_images,
-                "durationSec": round(video_duration, 1)
+                "durationSec": round(video_duration, 1),
+                "miniClips": mini_clips_data
             }
         }
 
@@ -671,6 +715,53 @@ async def process_video_assembly_async(video_job_id, original_job_id, zip_bytes,
             "mode": "video",
             "result": None
         }
+
+async def handle_export_timeline(request):
+    try:
+        data = await request.json()
+        clip_filenames = data.get("clip_filenames", [])
+        if not clip_filenames:
+            return web.json_response({"error": "No mini clips selected for export."}, status=400)
+
+        temp_dir = os.path.join(STUDIO_DIR, f"temp_export_{uuid.uuid4().hex[:6]}")
+        os.makedirs(temp_dir, exist_ok=True)
+
+        concat_file = os.path.join(temp_dir, "concat_timeline.txt")
+        with open(concat_file, "w", encoding="utf-8") as f:
+            for fname in clip_filenames:
+                fpath = os.path.join(DOWNLOADS_DIR, fname)
+                if os.path.exists(fpath):
+                    escaped = fpath.replace("\\", "/")
+                    f.write(f"file '{escaped}'\n")
+
+        master_filename = f"master_timeline_{uuid.uuid4().hex[:6]}.mp4"
+        master_filepath = os.path.join(DOWNLOADS_DIR, master_filename)
+
+        cmd = [
+            "ffmpeg", "-y",
+            "-f", "concat", "-safe", "0", "-i", concat_file,
+            "-c", "copy",
+            master_filepath
+        ]
+
+        proc = await asyncio.create_subprocess_exec(
+            *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+        )
+        await proc.communicate()
+
+        try:
+            shutil.rmtree(temp_dir)
+        except Exception:
+            pass
+
+        return web.json_response({
+            "status": "success",
+            "videoFilename": master_filename,
+            "videoUrl": f"/static/generated/{master_filename}",
+            "qaReport": f"✅ Master Timeline Exported: {len(clip_filenames)} Mini-Clips merged seamlessly!"
+        })
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)
 
 async def handle_assemble_video(request):
     try:
@@ -718,6 +809,7 @@ def create_app():
     app.router.add_get("/api/job-status", handle_job_status)
     app.router.add_get("/api/voices", handle_voices)
     app.router.add_post("/api/assemble-video", handle_assemble_video)
+    app.router.add_post("/api/export-timeline", handle_export_timeline)
     app.router.add_post("/telegram-webhook", handle_telegram_webhook)
     app.router.add_static("/static/", STATIC_DIR)
     return app
