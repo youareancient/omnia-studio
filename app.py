@@ -57,27 +57,41 @@ def generate_stock_keywords(text):
     words = re.findall(r'\b[a-zA-Z]{3,}\b', text)
     stopwords = {"the", "and", "that", "have", "for", "not", "with", "you", "this", "but", "his", "from", "they", "say", "her", "she", "will", "one", "all", "would", "there", "their", "were", "been", "some", "into", "than", "more", "like", "over", "some"}
     filtered = [w for w in words if w.lower() not in stopwords]
-    keywords = list(dict.fromkeys(filtered))[:4] # 4 unique stock search keywords
+    keywords = list(dict.fromkeys(filtered))[:4]
     return ", ".join(keywords) if keywords else "business, economics, technology"
+
+def extract_props_and_visuals(text):
+    text_lower = text.lower()
+    props = []
+    
+    if any(k in text_lower for k in ["money", "cost", "costs", "revenue", "dollar", "dollars", "price", "premium", "profit", "margin", "margins", "pay", "rate", "rates", "$"]):
+        props.append("glowing golden coins, stacks of neat green banknotes, and a 3D percentage bar chart")
+    if any(k in text_lower for k in ["cool", "cooling", "liquid", "water", "air", "density", "pipe", "pipes", "heat", "temperature"]):
+        props.append("transparent cyan liquid cooling pipes flowing with neon blue fluid and metallic valves")
+    if any(k in text_lower for k in ["data", "server", "servers", "ai", "workload", "workloads", "chip", "tech", "facility", "facilities"]):
+        props.append("a sleek black server rack chassis with glowing LED indicator lights and cyan fiber optic lines")
+    if any(k in text_lower for k in ["building", "construction", "ranch", "hotel", "house", "firm", "market", "markets"]):
+        props.append("a crisp 2D vector architectural blueprint scroll and a yellow industrial safety hardhat")
+        
+    if not props:
+        words = re.findall(r'\b[a-zA-Z]{4,}\b', text)
+        stopwords = {"that", "have", "with", "this", "from", "they", "will", "would", "there", "their", "were", "been", "some", "into", "than", "more", "like", "over"}
+        main_words = [w for w in words if w.lower() not in stopwords][:3]
+        prop_subject = " and ".join(main_words) if main_words else "central concept object"
+        props.append(f"a distinct 2D vector icon prop representing '{prop_subject}'")
+        
+    return "; ".join(props)
 
 def build_vector_art_scene_prompt(text):
     clean_text = text.strip()
+    featured_props = extract_props_and_visuals(clean_text)
     
-    # Financial / Accounting terms detector
-    is_finance = bool(re.search(r'\b(revenue|cost|costs|profit|margin|margins|dollar|dollars|percent|pricing|price|premium|construction|growth|market|markets|rate|rates|analysis|data|efficiency)\b', clean_text, re.IGNORECASE))
-    
-    extra_visual = ""
-    if is_finance:
-        extra_visual = " Minimalist financial motion graphics breakdown diagram overlay, clean numbers, revenue vs cost chart lines, and bold label graphics."
-    else:
-        extra_visual = " Thought bubble overhead containing a minimal clean vector icon visualizing the concept."
-
     prompt = (
-        f"Hand-drawn professional educational cartoon illustration inspired by @misterfinanceyt and @TheWealthCortexx, "
-        f"clean studio-quality digital vector artwork with thick smooth black outlines, crisp linework, soft flat colors, "
-        f"and polished modern explainer-animation aesthetics. Visualizing scene concept: '{clean_text}'.{extra_visual} "
-        f"Relaxed character or central concept centered on pure white background with generous negative space, "
-        f"clutter-free composition, professional, simple, modern 2D vector style."
+        f"Hand-drawn professional educational cartoon illustration, clean studio-quality digital vector artwork "
+        f"with thick smooth black outlines, crisp linework, soft flat colors, and polished modern explainer-animation aesthetics "
+        f"inspired by @misterfinanceyt and @TheWealthCortexx. Visualizing scene: '{clean_text}'. "
+        f"FEATURED VISUAL PROPS: {featured_props}. "
+        f"Centered composition on a pure white background with generous negative space, zero clutter, simple, modern, high-contrast 2D vector style."
     )
     return prompt
 
@@ -150,11 +164,11 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
 
             progress_pct = int((i / total_paras) * 90) + 5
             BACKGROUND_JOBS[job_id]["progress"] = progress_pct
-            BACKGROUND_JOBS[job_id]["status_text"] = f"Generating vector prompts & stock keywords ({progress_pct}%)..."
+            BACKGROUND_JOBS[job_id]["status_text"] = f"Synthesizing visual props & prompts ({progress_pct}%)..."
 
         if mode == "breakdown":
             BACKGROUND_JOBS[job_id]["progress"] = 96
-            BACKGROUND_JOBS[job_id]["status_text"] = "Creating @misterfinanceyt style 2D vector prompts & Pexels stock keywords..."
+            BACKGROUND_JOBS[job_id]["status_text"] = "Creating prop-enhanced 2D vector prompts & stock keywords..."
 
             cues = submaker.cues
             scenes = []
@@ -173,7 +187,6 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
                     duration_sec = (end_ms - start_ms) / 1000.0
                     is_punct = bool(re.search(r'[,.!?]$', word))
                     
-                    # 3-5 second target pacing (~8 words)
                     if (len(curr_words) >= 8 or duration_sec >= 3.8 or (is_punct and len(curr_words) >= 5)):
                         scene_text = " ".join(curr_words)
                         time_str = f"{format_timestamp(start_ms)} -> {format_timestamp(end_ms)}"
@@ -233,7 +246,7 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
             BACKGROUND_JOBS[job_id] = {
                 "status": "completed",
                 "progress": 100,
-                "status_text": f"Generated {len(scenes)} vector scene prompts & stock keywords!",
+                "status_text": f"Generated {len(scenes)} prop-enhanced scene prompts & stock keywords!",
                 "mode": "breakdown",
                 "result": {
                     "scenes": scenes
