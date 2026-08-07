@@ -487,14 +487,14 @@ def natural_sort_key(s):
 def get_ken_burns_vf(scene_idx):
     preset = int(scene_idx) % 3
     if preset == 0:
-        # Slow Smooth Zoom In to Center
-        kp = "zoompan=z='min(zoom+0.0012,1.15)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=125:s=1920x1080:fps=25"
+        # Ultra-smooth subtle micro zoom-in (1.000 -> 1.028 max, zero text/header crop)
+        kp = "zoompan=z='min(pzoom+0.0003,1.028)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=125:s=1920x1080:fps=25"
     elif preset == 1:
-        # Slow Panoramic Pan Left to Right
-        kp = "zoompan=z='1.12':x='if(eq(on,1),0,x+1.2)':y='ih/2-(ih/zoom/2)':d=125:s=1920x1080:fps=25"
+        # Butter-smooth subtle floating pan (subpixel float math, zero stutter)
+        kp = "zoompan=z='1.020':x='(iw-iw/zoom)*(0.5+0.25*sin(on/80))':y='ih/2-(ih/zoom/2)':d=125:s=1920x1080:fps=25"
     else:
-        # Slow Reveal Zoom Out
-        kp = "zoompan=z='max(1.15-0.0012*on,1.0)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=125:s=1920x1080:fps=25"
+        # Ultra-smooth subtle micro zoom-out (1.028 -> 1.000)
+        kp = "zoompan=z='max(1.028-0.0003*on,1.0)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=125:s=1920x1080:fps=25"
     
     return f"scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2:black,{kp},format=yuv420p"
 
