@@ -644,7 +644,10 @@
             <div class="output-card" id="breakdownCard">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
                     <div style="font-size: 0.88rem; font-weight: 600; color: var(--text-primary);">🎬 16:9 Scene Cuts & Visual Prompts</div>
-                    <button class="btn-apple btn-apple-secondary" style="min-height:32px; padding:4px 12px; font-size:0.75rem; width:auto;" onclick="copyAllPromptsOnly()">📋 Copy Prompts Only (Bulk)</button>
+                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                        <button class="btn-apple btn-apple-secondary" style="min-height:32px; padding:4px 12px; font-size:0.75rem; width:auto;" onclick="copyAllPromptsOnly()">📋 Copy Prompts Only</button>
+                        <button class="btn-apple" style="min-height:32px; padding:4px 12px; font-size:0.75rem; width:auto; background: linear-gradient(135deg, #FF9500, #FF2D55);" onclick="generateAllSceneImages()">🎨 Generate All 16:9 Images (FLUX AI)</button>
+                    </div>
                 </div>
                 <div id="breakdownContainer"></div>
             </div>
@@ -803,10 +806,20 @@
                             data.result.scenes.forEach(item => {
                                 const card = document.createElement('div');
                                 card.className = 'breakdown-card';
+                                card.id = `scene-card-${item.scene}`;
+                                const safePrompt = (item.prompt || '').replace(/`/g, '\\`').replace(/"/g, '&quot;');
                                 card.innerHTML = `
                                     <div class="breakdown-ts">Scene #${item.scene} • ${item.timestamp}</div>
                                     <div class="breakdown-script">🗣️ "${item.text}"</div>
                                     <div class="breakdown-prompt">🎨 ${item.prompt}</div>
+                                    <div style="margin-top:10px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+                                        <button class="btn-apple btn-apple-secondary" style="min-height:30px; padding:4px 10px; font-size:0.72rem; width:auto;" onclick="generateImageForScene(${item.scene}, \`${safePrompt}\`)">🖼️ Generate 16:9 Image</button>
+                                        <span id="img-status-${item.scene}" style="font-size:0.72rem; color:var(--text-secondary);"></span>
+                                    </div>
+                                    <div id="img-container-${item.scene}" style="margin-top:10px; display:none;">
+                                        <img id="img-preview-${item.scene}" src="" alt="Scene ${item.scene} Image" style="width:100%; aspect-ratio:16/9; border-radius:10px; object-fit:cover; border:1px solid var(--border-subtle); display:block; background:#141416;" />
+                                        <a id="img-download-${item.scene}" href="#" download class="btn-apple btn-apple-secondary" style="margin-top:8px; min-height:28px; padding:4px 10px; font-size:0.72rem; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; gap:4px;">⏬ Download 16:9 Image</a>
+                                    </div>
                                 `;
                                 container.appendChild(card);
                             });
@@ -823,6 +836,59 @@
                     console.log('Polling status error:', e);
                 }
             }, 1500);
+        }
+
+        async function generateImageForScene(sceneNum, promptText) {
+            const statusEl = document.getElementById(`img-status-${sceneNum}`);
+            const imgContainer = document.getElementById(`img-container-${sceneNum}`);
+            const imgPreview = document.getElementById(`img-preview-${sceneNum}`);
+            const imgDownload = document.getElementById(`img-download-${sceneNum}`);
+
+            if (statusEl) statusEl.textContent = '⏳ Generating 16:9 image...';
+
+            try {
+                const res = await fetch('/api/generate-image', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt: promptText, scene: sceneNum })
+                });
+                const data = await res.json();
+
+                if (data.success && data.imageUrl) {
+                    imgPreview.src = data.imageUrl;
+                    imgDownload.href = data.imageUrl;
+                    imgDownload.download = `scene_${sceneNum}_16x9.jpg`;
+                    imgContainer.style.display = 'block';
+                    if (statusEl) statusEl.textContent = '✅ Image ready!';
+                    return true;
+                } else {
+                    if (statusEl) statusEl.textContent = '❌ Generation failed.';
+                    return false;
+                }
+            } catch (e) {
+                console.error(e);
+                if (statusEl) statusEl.textContent = '❌ Error generating image.';
+                return false;
+            }
+        }
+
+        async function generateAllSceneImages() {
+            if (!lastBreakdownData || !lastBreakdownData.length) {
+                alert('No scenes available for image generation.');
+                return;
+            }
+
+            const total = lastBreakdownData.length;
+            let count = 0;
+
+            for (const item of lastBreakdownData) {
+                count++;
+                const statusEl = document.getElementById(`img-status-${item.scene}`);
+                if (statusEl) statusEl.textContent = `⏳ Rendering (${count}/${total})...`;
+                await generateImageForScene(item.scene, item.prompt);
+            }
+
+            alert(`✅ Completed generating all ${total} 16:9 scene images!`);
         }
 
         async function generateStream(mode) {

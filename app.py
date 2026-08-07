@@ -441,6 +441,49 @@ async def handle_telegram_webhook(request):
 
     return web.Response(text="OK")
 
+import urllib.parse
+import random
+
+async def generate_image_for_prompt(session, prompt, scene_num, job_id):
+    try:
+        clean_prompt = prompt.replace("--ar 16:9", "").strip()
+        encoded_prompt = urllib.parse.quote(clean_prompt)
+        seed = random.randint(1000, 999999)
+        url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1280&height=720&model=flux&nologo=true&seed={seed}"
+        
+        img_filename = f"img_scene_{job_id[:6]}_{scene_num}_{seed}.jpg"
+        img_filepath = os.path.join(DOWNLOADS_DIR, img_filename)
+        
+        async with session.get(url, timeout=40) as resp:
+            if resp.status == 200:
+                img_bytes = await resp.read()
+                with open(img_filepath, "wb") as f:
+                    f.write(img_bytes)
+                return f"/static/generated/{img_filename}"
+    except Exception as e:
+        print(f"Error generating image for scene {scene_num}: {e}")
+    return None
+
+async def handle_generate_image(request):
+    try:
+        data = await request.json()
+        prompt = data.get("prompt", "").strip()
+        scene_num = data.get("scene", 1)
+        job_id = data.get("job_id", str(uuid.uuid4())[:6])
+
+        if not prompt:
+            return web.json_response({"error": "Prompt cannot be empty"}, status=400)
+
+        async with ClientSession() as session:
+            img_url = await generate_image_for_prompt(session, prompt, scene_num, job_id)
+
+        if img_url:
+            return web.json_response({"success": True, "imageUrl": img_url})
+        else:
+            return web.json_response({"error": "Failed to generate image"}, status=500)
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)
+
 def create_app():
     app = web.Application()
     app.router.add_get("", handle_index)
@@ -449,6 +492,7 @@ def create_app():
     app.router.add_post("/api/start-job", handle_start_job)
     app.router.add_get("/api/job-status", handle_job_status)
     app.router.add_get("/api/voices", handle_voices)
+    app.router.add_post("/api/generate-image", handle_generate_image)
     app.router.add_post("/telegram-webhook", handle_telegram_webhook)
     app.router.add_static("/static/", STATIC_DIR)
     return app
