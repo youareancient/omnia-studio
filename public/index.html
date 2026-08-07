@@ -69,12 +69,11 @@
             display: flex;
             flex-direction: column;
             transition: background-color 0.3s ease, color 0.3s ease;
-            padding-bottom: 85px;
         }
 
-        @media (min-width: 961px) {
+        @media (max-width: 960px) {
             body {
-                padding-bottom: 0;
+                padding-bottom: 90px; /* Safe padding for mobile bottom bar */
             }
         }
 
@@ -358,11 +357,18 @@
             transform: none;
         }
 
+        /* Responsive Button Ergonomics: Single Button Rule */
         .mobile-bottom-bar {
             display: none;
         }
 
         @media (max-width: 960px) {
+            /* Hide duplicate in-card button on mobile screens */
+            #generateBtn {
+                display: none !important;
+            }
+            
+            /* Show ONLY single sticky bottom button for mobile thumbs */
             .mobile-bottom-bar {
                 display: flex;
                 position: fixed;
@@ -538,6 +544,7 @@
                 <input type="text" id="filenameInput" placeholder="e.g. data_center_narration.mp3" style="width: 100%; background: var(--bg-input); border: 1px solid var(--border-subtle); padding: 10px 12px; border-radius: 12px; color: var(--text-primary); outline: none; font-size: 0.88rem;">
             </div>
 
+            <!-- In-Card Button: Active on PC/Desktop, hidden on mobile -->
             <button class="btn-apple" id="generateBtn" onclick="generateVoiceoverStream()">
                 Generate Voiceover
             </button>
@@ -563,7 +570,7 @@
         </section>
     </main>
 
-    <!-- Mobile Sticky Floating Bar -->
+    <!-- Mobile Sticky Floating Bar: Active on Mobile Phones ONLY -->
     <div class="mobile-bottom-bar">
         <button class="btn-apple" id="mobileGenerateBtn" onclick="generateVoiceoverStream()">
             ⚡ Generate Voiceover
