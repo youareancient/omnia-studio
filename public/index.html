@@ -19,6 +19,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     
     <style>
         [data-theme="dark"] {
@@ -688,9 +689,20 @@
                         <span>⚡ 1-Click Master Automation Suite</span>
                         <span id="autoStatusText" style="font-size:0.78rem; font-weight:700; color:var(--accent-apple); display:none;">Ready</span>
                     </div>
+
+                    <!-- Batch Images / ZIP Auto-Match Uploader -->
+                    <div style="margin-bottom:12px; padding:10px 14px; background:var(--bg-input); border:1px dashed var(--accent-apple); border-radius:10px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                        <div>
+                            <div style="font-size:0.8rem; font-weight:700; color:var(--text-primary);">📦 Step 1: Upload Images ZIP or Batch Files (e.g. 1.jpg, 2.jpg, 3.jpg...):</div>
+                            <div style="font-size:0.72rem; color:var(--text-secondary);">Automatically assigns 1.jpg -> Beat #1, 2.jpg -> Beat #2 sequentially!</div>
+                        </div>
+                        <input type="file" id="batchZipInput" accept=".zip,image/*" multiple style="font-size:0.75rem; color:var(--text-primary);" onchange="handleBatchZipOrImagesUpload(this)" />
+                    </div>
+                    <div id="batchUploadStatus" style="display:none; font-size:0.75rem; font-weight:700; color:#34c759; margin-bottom:10px;"></div>
+
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; flex-wrap:wrap;">
-                        <button id="btnAutoAllVoiceovers" class="btn-apple" style="font-size:0.85rem; min-height:44px; padding:8px 14px; background:linear-gradient(135deg, #0071e3, #34c759);" onclick="autoGenerateAllBeatVoiceovers()">🎙️ 1-Click Auto-Generate All Beat Voiceovers</button>
-                        <button id="btnAutoAllMiniClips" class="btn-apple" style="font-size:0.85rem; min-height:44px; padding:8px 14px; background:linear-gradient(135deg, #FF9500, #FF2D55);" onclick="autoRenderAllSceneMiniClips()">🎬 1-Click Auto-Render All Scene Mini-Clips</button>
+                        <button id="btnAutoAllVoiceovers" class="btn-apple" style="font-size:0.85rem; min-height:44px; padding:8px 14px; background:linear-gradient(135deg, #0071e3, #34c759);" onclick="autoGenerateAllBeatVoiceovers()">🎙️ Step 2: Auto-Generate All Beat Voiceovers</button>
+                        <button id="btnAutoAllMiniClips" class="btn-apple" style="font-size:0.85rem; min-height:44px; padding:8px 14px; background:linear-gradient(135deg, #FF9500, #FF2D55);" onclick="autoRenderAllSceneMiniClips()">🎬 Step 3: Auto-Render All Scene Mini-Clips</button>
                     </div>
                     <div id="autoProgressContainer" style="display:none; margin-top:10px;">
                         <div class="progress-bar" style="height:8px; margin:0;"><div id="autoProgressBarFill" class="progress-fill" style="width:0%;"></div></div>
@@ -1163,6 +1175,77 @@
                     }
                 };
                 reader.readAsDataURL(file);
+            }
+        }
+
+        async function handleBatchZipOrImagesUpload(inputEl) {
+            const files = inputEl.files;
+            if (!files || !files.length) return;
+
+            const statusEl = document.getElementById('batchUploadStatus');
+            if (statusEl) {
+                statusEl.style.display = 'block';
+                statusEl.textContent = '⏳ Processing batch image uploads...';
+            }
+
+            let fileList = Array.from(files);
+
+            // If single ZIP file uploaded, extract with JSZip
+            if (fileList.length === 1 && fileList[0].name.toLowerCase().endsWith('.zip')) {
+                try {
+                    const zipFile = fileList[0];
+                    const zip = await JSZip.loadAsync(zipFile);
+                    fileList = [];
+                    const zipEntries = Object.keys(zip.files).filter(filename => {
+                        const lower = filename.toLowerCase();
+                        return !zip.files[filename].dir && (lower.endsWith('.jpg') || lower.endsWith('.jpeg') || lower.endsWith('.png') || lower.endsWith('.webp'));
+                    });
+
+                    for (const filename of zipEntries) {
+                        const fileData = await zip.files[filename].async('blob');
+                        const cleanName = filename.split('/').pop();
+                        const imageFile = new File([fileData], cleanName, { type: fileData.type || 'image/jpeg' });
+                        fileList.push(imageFile);
+                    }
+                } catch (err) {
+                    alert('Error extracting ZIP archive: ' + err.message);
+                    if (statusEl) statusEl.style.display = 'none';
+                    return;
+                }
+            }
+
+            // Sort files numerically by extracting digits (1.jpg -> 1, 2.jpg -> 2, 10.jpg -> 10...)
+            fileList.sort((a, b) => {
+                const numA = parseInt((a.name.match(/\d+/) || [99999])[0], 10);
+                const numB = parseInt((b.name.match(/\d+/) || [99999])[0], 10);
+                return numA - numB;
+            });
+
+            let matchedCount = 0;
+            fileList.forEach((file, index) => {
+                const match = file.name.match(/\d+/);
+                let beatNum = match ? parseInt(match[0], 10) : (index + 1);
+
+                if (beatNum <= 0) beatNum = index + 1;
+
+                perBeatImages[beatNum] = file;
+                matchedCount++;
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const previewBox = document.getElementById('beatPreview_' + beatNum);
+                    const previewImg = document.getElementById('beatImg_' + beatNum);
+                    if (previewBox && previewImg) {
+                        previewImg.src = e.target.result;
+                        previewBox.style.display = 'block';
+                    }
+                };
+                reader.readAsDataURL(file);
+            });
+
+            if (statusEl) {
+                statusEl.style.display = 'block';
+                statusEl.textContent = `✓ Successfully assigned ${matchedCount} images sequentially to Beat Cards! (1.jpg -> Beat #1, 2.jpg -> Beat #2...)`;
             }
         }
 
