@@ -4,10 +4,11 @@ import os
 import re
 import uuid
 import edge_tts
-from aiohttp import web
+from aiohttp import web, ClientSession, FormData
 
 HOST = "0.0.0.0"
 PORT = int(os.environ.get("PORT", 7860))
+TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
 
 STUDIO_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(STUDIO_DIR, "public")
@@ -153,6 +154,66 @@ async def handle_generate_stream(request):
 
     return response
 
+# Telegram Bot Handler
+async def handle_telegram_webhook(request):
+    token = TELEGRAM_BOT_TOKEN or os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
+    if not token:
+        return web.Response(text="Telegram Bot Token not configured", status=400)
+
+    try:
+        data = await request.json()
+        message = data.get("message") or data.get("edited_message")
+        if not message:
+            return web.Response(text="OK")
+
+        chat_id = message.get("chat", {}).get("id")
+        text = message.get("text", "").strip()
+
+        if not text or not chat_id:
+            return web.Response(text="OK")
+
+        if text.startswith("/start"):
+            welcome_msg = (
+                "🎙️ *Welcome to YouTube Voiceover Bot!*\n\n"
+                "Simply send or paste any script text to this bot, and I will generate an HD humanized voiceover MP3 using Andrew's voice!"
+            )
+            async with ClientSession() as session:
+                await session.post(f"https://api.telegram.org/bot{token}/sendMessage", json={
+                    "chat_id": chat_id,
+                    "text": welcome_msg,
+                    "parse_mode": "Markdown"
+                })
+            return web.Response(text="OK")
+
+        # Send processing status message
+        async with ClientSession() as session:
+            await session.post(f"https://api.telegram.org/bot{token}/sendMessage", json={
+                "chat_id": chat_id,
+                "text": "⚡ Processing script and generating HD Voiceover MP3..."
+            })
+
+        # Synthesize audio
+        humanized_text, paragraphs = humanize_text_for_speech(text)
+        out_filename = f"voiceover_tg_{uuid.uuid4().hex[:6]}.mp3"
+        out_filepath = os.path.join(DOWNLOADS_DIR, out_filename)
+
+        communicate = edge_tts.Communicate(humanized_text, "en-US-AndrewNeural", rate="+1%", pitch="+0Hz")
+        await communicate.save(out_filepath)
+
+        # Send MP3 back to Telegram user
+        async with ClientSession() as session:
+            form = FormData()
+            form.add_field("chat_id", str(chat_id))
+            form.add_field("caption", f"🎙️ Voiceover generated for: {humanized_text[:40]}...")
+            form.add_field("audio", open(out_filepath, "rb"), filename=out_filename)
+
+            await session.post(f"https://api.telegram.org/bot{token}/sendAudio", data=form)
+
+    except Exception as e:
+        print("Telegram error:", e)
+
+    return web.Response(text="OK")
+
 def create_app():
     app = web.Application()
     app.router.add_get("", handle_index)
@@ -160,6 +221,7 @@ def create_app():
     app.router.add_get("/index.html", handle_index)
     app.router.add_post("/api/generate-stream", handle_generate_stream)
     app.router.add_get("/api/voices", handle_voices)
+    app.router.add_post("/telegram-webhook", handle_telegram_webhook)
     app.router.add_static("/static/", STATIC_DIR)
     return app
 
