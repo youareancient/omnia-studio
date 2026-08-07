@@ -56,24 +56,20 @@ def format_timestamp(ms):
 
 async def call_groq_ai_prompt_engineer(scene_text, scene_number):
     api_key = GROQ_API_KEY or os.environ.get("GROQ_API_KEY", "").strip()
-    print(f"DEBUG: calling Groq for Scene {scene_number}, API KEY PRESENT: {bool(api_key)}")
-    
     if not api_key:
-        print("DEBUG: GROQ_API_KEY is missing! Using fallback template.")
         return None
 
     system_prompt = (
-        "You are a Professional Prompt Engineer with over 5 years of experience.\n"
-        "Your task is to take a 3-5 second script line and create a detailed, standalone image prompt locked to the fixed visual style below.\n\n"
-        "FIXED VISUAL STYLE & MASTER PROMPT PATTERN:\n"
-        "Hand-drawn professional educational cartoon illustration, clean studio-quality digital vector artwork with thick, smooth black outlines, crisp linework, soft flat colors, and polished modern explainer-animation aesthetics. [Describe character, posture, facial expression, action, visual humor, or props matching the line]. Above or beside the character, [describe a thought bubble or graphic overlay with bold black outlines visualizing the concept]. Background is pure white with generous negative space, keeping the composition simple, clutter-free, and high contrast.\n\n"
+        "You are an Elite 16:9 Visual Prompt Engineer for top educational YouTube channels like @misterfinanceyt and @TheWealthCortexx.\n"
+        "Your task: Read a 3-5 second script line and create a stunning, long, highly-detailed 16:9 standalone image prompt packed with vibrant visual props, character poses, and visual humor.\n\n"
+        "STRICT MASTER PROMPT PATTERN:\n"
+        "Image Prompt - Hand-drawn professional educational 2D vector cartoon illustration in 16:9 widescreen aspect ratio, clean studio-quality digital vector artwork with thick, smooth black outlines, crisp linework, vibrant soft flat colors, and polished modern explainer-animation aesthetics inspired by @misterfinanceyt and @TheWealthCortexx. [Describe character pose, facial expression, and action on the left/center]. FEATURED VISUAL PROPS: [List 3-5 rich, specific, vibrant physical props, tech equipment, financial charts, glowing cables, coins, or meters relevant to the concept]. Above his head, a large white thought bubble with bold black outlines contains [describe a minimal 2D vector icon or silhouette]. Pure white background, generous negative space, balanced 16:9 composition, zero clutter, ultra-crisp 2D vector style --ar 16:9\n\n"
         "RULES:\n"
-        "1. Visuals inspired by @misterfinanceyt, @TheWealthCortexx & @millyproblems.\n"
-        "2. Do NOT copy the input text verbatim into the prompt. Describe a unique visual scene with characters, poses, props, or numbers/diagrams.\n"
-        "3. Keep overall image professional, clean, and modern without clutter.\n"
-        "4. Output MUST start with 'Image Prompt - '\n\n"
+        "1. Do NOT repeat the script line verbatim. Write a rich, detailed visual description with characters & props.\n"
+        "2. Always include FEATURED VISUAL PROPS with 3 to 5 vivid physical objects.\n"
+        "3. Always end with '--ar 16:9'.\n\n"
         "OUTPUT FORMAT (JSON ONLY):\n"
-        "{\"prompt\": \"Image Prompt - Hand-drawn professional educational cartoon illustration...\"}"
+        "{\"prompt\": \"Image Prompt - Hand-drawn professional educational 2D vector... --ar 16:9\"}"
     )
 
     user_prompt = f"Script Line (Scene {scene_number}): \"{scene_text}\""
@@ -86,7 +82,7 @@ async def call_groq_ai_prompt_engineer(scene_text, scene_number):
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
                 ],
-                "temperature": 0.7,
+                "temperature": 0.75,
                 "response_format": {"type": "json_object"}
             }
             headers = {
@@ -94,29 +90,25 @@ async def call_groq_ai_prompt_engineer(scene_text, scene_number):
                 "Content-Type": "application/json"
             }
             async with session.post("https://api.groq.com/openai/v1/chat/completions", json=payload, headers=headers, timeout=15) as resp:
-                print(f"DEBUG: Groq HTTP status = {resp.status}")
                 if resp.status == 200:
                     data = await resp.json()
                     content = data["choices"][0]["message"]["content"]
                     parsed = json.loads(content)
-                    prompt_val = parsed.get("prompt")
-                    print(f"DEBUG: Groq success for Scene {scene_number}: {prompt_val[:60]}...")
-                    return prompt_val
-                else:
-                    err_txt = await resp.text()
-                    print(f"DEBUG: Groq API Error: Status {resp.status}, Body: {err_txt}")
+                    return parsed.get("prompt")
     except Exception as e:
-        print("DEBUG: Groq API Exception:", e)
+        print("Groq API Exception:", e)
 
     return None
 
 def build_vector_art_scene_prompt_fallback(text):
     clean_text = text.strip()
     return (
-        f"Image Prompt - Hand-drawn professional educational cartoon illustration, clean studio-quality digital vector artwork "
-        f"with thick smooth black outlines, crisp linework, soft flat colors, and polished modern explainer-animation aesthetics "
-        f"inspired by @misterfinanceyt and @TheWealthCortexx. A relaxed character sitting in a chair daydreaming about {clean_text}, "
-        f"with a large thought bubble showing a minimal vector icon. Pure white background, generous negative space, zero clutter, 2D vector style."
+        f"Image Prompt - Hand-drawn professional educational 2D vector cartoon illustration in 16:9 widescreen aspect ratio, "
+        f"clean studio-quality digital vector artwork with thick, smooth black outlines, crisp linework, vibrant soft flat colors, "
+        f"and polished modern explainer-animation aesthetics inspired by @misterfinanceyt and @TheWealthCortexx. "
+        f"A relaxed character sitting in a chair daydreaming about {clean_text}. FEATURED VISUAL PROPS: glowing 3D golden coins, "
+        f"a sleek black tech server rack with cyan LEDs, and a percentage chart board. Large white thought bubble overhead. "
+        f"Pure white background, generous negative space, zero clutter, 2D vector style --ar 16:9"
     )
 
 async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode):
@@ -172,7 +164,6 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
             BACKGROUND_JOBS[job_id]["status_text"] = f"Audio timing analysis ({progress_pct}%)..."
 
         if mode == "breakdown":
-            # STEP 1: Compute 3-5 second Scene Cuts
             BACKGROUND_JOBS[job_id]["progress"] = 50
             BACKGROUND_JOBS[job_id]["status_text"] = "STEP 1: Computing 3-5 second scene cuts from speech audio..."
 
@@ -204,9 +195,8 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
                     time_str = f"{format_timestamp(start_ms)} -> {format_timestamp(end_ms)}"
                     scenes_raw.append((scene_text, time_str))
 
-            # STEP 2: Generate High-Quality Standalone Visual Prompts with Groq AI
             BACKGROUND_JOBS[job_id]["progress"] = 60
-            BACKGROUND_JOBS[job_id]["status_text"] = "STEP 2: Groq AI generating high-quality 2D vector prompts..."
+            BACKGROUND_JOBS[job_id]["status_text"] = "STEP 2: Groq AI generating stunning 16:9 vector prompts & props..."
 
             scenes = []
             total_scenes = len(scenes_raw)
@@ -214,7 +204,7 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
             for idx, (scene_text, time_str) in enumerate(scenes_raw, start=1):
                 pct = 60 + int((idx / total_scenes) * 38)
                 BACKGROUND_JOBS[job_id]["progress"] = pct
-                BACKGROUND_JOBS[job_id]["status_text"] = f"Groq AI crafting visual prompt {idx} of {total_scenes}..."
+                BACKGROUND_JOBS[job_id]["status_text"] = f"Groq AI crafting 16:9 prompt {idx} of {total_scenes}..."
 
                 ai_prompt = await call_groq_ai_prompt_engineer(scene_text, idx)
                 if not ai_prompt:
@@ -236,7 +226,7 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
             BACKGROUND_JOBS[job_id] = {
                 "status": "completed",
                 "progress": 100,
-                "status_text": f"Generated {len(scenes)} high-quality vector prompts!",
+                "status_text": f"Generated {len(scenes)} rich 16:9 vector prompts!",
                 "mode": "breakdown",
                 "result": {
                     "scenes": scenes
