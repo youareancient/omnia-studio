@@ -642,7 +642,8 @@ async def handle_assemble_video(request):
         return web.json_response({"error": str(e)}, status=500)
 
 def create_app():
-    app = web.Application()
+    # Allow large ZIP uploads up to 500MB
+    app = web.Application(client_max_size=500 * 1024 * 1024)
     app.router.add_get("", handle_index)
     app.router.add_get("/", handle_index)
     app.router.add_get("/index.html", handle_index)
