@@ -799,6 +799,13 @@ async def handle_assemble_video(request):
     except Exception as e:
         return web.json_response({"error": str(e)}, status=500)
 
+def humanize_script(text):
+    if not text:
+        return ""
+    # Strip unnecessary punctuation formatting for clean edge-tts reading
+    clean = re.sub(r'[\r\n]+', ' ', text).strip()
+    return clean
+
 async def handle_generate_beat_audio(request):
     try:
         data = await request.json()
@@ -807,7 +814,8 @@ async def handle_generate_beat_audio(request):
         voice = data.get("voice", "andrew").lower()
         rate = data.get("rate", "+1%")
 
-        voice_id = VOICE_MAP.get(voice, "en-US-AndrewNeural")
+        preset = VOICE_PRESETS.get(voice, {})
+        voice_id = preset.get("id", "en-US-AndrewNeural")
         
         job = BACKGROUND_JOBS.get(job_id)
         scene_text = ""
