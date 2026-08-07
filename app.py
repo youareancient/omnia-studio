@@ -955,8 +955,8 @@ async def handle_generate_beat_clip(request):
         return web.json_response({"error": str(e)}, status=500)
 
 def create_app():
-    # Allow large ZIP uploads up to 500MB
-    app = web.Application(client_max_size=500 * 1024 * 1024)
+    # Allow large ZIP and batch uploads up to 2GB (2048MB)
+    app = web.Application(client_max_size=2048 * 1024 * 1024)
     app.router.add_get("", handle_index)
     app.router.add_get("/", handle_index)
     app.router.add_get("/index.html", handle_index)
