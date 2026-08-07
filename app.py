@@ -3,6 +3,8 @@ import json
 import os
 import re
 import uuid
+import urllib.parse
+import urllib.request
 import edge_tts
 from aiohttp import web, ClientSession, FormData
 
@@ -46,6 +48,13 @@ def humanize_text_for_speech(text):
     humanized_text = re.sub(r'\.{3,}', '...', humanized_text)
     return humanized_text, paragraphs
 
+def clean_prompt_for_image(text):
+    words = re.findall(r'\b[a-zA-Z]{3,}\b', text)
+    stopwords = {"the", "and", "that", "have", "for", "not", "with", "you", "this", "but", "his", "from", "they", "say", "her", "she", "will", "one", "all", "would", "there", "their"}
+    filtered = [w for w in words if w.lower() not in stopwords][:8]
+    prompt_str = " ".join(filtered) if filtered else text[:40]
+    return f"cinematic professional YouTube documentary illustration, {prompt_str}, 8k resolution, highly detailed"
+
 async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode):
     try:
         BACKGROUND_JOBS[job_id] = {
@@ -61,6 +70,50 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
 
         full_humanized_text, paragraphs = humanize_text_for_speech(raw_text)
         total_paras = len(paragraphs)
+
+        if mode == "storyboard":
+            images_list = []
+            target_paras = paragraphs[:6] # Process up to 6 scenes
+            total_scenes = len(target_paras)
+
+            async with ClientSession() as session:
+                for idx, para in enumerate(target_paras, start=1):
+                    BACKGROUND_JOBS[job_id]["progress"] = int((idx / total_scenes) * 90)
+                    BACKGROUND_JOBS[job_id]["status_text"] = f"Generating AI Image {idx} of {total_scenes}..."
+
+                    prompt = clean_prompt_for_image(para)
+                    encoded_prompt = urllib.parse.quote(prompt)
+                    seed = uuid.uuid4().hex[:8]
+                    img_api_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1280&height=720&nologo=true&seed={seed}"
+
+                    img_filename = f"storyboard_{job_id[:6]}_{idx}.jpg"
+                    img_filepath = os.path.join(DOWNLOADS_DIR, img_filename)
+
+                    try:
+                        async with session.get(img_api_url, timeout=15) as resp:
+                            if resp.status == 200:
+                                img_data = await resp.read()
+                                with open(img_filepath, "wb") as f:
+                                    f.write(img_data)
+                                images_list.append({
+                                    "scene": idx,
+                                    "text": para[:80] + ("..." if len(para) > 80 else ""),
+                                    "imageUrl": f"/static/generated/{img_filename}",
+                                    "filename": img_filename
+                                })
+                    except Exception as img_err:
+                        print(f"Error fetching image {idx}:", img_err)
+
+            BACKGROUND_JOBS[job_id] = {
+                "status": "completed",
+                "progress": 100,
+                "status_text": f"Generated {len(images_list)} AI Storyboard Images!",
+                "mode": "storyboard",
+                "result": {
+                    "storyboard": images_list
+                }
+            }
+            return
 
         if not filename:
             filename = f"voiceover_{voice_preset}_{job_id[:6]}.mp3"
