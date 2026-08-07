@@ -1155,7 +1155,8 @@
 
             try {
                 const chosenVoice = (typeof selectedVoice !== 'undefined' && selectedVoice) ? selectedVoice : 'andrew';
-                const rateVal = document.getElementById('rateSlider') ? document.getElementById('rateSlider').value + '%' : '+1%';
+                const sliderVal = document.getElementById('rateSlider') ? parseInt(document.getElementById('rateSlider').value || 1) : 1;
+                const rateVal = `${sliderVal >= 0 ? '+' : ''}${sliderVal}%`;
 
                 const res = await fetch('/api/generate-beat-audio', {
                     method: 'POST',

@@ -812,7 +812,9 @@ async def handle_generate_beat_audio(request):
         job_id = data.get("job_id", "")
         scene_idx = int(data.get("scene_index", 1))
         voice = data.get("voice", "andrew").lower()
-        rate = data.get("rate", "+1%")
+        rate = str(data.get("rate", "+1%")).strip()
+        if not rate.startswith("+") and not rate.startswith("-"):
+            rate = "+" + rate
 
         preset = VOICE_PRESETS.get(voice, {})
         voice_id = preset.get("id", "en-US-AndrewNeural")
