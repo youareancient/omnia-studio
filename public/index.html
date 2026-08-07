@@ -1,91 +1,80 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YouTube Voiceover Studio Pro - Studio Narration</title>
+    <title>Voiceover Studio Pro - Studio Narration</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --bg-dark: #060911;
-            --bg-card: rgba(13, 18, 32, 0.75);
-            --bg-card-hover: rgba(22, 30, 52, 0.9);
-            --accent-cyan: #06b6d4;
-            --accent-blue: #3b82f6;
-            --accent-indigo: #6366f1;
-            --accent-purple: #a855f7;
-            --accent-emerald: #10b981;
-            --glow-blue: rgba(59, 130, 246, 0.3);
-            --glow-cyan: rgba(6, 182, 212, 0.3);
-            --text-main: #f8fafc;
-            --text-sub: #94a3b8;
-            --text-muted: #64748b;
-            --border-glass: rgba(255, 255, 255, 0.08);
-            --border-active: rgba(6, 182, 212, 0.5);
-            --radius-xl: 20px;
-            --radius-lg: 14px;
-            --radius-md: 10px;
+        /* Apple Pro System Theme Variables */
+        [data-theme="dark"] {
+            --bg-body: #000000;
+            --bg-header: rgba(22, 22, 23, 0.8);
+            --bg-card: #1c1c1e;
+            --bg-card-secondary: #2c2c2e;
+            --bg-input: #141416;
+            --text-primary: #f5f5f7;
+            --text-secondary: #86868b;
+            --text-muted: #6e6e73;
+            --accent-apple: #2997ff;
+            --accent-apple-hover: #0077ed;
+            --border-subtle: rgba(255, 255, 255, 0.12);
+            --border-focus: #2997ff;
+            --shadow-card: 0 12px 40px rgba(0, 0, 0, 0.5);
+            --toggle-bg: #2c2c2e;
+        }
+
+        [data-theme="light"] {
+            --bg-body: #f5f5f7;
+            --bg-header: rgba(255, 255, 255, 0.8);
+            --bg-card: #ffffff;
+            --bg-card-secondary: #f2f2f7;
+            --bg-input: #fbfbfd;
+            --text-primary: #1d1d1f;
+            --text-secondary: #6e6e73;
+            --text-muted: #86868b;
+            --accent-apple: #0071e3;
+            --accent-apple-hover: #0077ed;
+            --border-subtle: rgba(0, 0, 0, 0.08);
+            --border-focus: #0071e3;
+            --shadow-card: 0 12px 40px rgba(0, 0, 0, 0.04);
+            --toggle-bg: #e5e5ea;
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", sans-serif;
+            -webkit-font-smoothing: antialiased;
         }
 
         body {
-            background-color: var(--bg-dark);
-            background-image: 
-                radial-gradient(ellipse at 15% 0%, rgba(59, 130, 246, 0.15) 0%, transparent 60%),
-                radial-gradient(ellipse at 85% 100%, rgba(168, 85, 247, 0.15) 0%, transparent 60%),
-                radial-gradient(ellipse at 50% 50%, rgba(6, 182, 212, 0.06) 0%, transparent 80%);
-            color: var(--text-main);
+            background-color: var(--bg-body);
+            color: var(--text-primary);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            overflow-x: hidden;
+            transition: background-color 0.4s ease, color 0.4s ease;
         }
 
-        /* Ambient Glowing Background Elements */
-        .ambient-orb-1 {
-            position: fixed;
-            top: -120px;
-            left: -120px;
-            width: 500px;
-            height: 500px;
-            background: radial-gradient(circle, rgba(59, 130, 246, 0.2), transparent 70%);
-            filter: blur(80px);
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        .ambient-orb-2 {
-            position: fixed;
-            bottom: -120px;
-            right: -120px;
-            width: 500px;
-            height: 500px;
-            background: radial-gradient(circle, rgba(168, 85, 247, 0.2), transparent 70%);
-            filter: blur(80px);
-            pointer-events: none;
-            z-index: 0;
-        }
-
+        /* Apple Header Navigation */
         header {
-            border-bottom: 1px solid var(--border-glass);
-            background: rgba(6, 9, 17, 0.85);
-            backdrop-filter: blur(24px);
+            background: var(--bg-header);
+            backdrop-filter: saturate(180%) blur(20px);
+            -webkit-backdrop-filter: saturate(180%) blur(20px);
+            border-bottom: 1px solid var(--border-subtle);
             position: sticky;
             top: 0;
             z-index: 100;
-            padding: 1.1rem 2.5rem;
+            padding: 0.9rem 2rem;
+            transition: background 0.4s ease, border-color 0.4s ease;
         }
 
         .header-container {
-            max-width: 1320px;
+            max-width: 1200px;
             margin: 0 auto;
             display: flex;
             justify-content: space-between;
@@ -95,287 +84,213 @@
         .brand {
             display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 12px;
         }
 
-        .brand-icon {
-            width: 44px;
-            height: 44px;
-            border-radius: 12px;
-            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue), var(--accent-purple));
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 22px;
-            box-shadow: 0 4px 20px var(--glow-cyan);
+        .apple-logo {
+            font-size: 1.25rem;
+            color: var(--text-primary);
         }
 
         .brand-title {
-            font-size: 1.35rem;
-            font-weight: 800;
-            letter-spacing: -0.5px;
-            background: linear-gradient(135deg, #ffffff 40%, #cbd5e1);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            font-size: 1.15rem;
+            font-weight: 600;
+            letter-spacing: -0.015em;
+            color: var(--text-primary);
         }
 
         .brand-badge {
-            background: rgba(6, 182, 212, 0.12);
-            border: 1px solid rgba(6, 182, 212, 0.3);
-            color: var(--accent-cyan);
-            font-size: 0.72rem;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            padding: 3px 10px;
-            border-radius: 20px;
-            text-transform: uppercase;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            background: var(--bg-card-secondary);
+            padding: 3px 8px;
+            border-radius: 12px;
+            margin-left: 6px;
         }
 
-        .header-controls {
+        .header-actions {
             display: flex;
             align-items: center;
             gap: 16px;
         }
 
-        .pill-badge {
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+        /* Apple Theme Switcher Toggle */
+        .theme-toggle-btn {
+            background: var(--toggle-bg);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-primary);
             border-radius: 30px;
             padding: 6px 14px;
+            font-size: 0.82rem;
+            font-weight: 500;
+            cursor: pointer;
             display: flex;
             align-items: center;
             gap: 8px;
-            font-size: 0.82rem;
-            font-weight: 600;
-            color: var(--text-sub);
+            transition: all 0.25s ease;
         }
 
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background-color: var(--accent-emerald);
-            box-shadow: 0 0 10px var(--accent-emerald);
-            animation: pulse-dot 2s infinite;
-        }
-
-        @keyframes pulse-dot {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.5; transform: scale(0.85); }
+        .theme-toggle-btn:hover {
+            transform: scale(1.03);
         }
 
         main {
-            max-width: 1320px;
-            margin: 2rem auto;
+            max-width: 1200px;
+            margin: 2.5rem auto;
             padding: 0 1.5rem;
             flex: 1;
             width: 100%;
             display: grid;
-            grid-template-columns: 1fr 430px;
-            gap: 1.75rem;
-            position: relative;
-            z-index: 1;
+            grid-template-columns: 1fr 400px;
+            gap: 2rem;
         }
 
-        @media (max-width: 1024px) {
+        @media (max-width: 960px) {
             main {
                 grid-template-columns: 1fr;
             }
         }
 
-        .glass-card {
+        /* Apple Clean Minimal Cards */
+        .apple-card {
             background: var(--bg-card);
-            border: 1px solid var(--border-glass);
-            border-radius: var(--radius-xl);
-            backdrop-filter: blur(24px);
+            border: 1px solid var(--border-subtle);
+            border-radius: 22px;
             padding: 1.75rem;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
-            transition: border-color 0.3s ease;
-        }
-
-        .glass-card:hover {
-            border-color: rgba(255, 255, 255, 0.12);
+            box-shadow: var(--shadow-card);
+            transition: background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
         }
 
         .card-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1.2rem;
+            margin-bottom: 1.25rem;
         }
 
         .card-title {
-            font-size: 1.15rem;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            color: var(--text-primary);
         }
 
-        .accuracy-badge {
-            background: rgba(16, 185, 129, 0.12);
-            border: 1px solid rgba(16, 185, 129, 0.3);
-            color: var(--accent-emerald);
-            font-size: 0.78rem;
-            font-weight: 700;
-            padding: 4px 12px;
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .editor-container {
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
+        .accuracy-tag {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--accent-apple);
+            background: rgba(41, 151, 255, 0.1);
+            padding: 4px 10px;
+            border-radius: 14px;
         }
 
         textarea {
             width: 100%;
-            height: 450px;
-            background: rgba(8, 12, 22, 0.75);
-            border: 1px solid var(--border-glass);
-            border-radius: var(--radius-lg);
-            color: var(--text-main);
+            height: 440px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            color: var(--text-primary);
             font-size: 1.02rem;
-            line-height: 1.7;
-            padding: 1.35rem;
+            line-height: 1.65;
+            padding: 1.25rem;
             resize: vertical;
             outline: none;
             transition: all 0.25s ease;
-            font-weight: 400;
         }
 
         textarea:focus {
-            border-color: var(--accent-cyan);
-            box-shadow: 0 0 25px var(--glow-cyan), inset 0 0 10px rgba(6, 182, 212, 0.05);
-            background: rgba(8, 12, 22, 0.9);
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px rgba(41, 151, 255, 0.15);
         }
 
-        .meta-bar {
+        .meta-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            color: var(--text-sub);
-            font-size: 0.88rem;
-            padding: 0 4px;
+            margin-top: 1rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
         }
 
-        .badge-list {
+        .meta-stats {
             display: flex;
-            gap: 10px;
+            gap: 12px;
         }
 
-        .meta-tag {
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            padding: 5px 12px;
-            border-radius: var(--radius-md);
-            font-weight: 600;
-            color: var(--text-main);
-        }
-
-        .voice-options {
+        /* Apple Voice Selection Cards */
+        .voice-list {
             display: flex;
             flex-direction: column;
-            gap: 0.85rem;
+            gap: 0.75rem;
             margin-bottom: 1.5rem;
         }
 
-        .voice-card {
-            background: rgba(8, 12, 22, 0.65);
-            border: 1px solid var(--border-glass);
-            border-radius: var(--radius-lg);
-            padding: 1.1rem;
+        .voice-item {
+            background: var(--bg-card-secondary);
+            border: 1px solid transparent;
+            border-radius: 16px;
+            padding: 1rem 1.1rem;
             cursor: pointer;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.2s ease;
             position: relative;
         }
 
-        .voice-card:hover {
-            border-color: rgba(255, 255, 255, 0.2);
-            background: var(--bg-card-hover);
-            transform: translateY(-2px);
+        .voice-item:hover {
+            border-color: var(--border-subtle);
         }
 
-        .voice-card.selected {
-            border-color: var(--accent-cyan);
-            background: rgba(6, 182, 212, 0.08);
-            box-shadow: 0 0 20px rgba(6, 182, 212, 0.25);
+        .voice-item.selected {
+            border-color: var(--accent-apple);
+            background: var(--bg-card);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
         }
 
-        .voice-card.selected::after {
-            content: '✓ SELECTED';
+        .voice-item.selected::after {
+            content: '✓';
             position: absolute;
             top: 14px;
-            right: 14px;
-            font-size: 0.7rem;
-            font-weight: 800;
-            color: var(--accent-cyan);
-            letter-spacing: 0.5px;
-        }
-
-        .voice-header-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 4px;
+            right: 16px;
+            font-weight: 700;
+            color: var(--accent-apple);
         }
 
         .voice-name {
-            font-weight: 700;
-            font-size: 1rem;
-            color: var(--text-main);
-        }
-
-        .tag-recommended {
-            background: linear-gradient(135deg, #f59e0b, #d97706);
-            color: #060911;
-            font-size: 0.65rem;
-            font-weight: 800;
-            padding: 2px 7px;
-            border-radius: 12px;
-            text-transform: uppercase;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 2px;
         }
 
         .voice-desc {
-            font-size: 0.82rem;
-            color: var(--text-sub);
-            line-height: 1.45;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
         }
 
-        /* Pacing & Rate Selector */
-        .setting-group {
-            margin-bottom: 1.5rem;
-            background: rgba(8, 12, 22, 0.55);
-            border: 1px solid var(--border-glass);
-            border-radius: var(--radius-lg);
+        /* Apple Minimal Pacing Slider */
+        .slider-box {
+            background: var(--bg-card-secondary);
+            border-radius: 16px;
             padding: 1rem;
+            margin-bottom: 1.5rem;
         }
 
-        .setting-header {
+        .slider-header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            font-size: 0.82rem;
+            font-weight: 500;
+            color: var(--text-secondary);
             margin-bottom: 8px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: var(--text-sub);
-        }
-
-        .rate-slider-val {
-            font-weight: 700;
-            color: var(--accent-cyan);
-            font-family: 'JetBrains Mono', monospace;
         }
 
         input[type="range"] {
             width: 100%;
-            height: 6px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 4px;
+            height: 4px;
+            background: var(--border-subtle);
+            border-radius: 2px;
             outline: none;
             -webkit-appearance: none;
         }
@@ -385,338 +300,217 @@
             width: 18px;
             height: 18px;
             border-radius: 50%;
-            background: var(--accent-cyan);
-            box-shadow: 0 0 10px var(--accent-cyan);
+            background: var(--accent-apple);
             cursor: pointer;
-            transition: transform 0.1s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
         }
 
-        input[type="range"]::-webkit-slider-thumb:hover {
-            transform: scale(1.2);
-        }
-
-        .btn-primary {
+        .btn-apple {
             width: 100%;
-            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue), var(--accent-purple));
-            background-size: 200% 200%;
-            color: white;
+            background: var(--accent-apple);
+            color: #ffffff;
             border: none;
-            border-radius: var(--radius-lg);
-            padding: 1.15rem;
-            font-size: 1.05rem;
-            font-weight: 700;
+            border-radius: 980px; /* Apple signature capsule button */
+            padding: 0.95rem;
+            font-size: 0.98rem;
+            font-weight: 600;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            box-shadow: 0 6px 25px rgba(6, 182, 212, 0.35);
-            transition: all 0.3s ease;
-            letter-spacing: 0.2px;
+            transition: all 0.25s ease;
+            box-shadow: 0 4px 16px rgba(0, 113, 227, 0.25);
         }
 
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 30px rgba(59, 130, 246, 0.5);
-            background-position: 100% 0;
+        .btn-apple:hover {
+            background: var(--accent-apple-hover);
+            transform: scale(1.01);
         }
 
-        .btn-primary:disabled {
-            opacity: 0.6;
+        .btn-apple:disabled {
+            opacity: 0.5;
             cursor: not-allowed;
             transform: none;
         }
 
-        /* Real-Time Progress Tracker Container */
-        .progress-box {
+        /* Apple Clean Progress Indicator */
+        .progress-container {
             margin-top: 1.5rem;
-            background: rgba(8, 12, 22, 0.85);
-            border: 1px solid var(--border-active);
-            border-radius: var(--radius-lg);
-            padding: 1.25rem;
+            background: var(--bg-card-secondary);
+            border-radius: 16px;
+            padding: 1.2rem;
             display: none;
-            box-shadow: 0 0 25px var(--glow-cyan);
         }
 
-        .progress-box.active {
+        .progress-container.active {
             display: block;
-            animation: slideUp 0.35s ease;
         }
 
         .progress-header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 8px;
         }
 
-        .progress-title {
-            font-size: 0.92rem;
-            font-weight: 700;
-            color: var(--text-main);
-        }
-
-        .progress-percent {
-            font-size: 1.1rem;
-            font-weight: 800;
-            color: var(--accent-cyan);
-            font-family: 'JetBrains Mono', monospace;
-        }
-
-        .progress-bar-bg {
+        .progress-bar {
             width: 100%;
-            height: 10px;
-            background: rgba(255, 255, 255, 0.08);
-            border-radius: 6px;
+            height: 6px;
+            background: var(--border-subtle);
+            border-radius: 3px;
             overflow: hidden;
-            margin-bottom: 10px;
-            position: relative;
+            margin-bottom: 6px;
         }
 
-        .progress-bar-fill {
+        .progress-fill {
             width: 0%;
             height: 100%;
-            background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan), var(--accent-purple));
-            border-radius: 6px;
+            background: var(--accent-apple);
             transition: width 0.3s ease;
-            box-shadow: 0 0 15px var(--accent-cyan);
         }
 
-        .progress-status {
-            font-size: 0.82rem;
-            color: var(--text-sub);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+        .progress-sub {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
         }
 
-        /* Waveform Animation */
-        .waveform-bars {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 4px;
-            height: 36px;
-            margin: 1rem 0 0.5rem 0;
-        }
-
-        .wave-bar {
-            width: 4px;
-            height: 10px;
-            background: var(--accent-cyan);
-            border-radius: 4px;
-            animation: wave 1.2s ease-in-out infinite alternate;
-        }
-
-        .wave-bar:nth-child(2) { animation-delay: 0.1s; height: 18px; }
-        .wave-bar:nth-child(3) { animation-delay: 0.2s; height: 28px; }
-        .wave-bar:nth-child(4) { animation-delay: 0.3s; height: 14px; }
-        .wave-bar:nth-child(5) { animation-delay: 0.4s; height: 32px; }
-        .wave-bar:nth-child(6) { animation-delay: 0.6s; height: 20px; }
-        .wave-bar:nth-child(7) { animation-delay: 0.7s; height: 12px; }
-
-        @keyframes wave {
-            0% { transform: scaleY(0.4); opacity: 0.5; }
-            100% { transform: scaleY(1.3); opacity: 1; }
-        }
-
-        .audio-player-card {
+        /* Apple Audio Output Card */
+        .audio-card {
             margin-top: 1.5rem;
-            display: none;
-            background: rgba(8, 12, 22, 0.85);
-            border: 1px solid rgba(16, 185, 129, 0.3);
-            border-radius: var(--radius-lg);
+            background: var(--bg-card-secondary);
+            border-radius: 16px;
             padding: 1.25rem;
-            box-shadow: 0 0 25px rgba(16, 185, 129, 0.15);
+            display: none;
         }
 
-        .audio-player-card.active {
+        .audio-card.active {
             display: block;
-            animation: slideUp 0.35s ease;
-        }
-
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(14px); }
-            to { opacity: 1; transform: translateY(0); }
         }
 
         audio {
             width: 100%;
-            margin: 1rem 0;
-            border-radius: 10px;
+            margin: 1rem 0 0.75rem 0;
         }
 
-        .download-box {
-            background: rgba(6, 182, 212, 0.08);
-            border: 1px solid rgba(6, 182, 212, 0.25);
-            border-radius: var(--radius-md);
-            padding: 1rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .download-info {
-            display: flex;
-            flex-direction: column;
-            gap: 3px;
-        }
-
-        .btn-download {
-            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-emerald));
-            color: #060911;
-            font-weight: 800;
-            text-decoration: none;
-            padding: 10px 20px;
-            border-radius: var(--radius-md);
+        .btn-download-apple {
+            display: inline-block;
+            width: 100%;
+            text-align: center;
+            background: var(--accent-apple);
+            color: #ffffff;
+            font-weight: 600;
             font-size: 0.9rem;
+            text-decoration: none;
+            padding: 10px;
+            border-radius: 980px;
             transition: all 0.2s ease;
-            box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
         }
 
-        .btn-download:hover {
-            transform: scale(1.04);
-            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+        .btn-download-apple:hover {
+            background: var(--accent-apple-hover);
         }
     </style>
 </head>
 <body>
 
-    <div class="ambient-orb-1"></div>
-    <div class="ambient-orb-2"></div>
-
     <header>
         <div class="header-container">
             <div class="brand">
-                <div class="brand-icon">🎙️</div>
-                <div>
-                    <span class="brand-title">Voiceover Studio Pro</span>
-                    <span class="brand-badge">YOUTUBE EDITION</span>
-                </div>
+                <span class="apple-logo"></span>
+                <span class="brand-title">Voiceover Studio Pro</span>
+                <span class="brand-badge">YouTube Narration</span>
             </div>
-            <div class="header-controls">
-                <div class="pill-badge">
-                    <div class="status-dot"></div>
-                    <span>Studio Engine Online • HD 320kbps</span>
-                </div>
-                <div class="pill-badge" style="border-color: rgba(6, 182, 212, 0.3); color: var(--accent-cyan);">
-                    <span>⚡ Direct Device Download</span>
-                </div>
+            
+            <div class="header-actions">
+                <!-- Dark / Light Mode Switcher -->
+                <button class="theme-toggle-btn" onclick="toggleTheme()">
+                    <span id="themeIcon">☀️</span>
+                    <span id="themeText">Light Mode</span>
+                </button>
             </div>
         </div>
     </header>
 
     <main>
-        <!-- Left Panel: Script Input -->
-        <section class="glass-card editor-container">
+        <!-- Left Column: Minimal Script Editor -->
+        <section class="apple-card">
             <div class="card-header">
-                <div class="card-title">📝 Script Editor</div>
-                <div class="accuracy-badge">
-                    <span>✓</span> 100% Word-for-Word Verified
-                </div>
+                <span class="card-title">Script Editor</span>
+                <span class="accuracy-tag">✓ 100% Word-for-Word Verified</span>
             </div>
-            
+
             <textarea id="scriptText" placeholder="Paste your script here... (e.g. Okay, so you want to own a data center...)"></textarea>
-            
-            <div class="meta-bar">
-                <div class="badge-list">
-                    <span class="meta-tag" id="wordCount">0 Words</span>
-                    <span class="meta-tag" id="charCount">0 Chars</span>
-                    <span class="meta-tag" id="estTime">~0 min audio</span>
+
+            <div class="meta-row">
+                <div class="meta-stats">
+                    <span id="wordCount">0 Words</span>
+                    <span>•</span>
+                    <span id="estTime">~0 min audio</span>
                 </div>
-                <div style="font-weight: 600; color: var(--accent-cyan);">⚡ Natural Pacing Active</div>
+                <span>Natural Pacing Active</span>
             </div>
         </section>
 
-        <!-- Right Panel: Voice Selection & Settings -->
-        <section class="glass-card">
+        <!-- Right Column: Apple Segment Controls -->
+        <section class="apple-card">
             <div class="card-header">
-                <div class="card-title">🎯 Voice & Delivery Settings</div>
+                <span class="card-title">Voice Profile</span>
             </div>
 
-            <div class="voice-options">
-                <div class="voice-card selected" onclick="selectVoice('andrew', this)">
-                    <div class="voice-header-row">
-                        <span class="voice-name">🌟 Andrew</span>
-                        <span class="tag-recommended">YouTube Master</span>
-                    </div>
-                    <div class="voice-desc">Warm, energetic documentary narration. High retention for tech, finance & business essays.</div>
+            <div class="voice-list">
+                <div class="voice-item selected" onclick="selectVoice('andrew', this)">
+                    <div class="voice-name">Andrew (YouTube Master)</div>
+                    <div class="voice-desc">Warm, energetic documentary narrator. High retention rate for finance & tech essays.</div>
                 </div>
 
-                <div class="voice-card" onclick="selectVoice('christopher', this)">
-                    <div class="voice-header-row">
-                        <span class="voice-name">🎙️ Christopher</span>
-                    </div>
-                    <div class="voice-desc">Deep, authoritative, cinematic tone. Ideal for crime, mystery & deep storytelling.</div>
+                <div class="voice-item" onclick="selectVoice('christopher', this)">
+                    <div class="voice-name">Christopher (Deep Storyteller)</div>
+                    <div class="voice-desc">Deep, cinematic tone ideal for crime, mystery & deep business essays.</div>
                 </div>
 
-                <div class="voice-card" onclick="selectVoice('ava', this)">
-                    <div class="voice-header-row">
-                        <span class="voice-name">🎙️ Ava</span>
-                    </div>
+                <div class="voice-item" onclick="selectVoice('ava', this)">
+                    <div class="voice-name">Ava (Modern Expressive)</div>
                     <div class="voice-desc">Clear, modern, expressive narrator voice for tech reviews & commentary.</div>
                 </div>
 
-                <div class="voice-card" onclick="selectVoice('guy', this)">
-                    <div class="voice-header-row">
-                        <span class="voice-name">🎙️ Guy</span>
-                    </div>
-                    <div class="voice-desc">Authoritative American news broadcaster style for commentary & finance.</div>
+                <div class="voice-item" onclick="selectVoice('guy', this)">
+                    <div class="voice-name">Guy (News Broadcaster)</div>
+                    <div class="voice-desc">Clear American news anchor style for commentary & finance.</div>
                 </div>
             </div>
 
-            <!-- Pacing Control -->
-            <div class="setting-group">
-                <div class="setting-header">
-                    <span>Speech Pacing Rate</span>
-                    <span class="rate-slider-val" id="rateVal">+1% (Optimal)</span>
+            <div class="slider-box">
+                <div class="slider-header">
+                    <span>Speech Pacing</span>
+                    <span id="rateVal" style="color: var(--accent-apple); font-weight: 600;">+1% (Optimal)</span>
                 </div>
                 <input type="range" id="rateSlider" min="-10" max="15" value="1" step="1" oninput="updateRateLabel(this.value)">
             </div>
 
-            <div style="margin-bottom: 1.5rem;">
-                <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-sub); display: block; margin-bottom: 6px;">Output Filename</label>
-                <input type="text" id="filenameInput" placeholder="e.g. data_center_narration.mp3" style="width: 100%; background: rgba(8, 12, 22, 0.75); border: 1px solid var(--border-glass); padding: 12px; border-radius: var(--radius-md); color: white; outline: none; font-size: 0.95rem;">
+            <div style="margin-bottom: 1.25rem;">
+                <label style="font-size: 0.8rem; font-weight: 500; color: var(--text-secondary); display: block; margin-bottom: 6px;">Output File Name</label>
+                <input type="text" id="filenameInput" placeholder="e.g. data_center_narration.mp3" style="width: 100%; background: var(--bg-input); border: 1px solid var(--border-subtle); padding: 10px 14px; border-radius: 12px; color: var(--text-primary); outline: none; font-size: 0.9rem;">
             </div>
 
-            <button class="btn-primary" id="generateBtn" onclick="generateVoiceoverStream()">
-                <span>Generate High-Quality Voiceover</span>
+            <button class="btn-apple" id="generateBtn" onclick="generateVoiceoverStream()">
+                Generate Voiceover
             </button>
 
-            <!-- Real-Time Progress Tracker Box -->
-            <div class="progress-box" id="progressBox">
+            <!-- Real-Time Progress Indicator -->
+            <div class="progress-container" id="progressBox">
                 <div class="progress-header">
-                    <span class="progress-title" id="progressTitle">Synthesizing Voiceover...</span>
-                    <span class="progress-percent" id="progressPercent">0%</span>
+                    <span id="progressTitle">Synthesizing...</span>
+                    <span id="progressPercent" style="color: var(--accent-apple);">0%</span>
                 </div>
-                <div class="progress-bar-bg">
-                    <div class="progress-bar-fill" id="progressBarFill"></div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressBarFill"></div>
                 </div>
-                <div class="progress-status" id="progressStatus">Initializing speech engine...</div>
-                
-                <div class="waveform-bars">
-                    <div class="wave-bar"></div>
-                    <div class="wave-bar"></div>
-                    <div class="wave-bar"></div>
-                    <div class="wave-bar"></div>
-                    <div class="wave-bar"></div>
-                    <div class="wave-bar"></div>
-                    <div class="wave-bar"></div>
-                </div>
+                <div class="progress-sub" id="progressStatus">Humanizing pacing and preparing audio...</div>
             </div>
 
-            <!-- Audio Output Section -->
-            <div class="audio-player-card" id="audioCard">
-                <div class="card-title" style="color: var(--accent-emerald); font-size: 1rem;">🎉 Voiceover Generated Successfully!</div>
+            <!-- Audio Output -->
+            <div class="audio-card" id="audioCard">
+                <div style="font-size: 0.9rem; font-weight: 600; color: var(--text-primary);">Voiceover Ready</div>
                 <audio id="audioElement" controls></audio>
-                
-                <div class="download-box">
-                    <div class="download-info">
-                        <span style="font-weight: 700; font-size: 0.9rem;" id="outFilename">voiceover.mp3</span>
-                        <span style="font-size: 0.78rem; color: var(--text-sub);">Ready for YouTube Monetization</span>
-                    </div>
-                    <a href="#" id="downloadLink" class="btn-download" download>Download MP3</a>
-                </div>
+                <a href="#" id="downloadLink" class="btn-download-apple" download>Download MP3 Audio</a>
             </div>
         </section>
     </main>
@@ -725,9 +519,28 @@
         let selectedVoice = 'andrew';
         let currentRateStr = '+1%';
 
+        // Apple Light / Dark Mode Toggle
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', newTheme);
+
+            const themeIcon = document.getElementById('themeIcon');
+            const themeText = document.getElementById('themeText');
+
+            if (newTheme === 'light') {
+                themeIcon.textContent = '🌙';
+                themeText.textContent = 'Dark Mode';
+            } else {
+                themeIcon.textContent = '☀️';
+                themeText.textContent = 'Light Mode';
+            }
+        }
+
         function selectVoice(voice, element) {
             selectedVoice = voice;
-            document.querySelectorAll('.voice-card').forEach(el => el.classList.remove('selected'));
+            document.querySelectorAll('.voice-item').forEach(el => el.classList.remove('selected'));
             element.classList.add('selected');
         }
 
@@ -740,16 +553,13 @@
 
         const scriptInput = document.getElementById('scriptText');
         const wordCountEl = document.getElementById('wordCount');
-        const charCountEl = document.getElementById('charCount');
         const estTimeEl = document.getElementById('estTime');
 
         scriptInput.addEventListener('input', () => {
             const text = scriptInput.value.trim();
             const words = text ? text.split(/\s+/).length : 0;
-            const chars = text.length;
             const minutes = Math.ceil(words / 150);
             wordCountEl.textContent = `${words.toLocaleString()} Words`;
-            charCountEl.textContent = `${chars.toLocaleString()} Chars`;
             estTimeEl.textContent = `~${minutes} min audio`;
         });
 
@@ -770,7 +580,7 @@
             const audioCard = document.getElementById('audioCard');
 
             btn.disabled = true;
-            btn.innerHTML = `Synthesizing Audio...`;
+            btn.textContent = 'Synthesizing Audio...';
             audioCard.classList.remove('active');
             
             progressBox.classList.add('active');
@@ -827,12 +637,10 @@
                             if (evt.success) {
                                 const audioElement = document.getElementById('audioElement');
                                 const downloadLink = document.getElementById('downloadLink');
-                                const outFilename = document.getElementById('outFilename');
 
                                 audioElement.src = evt.audioUrl;
                                 downloadLink.href = evt.audioUrl;
                                 downloadLink.download = evt.filename;
-                                outFilename.textContent = evt.filename;
 
                                 audioCard.classList.add('active');
                                 audioElement.play();
@@ -845,7 +653,7 @@
                 progressBox.classList.remove('active');
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = `<span>Generate High-Quality Voiceover</span>`;
+                btn.textContent = 'Generate Voiceover';
             }
         }
     </script>
