@@ -504,6 +504,16 @@
             line-height: 1.4;
         }
 
+        .breakdown-stock {
+            font-size: 0.74rem;
+            color: #ff9f0a;
+            background: rgba(255, 159, 10, 0.08);
+            padding: 4px 8px;
+            border-radius: 6px;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+
         .breakdown-prompt {
             font-size: 0.76rem;
             color: var(--text-secondary);
@@ -511,6 +521,7 @@
             padding: 6px 8px;
             border-radius: 8px;
             font-family: monospace;
+            line-height: 1.4;
         }
     </style>
 </head>
@@ -636,7 +647,7 @@
             <!-- Breakdown Output Card -->
             <div class="output-card" id="breakdownCard">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                    <div style="font-size: 0.88rem; font-weight: 600; color: var(--text-primary);">🎬 Snappy 2.5s Scene Cuts & Prompts</div>
+                    <div style="font-size: 0.88rem; font-weight: 600; color: var(--text-primary);">🎬 Scene Cuts & Stock Keywords</div>
                     <button class="btn-apple btn-apple-secondary" style="min-height:30px; padding:4px 10px; font-size:0.72rem; width:auto;" onclick="copyAllBreakdown()">📋 Copy All</button>
                 </div>
                 <div id="breakdownContainer"></div>
@@ -708,12 +719,14 @@
 
         function copyAllBreakdown() {
             if (!lastBreakdownData.length) return;
-            let fullText = "🎬 SNAPPY SCENE BREAKDOWN & VISUAL PROMPTS\n\n";
+            let fullText = "🎬 3-5 SECOND SCENE BREAKDOWN, STOCK KEYWORDS & VECTOR PROMPTS\n\n";
             lastBreakdownData.forEach(item => {
-                fullText += `⏱️ Scene #${item.scene} [${item.timestamp}]\n📝 Line: ${item.text}\n🎨 Visual Prompt: ${item.prompt}\n\n`;
+                fullText += `Scene ${item.scene}: ${item.text}\n\n`;
+                fullText += `Pexels/Pixabay Stock Keywords: ${item.stockKeywords}\n\n`;
+                fullText += `Image Prompt - ${item.prompt}\n\n------------------------\n\n`;
             });
             navigator.clipboard.writeText(fullText);
-            alert('Copied full Scene Cuts & Visual Prompts to clipboard! 📋');
+            alert('Copied full Scene Breakdown, Stock Keywords & Vector Prompts to clipboard! 📋');
         }
 
         async function startPollingJob(jobId) {
@@ -784,7 +797,8 @@
                                 card.innerHTML = `
                                     <div class="breakdown-ts">Scene #${item.scene} • ${item.timestamp}</div>
                                     <div class="breakdown-script">"${item.text}"</div>
-                                    <div class="breakdown-prompt">🎨 Prompt: ${item.prompt}</div>
+                                    <div class="breakdown-stock">🔍 Pexels/Pixabay Stock Keywords: ${item.stockKeywords}</div>
+                                    <div class="breakdown-prompt">🎨 Image Prompt - ${item.prompt}</div>
                                 `;
                                 container.appendChild(card);
                             });

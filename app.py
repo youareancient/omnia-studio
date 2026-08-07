@@ -53,15 +53,35 @@ def format_timestamp(ms):
     tenths = int((ms % 1000) / 100)
     return f"{minutes:02d}:{rem_sec:02d}.{tenths}"
 
-def build_scene_prompt(text):
+def generate_stock_keywords(text):
     words = re.findall(r'\b[a-zA-Z]{3,}\b', text)
-    stopwords = {"the", "and", "that", "have", "for", "not", "with", "you", "this", "but", "his", "from", "they", "say", "her", "she", "will", "one", "all", "would", "there", "their", "were", "been", "some", "into"}
-    filtered = [w for w in words if w.lower() not in stopwords][:6]
-    prompt_keywords = " ".join(filtered) if filtered else text[:30]
-    return f"Cinematic 8k YouTube documentary visual scene of {prompt_keywords}, dramatic studio lighting, photorealistic detailed shot"
+    stopwords = {"the", "and", "that", "have", "for", "not", "with", "you", "this", "but", "his", "from", "they", "say", "her", "she", "will", "one", "all", "would", "there", "their", "were", "been", "some", "into", "than", "more", "like", "over", "some"}
+    filtered = [w for w in words if w.lower() not in stopwords]
+    keywords = list(dict.fromkeys(filtered))[:4] # 4 unique stock search keywords
+    return ", ".join(keywords) if keywords else "business, economics, technology"
 
-def split_long_text_into_snappy_chunks(text, max_words=7):
-    # Split text by commas, colons, or dashes first
+def build_vector_art_scene_prompt(text):
+    clean_text = text.strip()
+    
+    # Financial / Accounting terms detector
+    is_finance = bool(re.search(r'\b(revenue|cost|costs|profit|margin|margins|dollar|dollars|percent|pricing|price|premium|construction|growth|market|markets|rate|rates|analysis|data|efficiency)\b', clean_text, re.IGNORECASE))
+    
+    extra_visual = ""
+    if is_finance:
+        extra_visual = " Minimalist financial motion graphics breakdown diagram overlay, clean numbers, revenue vs cost chart lines, and bold label graphics."
+    else:
+        extra_visual = " Thought bubble overhead containing a minimal clean vector icon visualizing the concept."
+
+    prompt = (
+        f"Hand-drawn professional educational cartoon illustration inspired by @misterfinanceyt and @TheWealthCortexx, "
+        f"clean studio-quality digital vector artwork with thick smooth black outlines, crisp linework, soft flat colors, "
+        f"and polished modern explainer-animation aesthetics. Visualizing scene concept: '{clean_text}'.{extra_visual} "
+        f"Relaxed character or central concept centered on pure white background with generous negative space, "
+        f"clutter-free composition, professional, simple, modern 2D vector style."
+    )
+    return prompt
+
+def split_long_text_into_snappy_chunks(text, max_words=8):
     sub_clauses = re.split(r'(?<=[,;:—])\s+', text.strip())
     chunks = []
     
@@ -73,7 +93,6 @@ def split_long_text_into_snappy_chunks(text, max_words=7):
         if len(clause_words) <= max_words:
             chunks.append(" ".join(clause_words))
         else:
-            # Sub-split into max_words chunks
             for k in range(0, len(clause_words), max_words):
                 slice_words = clause_words[k:k+max_words]
                 if slice_words:
@@ -131,11 +150,11 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
 
             progress_pct = int((i / total_paras) * 90) + 5
             BACKGROUND_JOBS[job_id]["progress"] = progress_pct
-            BACKGROUND_JOBS[job_id]["status_text"] = f"Analyzing scene cuts ({progress_pct}%)..."
+            BACKGROUND_JOBS[job_id]["status_text"] = f"Generating vector prompts & stock keywords ({progress_pct}%)..."
 
         if mode == "breakdown":
             BACKGROUND_JOBS[job_id]["progress"] = 96
-            BACKGROUND_JOBS[job_id]["status_text"] = "Splitting long lines into snappy 2.5-second visual cuts..."
+            BACKGROUND_JOBS[job_id]["status_text"] = "Creating @misterfinanceyt style 2D vector prompts & Pexels stock keywords..."
 
             cues = submaker.cues
             scenes = []
@@ -151,20 +170,22 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
                     curr_words.append(word)
                     end_ms = cue.end
                     
-                    # Snappy 2.5-3.0s cuts: max 7 words OR 2.8s duration OR punctuation pause
                     duration_sec = (end_ms - start_ms) / 1000.0
                     is_punct = bool(re.search(r'[,.!?]$', word))
                     
-                    if (len(curr_words) >= 7 or duration_sec >= 2.8 or (is_punct and len(curr_words) >= 4)):
+                    # 3-5 second target pacing (~8 words)
+                    if (len(curr_words) >= 8 or duration_sec >= 3.8 or (is_punct and len(curr_words) >= 5)):
                         scene_text = " ".join(curr_words)
                         time_str = f"{format_timestamp(start_ms)} -> {format_timestamp(end_ms)}"
-                        prompt_str = build_scene_prompt(scene_text)
+                        prompt_str = build_vector_art_scene_prompt(scene_text)
+                        stock_kw = generate_stock_keywords(scene_text)
                         
                         scenes.append({
                             "scene": scene_num,
                             "timestamp": time_str,
                             "text": scene_text,
-                            "prompt": prompt_str
+                            "prompt": prompt_str,
+                            "stockKeywords": stock_kw
                         })
                         scene_num += 1
                         curr_words = []
@@ -173,19 +194,20 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
                 if curr_words:
                     scene_text = " ".join(curr_words)
                     time_str = f"{format_timestamp(start_ms)} -> {format_timestamp(end_ms)}"
-                    prompt_str = build_scene_prompt(scene_text)
+                    prompt_str = build_vector_art_scene_prompt(scene_text)
+                    stock_kw = generate_stock_keywords(scene_text)
                     scenes.append({
                         "scene": scene_num,
                         "timestamp": time_str,
                         "text": scene_text,
-                        "prompt": prompt_str
+                        "prompt": prompt_str,
+                        "stockKeywords": stock_kw
                     })
             else:
-                # Fallback: Split long paragraphs into snappy 6-7 word chunks
                 scene_num = 1
                 est_time_sec = 0.0
                 for idx, para in enumerate(paragraphs, start=1):
-                    snappy_chunks = split_long_text_into_snappy_chunks(para, max_words=7)
+                    snappy_chunks = split_long_text_into_snappy_chunks(para, max_words=8)
                     for chunk in snappy_chunks:
                         chunk_words = len(chunk.split())
                         dur = (chunk_words / 150.0) * 60.0
@@ -197,7 +219,8 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
                             "scene": scene_num,
                             "timestamp": f"{start_str} -> {end_str}",
                             "text": chunk,
-                            "prompt": build_scene_prompt(chunk)
+                            "prompt": build_vector_art_scene_prompt(chunk),
+                            "stockKeywords": generate_stock_keywords(chunk)
                         })
                         scene_num += 1
 
@@ -210,7 +233,7 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
             BACKGROUND_JOBS[job_id] = {
                 "status": "completed",
                 "progress": 100,
-                "status_text": f"Generated {len(scenes)} snappy 2.5s scene cuts!",
+                "status_text": f"Generated {len(scenes)} vector scene prompts & stock keywords!",
                 "mode": "breakdown",
                 "result": {
                     "scenes": scenes
