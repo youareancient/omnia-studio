@@ -64,18 +64,23 @@ def split_script_into_scenes(raw_text):
                 
     scenes = []
     for sent in raw_sentences:
-        # Strictly break into snappy 4-6 word chunks (max 2.5 seconds per scene)
-        clauses = re.split(r'(?<=[,;:—])\s+', sent)
-        for c in clauses:
-            words = c.split()
-            if len(words) <= 6:
-                scenes.append(c)
-            else:
-                # Sub-chunk long clauses into 5-word snappy beats
-                for i in range(0, len(words), 5):
-                    chunk_str = " ".join(words[i:i+5])
-                    if chunk_str:
-                        scenes.append(chunk_str)
+        words = sent.split()
+        if len(words) <= 12:
+            scenes.append(sent)
+        else:
+            # Group into natural 7-10 word meaningful clause scenes
+            clauses = re.split(r'(?<=[,;:—])\s+', sent)
+            curr = []
+            for c in clauses:
+                curr.extend(c.split())
+                if len(curr) >= 7:
+                    scenes.append(" ".join(curr))
+                    curr = []
+            if curr:
+                if len(curr) <= 3 and scenes:
+                    scenes[-1] += " " + " ".join(curr)
+                else:
+                    scenes.append(" ".join(curr))
                 
     return scenes if scenes else [raw_text]
 
@@ -85,8 +90,8 @@ async def call_groq_ai_prompt_engineer(session, scene_text, scene_number):
         return None
 
     system_prompt = (
-        "You are an Elite 16:9 Visual Prompt Engineer for fast-paced YouTube explainer videos.\n"
-        "Your task: Read a 2-3 second fast-paced script beat and create a standalone 16:9 image prompt packed with vibrant visual props, character poses, and visual humor.\n\n"
+        "You are an Elite 16:9 Visual Prompt Engineer for YouTube explainer videos.\n"
+        "Your task: Read a 3-5 second script scene and create a standalone 16:9 image prompt packed with vibrant visual props, character poses, and visual humor.\n\n"
         "STRICT MASTER PROMPT PATTERN:\n"
         "Image Prompt - Hand-drawn professional educational 2D vector cartoon illustration in 16:9 widescreen aspect ratio, clean studio-quality digital vector artwork with thick, smooth black outlines, crisp linework, vibrant soft flat colors, and polished modern explainer-animation aesthetics. [Describe character pose, facial expression, and action on the left/center]. FEATURED VISUAL PROPS: [List 3-5 rich, specific, vibrant physical props, tech equipment, financial charts, glowing cables, coins, or meters relevant to the concept]. Above his head, a large white thought bubble with bold black outlines contains [describe a minimal 2D vector icon or silhouette]. Pure white background, generous negative space, balanced 16:9 composition, zero clutter, ultra-crisp 2D vector style --ar 16:9\n\n"
         "STRICT RULES:\n"
@@ -198,7 +203,7 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
 
         if mode == "breakdown":
             BACKGROUND_JOBS[job_id]["progress"] = 50
-            BACKGROUND_JOBS[job_id]["status_text"] = "STEP 1: Computing snappy 2-3 second scene cuts..."
+            BACKGROUND_JOBS[job_id]["status_text"] = "STEP 1: Computing natural 3-5 second scene cuts..."
 
             cues = submaker.cues
             scenes_raw = []
@@ -214,10 +219,10 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
                     end_ms = cue.end
                     
                     duration_sec = (end_ms - start_ms) / 1000.0
-                    is_punct = bool(re.search(r'[,.!?—;:]$', word))
+                    is_punct = bool(re.search(r'[.!?]$', word))
                     
-                    # Maximum 2.6 seconds or 5 words per scene cut for fast-paced video engagement
-                    if (len(curr_words) >= 5 or duration_sec >= 2.6 or (is_punct and len(curr_words) >= 3)):
+                    # Natural 3-5 second cuts (7 to 10 words minimum per scene cut)
+                    if (len(curr_words) >= 8 or duration_sec >= 3.5 or (is_punct and len(curr_words) >= 6)):
                         scene_text = " ".join(curr_words)
                         time_str = f"{format_timestamp(start_ms)} -> {format_timestamp(end_ms)}"
                         scenes_raw.append((scene_text, time_str))
@@ -240,7 +245,7 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
                     scenes_raw.append((line, f"{t_start} -> {t_end}"))
 
             BACKGROUND_JOBS[job_id]["progress"] = 65
-            BACKGROUND_JOBS[job_id]["status_text"] = f"STEP 2: Groq AI generating parallel 16:9 vector prompts for {len(scenes_raw)} snappy scenes..."
+            BACKGROUND_JOBS[job_id]["status_text"] = f"STEP 2: Groq AI generating parallel 16:9 vector prompts for {len(scenes_raw)} scenes..."
 
             async with ClientSession() as http_session:
                 tasks = [
@@ -270,7 +275,7 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
             BACKGROUND_JOBS[job_id] = {
                 "status": "completed",
                 "progress": 100,
-                "status_text": f"Generated {len(scenes)} snappy 16:9 vector prompts!",
+                "status_text": f"Generated {len(scenes)} natural 3-5 second 16:9 vector prompts!",
                 "mode": "breakdown",
                 "result": {
                     "scenes": scenes
