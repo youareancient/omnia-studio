@@ -609,7 +609,7 @@ async def process_video_assembly_async(video_job_id, original_job_id, zip_bytes,
                     "-ss", f"{st_sec:.3f}", "-t", f"{dur:.3f}", "-i", audio_filepath,
                     "-loop", "1", "-i", img_path,
                     "-vf", "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2:black,format=yuv420p",
-                    "-c:v", "libx264", "-preset", "fast", "-crf", "22",
+                    "-c:v", "libx264", "-preset", "ultrafast", "-tune", "stillimage", "-crf", "26",
                     "-c:a", "aac", "-b:a", "192k",
                     "-shortest",
                     mini_filepath
@@ -906,7 +906,7 @@ async def handle_generate_beat_clip(request):
             "-i", beat_audio_path,
             "-loop", "1", "-i", img_filepath,
             "-vf", "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2:black,format=yuv420p",
-            "-c:v", "libx264", "-preset", "fast", "-crf", "22",
+            "-c:v", "libx264", "-preset", "ultrafast", "-tune", "stillimage", "-crf", "26",
             "-c:a", "aac", "-b:a", "192k",
             "-shortest",
             out_clip_filepath
