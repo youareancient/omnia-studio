@@ -667,22 +667,8 @@
                 <div class="progress-sub" id="progressStatus">Cloud background job active...</div>
             </div>
 
-            <!-- Audio Output Card -->
-            <div class="output-card" id="audioCard">
-                <div style="font-size: 0.88rem; font-weight: 600; color: var(--text-primary);">🎙️ Voiceover MP3 Ready</div>
-                <audio id="audioElement" controls></audio>
-                <a href="#" id="downloadAudioLink" class="btn-download-single" download>Download Voiceover MP3</a>
-            </div>
-
-            <!-- SRT Subtitle Output Card -->
-            <div class="output-card" id="srtCard">
-                <div style="font-size: 0.88rem; font-weight: 600; color: var(--text-primary);">📝 .SRT Subtitle File Ready</div>
-                <p style="font-size: 0.78rem; color: var(--text-secondary); margin: 6px 0 10px 0;">Word-level subtitle file generated for CapCut & Premiere Pro.</p>
-                <a href="#" id="downloadSrtLink" class="btn-download-single btn-apple-secondary" download>Download Subtitles (.SRT)</a>
-            </div>
-
-            <!-- Breakdown Output Card (Full Width Prompt Grid Gallery) -->
-            <div class="output-card" id="breakdownCard" style="grid-column: 1 / -1; margin-top: 24px; padding: 24px; background: var(--bg-card); border-radius: 20px; border: 1px solid var(--accent-apple); box-shadow: 0 12px 40px rgba(0, 113, 227, 0.25);">
+            <!-- Breakdown Output Card (Primary Workspace Grid Gallery) -->
+            <div class="output-card" id="breakdownCard" style="margin-top: 24px; padding: 24px; background: var(--bg-card); border-radius: 20px; border: 1px solid var(--accent-apple); box-shadow: 0 12px 40px rgba(0, 113, 227, 0.25);">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
                     <div>
                         <div style="font-size: 1.15rem; font-weight: 800; color: var(--text-primary);">🎬 16:9 Scene Cuts & Visual Prompts Grid Gallery</div>
@@ -717,6 +703,27 @@
                     </div>
                 </div>
             </div>
+        </section>
+
+        <!-- Sidebar Output Column -->
+        <section style="display:flex; flex-direction:column; gap:1rem;">
+            <!-- Audio Output Card -->
+            <div class="output-card" id="audioCard">
+                <div style="font-size: 0.88rem; font-weight: 600; color: var(--text-primary);">🎙️ Voiceover MP3 Ready</div>
+                <audio id="audioElement" controls></audio>
+                <a href="#" id="downloadAudioLink" class="btn-download-single" download>Download Voiceover MP3</a>
+            </div>
+
+            <!-- SRT Subtitle Output Card -->
+            <div class="output-card" id="srtCard">
+                <div style="font-size: 0.88rem; font-weight: 600; color: var(--text-primary);">📝 .SRT Subtitle File Ready</div>
+                <p style="font-size: 0.78rem; color: var(--text-secondary); margin: 6px 0 10px 0;">Word-level subtitle file generated for CapCut & Premiere Pro.</p>
+                <a href="#" id="downloadSrtLink" class="btn-download-single btn-apple-secondary" download>Download Subtitles (.SRT)</a>
+            </div>
+        </section>
+
+        <!-- Full Width Workspace Section for Mini-Clips Studio & Master Video Output -->
+        <div style="grid-column: 1 / -1; width: 100%;">
 
             <!-- Mini-Clips Grid Gallery Studio & Interactive Timeline Editor -->
             <div class="output-card" id="miniClipsStudioCard" style="grid-column: 1 / -1; margin-top: 24px; padding: 24px; background: var(--bg-card); border-radius: 20px; border: 1px solid var(--accent-apple); box-shadow: 0 12px 40px rgba(0, 113, 227, 0.2); display:none;">
