@@ -530,7 +530,7 @@
                     <span>•</span>
                     <span id="estTime">~0 min audio</span>
                 </div>
-                <span>Natural Pacing Active</span>
+                <span style="color: var(--accent-apple); font-weight: 500;">📱 Background Processing Active</span>
             </div>
         </section>
 
@@ -575,7 +575,7 @@
                 <input type="text" id="filenameInput" placeholder="e.g. data_center_narration.mp3" style="width: 100%; background: var(--bg-input); border: 1px solid var(--border-subtle); padding: 10px 12px; border-radius: 12px; color: var(--text-primary); outline: none; font-size: 0.88rem;">
             </div>
 
-            <!-- Desktop 3-Button Action Grid -->
+            <!-- Desktop Action Grid -->
             <div class="action-btn-grid" id="desktopActionGrid">
                 <button class="btn-apple" onclick="generateStream('audio')">
                     🎵 Voiceover
@@ -588,7 +588,7 @@
                 </button>
             </div>
 
-            <!-- Real-Time Progress Indicator -->
+            <!-- Real-Time Background Progress Indicator -->
             <div class="progress-container" id="progressBox">
                 <div class="progress-header">
                     <span id="progressTitle">Processing...</span>
@@ -597,7 +597,7 @@
                 <div class="progress-bar">
                     <div class="progress-fill" id="progressBarFill"></div>
                 </div>
-                <div class="progress-sub" id="progressStatus">Initializing...</div>
+                <div class="progress-sub" id="progressStatus">Cloud background job active...</div>
             </div>
 
             <!-- Audio Output Card -->
@@ -624,7 +624,7 @@
         </section>
     </main>
 
-    <!-- Mobile Sticky Floating Bar: 3 Action Buttons -->
+    <!-- Mobile Sticky Floating Bar -->
     <div class="mobile-bottom-bar">
         <button class="btn-apple" onclick="generateStream('audio')">
             🎵 Voiceover
@@ -640,6 +640,7 @@
     <script>
         let selectedVoice = 'andrew';
         let currentRateStr = '+1%';
+        let pollInterval = null;
 
         function toggleTheme() {
             const html = document.documentElement;
@@ -692,15 +693,9 @@
             alert("Copied Master Thumbnail Prompt to Clipboard! 📋");
         }
 
-        async function generateStream(mode) {
-            const text = scriptInput.value.trim();
-            if (!text) {
-                alert('Please paste a script first!');
-                return;
-            }
-
-            const customFilename = document.getElementById('filenameInput').value.trim();
-
+        async function startPollingJob(jobId) {
+            if (pollInterval) clearInterval(pollInterval);
+            
             const progressBox = document.getElementById('progressBox');
             const progressPercent = document.getElementById('progressPercent');
             const progressBarFill = document.getElementById('progressBarFill');
@@ -710,17 +705,84 @@
             const srtCard = document.getElementById('srtCard');
             const thumbnailCard = document.getElementById('thumbnailCard');
 
-            if (mode === 'audio') audioCard.classList.remove('active');
-            if (mode === 'srt') srtCard.classList.remove('active');
-            if (mode === 'thumbnail') thumbnailCard.classList.remove('active');
-            
             progressBox.classList.add('active');
-            progressPercent.textContent = '0%';
-            progressBarFill.style.width = '0%';
-            progressStatus.textContent = `Preparing ${mode.toUpperCase()} generation...`;
+
+            pollInterval = setInterval(async () => {
+                try {
+                    const res = await fetch(`/api/job-status?id=${jobId}`);
+                    if (!res.ok) {
+                        clearInterval(pollInterval);
+                        localStorage.removeItem('active_job_id');
+                        progressBox.classList.remove('active');
+                        return;
+                    }
+                    
+                    const data = await res.json();
+                    
+                    if (data.progress !== undefined) {
+                        progressPercent.textContent = `${data.progress}%`;
+                        progressBarFill.style.width = `${data.progress}%`;
+                    }
+
+                    if (data.status_text) {
+                        progressStatus.textContent = data.status_text;
+                    }
+
+                    if (data.status === 'completed') {
+                        clearInterval(pollInterval);
+                        localStorage.removeItem('active_job_id');
+                        progressBox.classList.remove('active');
+
+                        if (data.mode === 'audio' && data.result) {
+                            const audioElement = document.getElementById('audioElement');
+                            const downloadAudioLink = document.getElementById('downloadAudioLink');
+
+                            audioElement.src = data.result.audioUrl;
+                            downloadAudioLink.href = data.result.audioUrl;
+                            downloadAudioLink.download = data.result.filename;
+
+                            audioCard.classList.add('active');
+                            audioElement.play();
+                        } else if (data.mode === 'srt' && data.result) {
+                            const downloadSrtLink = document.getElementById('downloadSrtLink');
+
+                            downloadSrtLink.href = data.result.srtUrl;
+                            downloadSrtLink.download = data.result.srtFilename;
+
+                            srtCard.classList.add('active');
+                        } else if (data.mode === 'thumbnail' && data.result) {
+                            const thumbnailPromptText = document.getElementById('thumbnailPromptText');
+                            thumbnailPromptText.value = data.result.thumbnailPrompt;
+
+                            thumbnailCard.classList.add('active');
+                        }
+                    } else if (data.status === 'failed') {
+                        clearInterval(pollInterval);
+                        localStorage.removeItem('active_job_id');
+                        progressBox.classList.remove('active');
+                        alert(data.status_text || 'Job failed');
+                    }
+                } catch (e) {
+                    console.log('Polling status error:', e);
+                }
+            }, 1500);
+        }
+
+        async function generateStream(mode) {
+            const text = scriptInput.value.trim();
+            if (!text) {
+                alert('Please paste a script first!');
+                return;
+            }
+
+            const customFilename = document.getElementById('filenameInput').value.trim();
+
+            document.getElementById('audioCard').classList.remove('active');
+            document.getElementById('srtCard').classList.remove('active');
+            document.getElementById('thumbnailCard').classList.remove('active');
 
             try {
-                const response = await fetch('/api/generate-stream', {
+                const response = await fetch('/api/start-job', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -732,75 +794,28 @@
                     })
                 });
 
-                const reader = response.body.getReader();
-                const decoder = new TextDecoder('utf-8');
-                let buffer = '';
+                const data = await response.json();
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                    return;
+                }
 
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-
-                    buffer += decoder.decode(value, { stream: true });
-                    const lines = buffer.split('\n\n');
-                    buffer = lines.pop();
-
-                    for (const line of lines) {
-                        if (line.startsWith('data: ')) {
-                            const jsonStr = line.replace('data: ', '').trim();
-                            if (!jsonStr) continue;
-
-                            const evt = JSON.parse(jsonStr);
-
-                            if (evt.error) {
-                                alert('Error: ' + evt.error);
-                                progressBox.classList.remove('active');
-                                return;
-                            }
-
-                            if (evt.progress !== undefined) {
-                                progressPercent.textContent = `${evt.progress}%`;
-                                progressBarFill.style.width = `${evt.progress}%`;
-                            }
-
-                            if (evt.status) {
-                                progressStatus.textContent = evt.status;
-                            }
-
-                            if (evt.success) {
-                                progressBox.classList.remove('active');
-
-                                if (evt.mode === 'audio') {
-                                    const audioElement = document.getElementById('audioElement');
-                                    const downloadAudioLink = document.getElementById('downloadAudioLink');
-
-                                    audioElement.src = evt.audioUrl;
-                                    downloadAudioLink.href = evt.audioUrl;
-                                    downloadAudioLink.download = evt.filename;
-
-                                    audioCard.classList.add('active');
-                                    audioElement.play();
-                                } else if (evt.mode === 'srt') {
-                                    const downloadSrtLink = document.getElementById('downloadSrtLink');
-
-                                    downloadSrtLink.href = evt.srtUrl;
-                                    downloadSrtLink.download = evt.srtFilename;
-
-                                    srtCard.classList.add('active');
-                                } else if (evt.mode === 'thumbnail') {
-                                    const thumbnailPromptText = document.getElementById('thumbnailPromptText');
-                                    thumbnailPromptText.value = evt.thumbnailPrompt;
-
-                                    thumbnailCard.classList.add('active');
-                                }
-                            }
-                        }
-                    }
+                if (data.job_id) {
+                    localStorage.setItem('active_job_id', data.job_id);
+                    startPollingJob(data.job_id);
                 }
             } catch (err) {
                 alert('Connection error: ' + err.message);
-                progressBox.classList.remove('active');
             }
         }
+
+        // Restore background job on mobile app re-open
+        window.addEventListener('load', () => {
+            const savedJobId = localStorage.getItem('active_job_id');
+            if (savedJobId) {
+                startPollingJob(savedJobId);
+            }
+        });
     </script>
 </body>
 </html>

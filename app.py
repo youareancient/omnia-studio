@@ -26,6 +26,9 @@ VOICE_PRESETS = {
     "guy": {"id": "en-US-GuyNeural", "name": "Guy (News & Commentary)", "desc": "Clear American news broadcaster style"}
 }
 
+# Global Background Jobs Dictionary
+BACKGROUND_JOBS = {}
+
 def humanize_text_for_speech(text):
     lines = [line.strip() for line in text.strip().split('\n')]
     paragraphs = []
@@ -59,46 +62,15 @@ def extract_video_title(text, custom_filename=""):
         return " ".join(words).upper()
     return "YOUR VIDEO TITLE"
 
-async def handle_index(request):
-    headers = {
-        "Cache-Control": "no-cache, no-store, must-revalidate",
-        "Pragma": "no-cache",
-        "Expires": "0"
-    }
-    if os.path.exists(INDEX_HTML_PATH):
-        with open(INDEX_HTML_PATH, "r", encoding="utf-8") as f:
-            content = f.read()
-        return web.Response(text=content, content_type="text/html", charset="utf-8", headers=headers)
-    return web.Response(text="<h1>YouTube Voiceover Studio</h1><p>Initializing...</p>", content_type="text/html", headers=headers)
-
-async def handle_voices(request):
-    return web.json_response(VOICE_PRESETS)
-
-async def handle_generate_stream(request):
-    response = web.StreamResponse(
-        status=200,
-        reason='OK',
-        headers={
-            'Content-Type': 'text/event-stream',
-            'Cache-Control': 'no-cache',
-            'Connection': 'keep-alive',
-            'Access-Control-Allow-Origin': '*'
-        }
-    )
-    await response.prepare(request)
-
+async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode):
     try:
-        data = await request.json()
-        raw_text = data.get("text", "").strip()
-        voice_preset = data.get("voice", "andrew")
-        rate = data.get("rate", "+1%")
-        filename = data.get("filename", "").strip()
-        mode = data.get("mode", "audio") # "audio", "srt", or "thumbnail"
-
-        if not raw_text:
-            err_msg = json.dumps({"error": "Script text cannot be empty"})
-            await response.write(f"data: {err_msg}\n\n".encode("utf-8"))
-            return response
+        BACKGROUND_JOBS[job_id] = {
+            "status": "processing",
+            "progress": 5,
+            "status_text": "Humanizing script...",
+            "mode": mode,
+            "result": None
+        }
 
         voice_info = VOICE_PRESETS.get(voice_preset, VOICE_PRESETS["andrew"])
         voice_id = voice_info["id"]
@@ -106,9 +78,24 @@ async def handle_generate_stream(request):
         full_humanized_text, paragraphs = humanize_text_for_speech(raw_text)
         total_paras = len(paragraphs)
 
-        short_id = str(uuid.uuid4())[:6]
+        video_title = extract_video_title(raw_text, filename)
+        thumbnail_prompt = MASTER_THUMBNAIL_PROMPT_TEMPLATE.replace("{VIDEO_TITLE}", video_title)
+
+        if mode == "thumbnail":
+            BACKGROUND_JOBS[job_id] = {
+                "status": "completed",
+                "progress": 100,
+                "status_text": "Thumbnail Master Prompt generated!",
+                "mode": "thumbnail",
+                "result": {
+                    "videoTitle": video_title,
+                    "thumbnailPrompt": thumbnail_prompt
+                }
+            }
+            return
+
         if not filename:
-            filename = f"voiceover_{voice_preset}_{short_id}.mp3"
+            filename = f"voiceover_{voice_preset}_{job_id[:6]}.mp3"
         elif not filename.endswith(".mp3"):
             filename += ".mp3"
 
@@ -117,25 +104,6 @@ async def handle_generate_stream(request):
 
         out_filepath = os.path.join(DOWNLOADS_DIR, filename)
         srt_filepath = os.path.join(DOWNLOADS_DIR, srt_filename)
-
-        video_title = extract_video_title(raw_text, filename)
-        thumbnail_prompt = MASTER_THUMBNAIL_PROMPT_TEMPLATE.replace("{VIDEO_TITLE}", video_title)
-
-        if mode == "thumbnail":
-            final_evt = json.dumps({
-                "success": True,
-                "mode": "thumbnail",
-                "progress": 100,
-                "status": "Thumbnail Master Prompt generated!",
-                "videoTitle": video_title,
-                "thumbnailPrompt": thumbnail_prompt
-            })
-            await response.write(f"data: {final_evt}\n\n".encode("utf-8"))
-            return response
-
-        init_evt = json.dumps({"progress": 5, "status": f"Processing {mode.upper()} request ({total_paras} paragraphs)..."})
-        await response.write(f"data: {init_evt}\n\n".encode("utf-8"))
-        await asyncio.sleep(0.1)
 
         temp_chunks = []
         temp_dir = os.path.join(STUDIO_DIR, "temp_chunks")
@@ -159,51 +127,52 @@ async def handle_generate_stream(request):
             temp_chunks.append(chunk_path)
 
             progress_pct = int((i / total_paras) * 90) + 5
-            evt = json.dumps({
-                "progress": progress_pct,
-                "status": f"Synthesizing {mode.upper()} paragraph {i} of {total_paras} ({progress_pct}%)..."
-            })
-            await response.write(f"data: {evt}\n\n".encode("utf-8"))
+            BACKGROUND_JOBS[job_id]["progress"] = progress_pct
+            BACKGROUND_JOBS[job_id]["status_text"] = f"Synthesizing paragraph {i} of {total_paras} ({progress_pct}%)..."
 
         if mode == "audio":
-            merging_evt = json.dumps({"progress": 96, "status": "Merging audio tracks into HD MP3..."})
-            await response.write(f"data: {merging_evt}\n\n".encode("utf-8"))
+            BACKGROUND_JOBS[job_id]["progress"] = 96
+            BACKGROUND_JOBS[job_id]["status_text"] = "Merging audio tracks into HD MP3..."
 
             with open(out_filepath, "wb") as outfile:
                 for chunk_file in temp_chunks:
                     with open(chunk_file, "rb") as infile:
                         outfile.write(infile.read())
 
-            final_evt = json.dumps({
-                "success": True,
-                "mode": "audio",
+            BACKGROUND_JOBS[job_id] = {
+                "status": "completed",
                 "progress": 100,
-                "status": "Voiceover MP3 generated successfully!",
-                "filename": filename,
-                "audioUrl": f"/static/generated/{filename}",
-                "wordCount": len(full_humanized_text.split()),
-                "videoTitle": video_title,
-                "thumbnailPrompt": thumbnail_prompt
-            })
+                "status_text": "Voiceover MP3 generated successfully!",
+                "mode": "audio",
+                "result": {
+                    "filename": filename,
+                    "audioUrl": f"/static/generated/{filename}",
+                    "wordCount": len(full_humanized_text.split()),
+                    "videoTitle": video_title,
+                    "thumbnailPrompt": thumbnail_prompt
+                }
+            }
         else: # mode == "srt"
-            merging_evt = json.dumps({"progress": 96, "status": "Generating .SRT subtitle timestamps..."})
-            await response.write(f"data: {merging_evt}\n\n".encode("utf-8"))
+            BACKGROUND_JOBS[job_id]["progress"] = 96
+            BACKGROUND_JOBS[job_id]["status_text"] = "Generating .SRT subtitle timestamps..."
 
             srt_content = submaker.get_srt()
             with open(srt_filepath, "w", encoding="utf-8") as srt_file:
                 srt_file.write(srt_content)
 
-            final_evt = json.dumps({
-                "success": True,
-                "mode": "srt",
+            BACKGROUND_JOBS[job_id] = {
+                "status": "completed",
                 "progress": 100,
-                "status": ".SRT Subtitles generated successfully!",
-                "srtFilename": srt_filename,
-                "srtUrl": f"/static/generated/{srt_filename}",
-                "wordCount": len(full_humanized_text.split()),
-                "videoTitle": video_title,
-                "thumbnailPrompt": thumbnail_prompt
-            })
+                "status_text": ".SRT Subtitles generated successfully!",
+                "mode": "srt",
+                "result": {
+                    "srtFilename": srt_filename,
+                    "srtUrl": f"/static/generated/{srt_filename}",
+                    "wordCount": len(full_humanized_text.split()),
+                    "videoTitle": video_title,
+                    "thumbnailPrompt": thumbnail_prompt
+                }
+            }
 
         for chunk_file in temp_chunks:
             try:
@@ -211,14 +180,56 @@ async def handle_generate_stream(request):
             except Exception:
                 pass
 
-        await response.write(f"data: {final_evt}\n\n".encode("utf-8"))
-
     except Exception as e:
-        print("Error during streaming generation:", e)
-        err_evt = json.dumps({"error": str(e)})
-        await response.write(f"data: {err_evt}\n\n".encode("utf-8"))
+        print(f"Error processing job {job_id}:", e)
+        BACKGROUND_JOBS[job_id] = {
+            "status": "failed",
+            "progress": 0,
+            "status_text": f"Error: {str(e)}",
+            "mode": mode,
+            "result": None
+        }
 
-    return response
+async def handle_index(request):
+    headers = {
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0"
+    }
+    if os.path.exists(INDEX_HTML_PATH):
+        with open(INDEX_HTML_PATH, "r", encoding="utf-8") as f:
+            content = f.read()
+        return web.Response(text=content, content_type="text/html", charset="utf-8", headers=headers)
+    return web.Response(text="<h1>YouTube Voiceover Studio</h1><p>Initializing...</p>", content_type="text/html", headers=headers)
+
+async def handle_voices(request):
+    return web.json_response(VOICE_PRESETS)
+
+async def handle_start_job(request):
+    try:
+        data = await request.json()
+        raw_text = data.get("text", "").strip()
+        voice_preset = data.get("voice", "andrew")
+        rate = data.get("rate", "+1%")
+        filename = data.get("filename", "").strip()
+        mode = data.get("mode", "audio")
+
+        if not raw_text:
+            return web.json_response({"error": "Script text cannot be empty"}, status=400)
+
+        job_id = str(uuid.uuid4())
+        asyncio.create_task(process_job_async(job_id, raw_text, voice_preset, rate, filename, mode))
+
+        return web.json_response({"job_id": job_id, "status": "processing"})
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)
+
+async def handle_job_status(request):
+    job_id = request.query.get("id", "").strip()
+    if not job_id or job_id not in BACKGROUND_JOBS:
+        return web.json_response({"error": "Job not found"}, status=404)
+
+    return web.json_response(BACKGROUND_JOBS[job_id])
 
 async def handle_telegram_webhook(request):
     token = TELEGRAM_BOT_TOKEN or os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
@@ -281,7 +292,8 @@ def create_app():
     app.router.add_get("", handle_index)
     app.router.add_get("/", handle_index)
     app.router.add_get("/index.html", handle_index)
-    app.router.add_post("/api/generate-stream", handle_generate_stream)
+    app.router.add_post("/api/start-job", handle_start_job)
+    app.router.add_get("/api/job-status", handle_job_status)
     app.router.add_get("/api/voices", handle_voices)
     app.router.add_post("/telegram-webhook", handle_telegram_webhook)
     app.router.add_static("/static/", STATIC_DIR)
