@@ -589,17 +589,15 @@ async def process_video_assembly_async(video_job_id, original_job_id, zip_bytes,
         elif len(image_durations) == 1:
             image_durations[0] = round(total_audio_duration, 3)
 
-        # Render Per-Scene Individual Mini-Clips for Grid Gallery & Previewing
-        BACKGROUND_JOBS[video_job_id]["progress"] = 50
-        BACKGROUND_JOBS[video_job_id]["status_text"] = f"🎬 Synthesizing {total_images} per-scene 16:9 mini-clips for Grid Gallery..."
-
+        # Render Per-Scene Individual Mini-Clips sequentially for Grid Gallery & Previewing
         mini_clips_data = []
         for idx, (img_path, dur) in enumerate(zip(extracted_imgs, image_durations), start=1):
+            pct = 20 + int((idx / total_images) * 60)
+            BACKGROUND_JOBS[video_job_id]["progress"] = pct
+            BACKGROUND_JOBS[video_job_id]["status_text"] = f"🎬 Synthesizing 16:9 Mini-Clip {idx}/{total_images} for Beat #{idx} ({dur:.1f}s)..."
+
             mini_filename = f"mini_clip_{video_job_id[:6]}_{idx:02d}.mp4"
             mini_filepath = os.path.join(DOWNLOADS_DIR, mini_filename)
-            
-            # Extract line audio segment if scenes available, otherwise fallback
-            seg_audio_path = os.path.join(temp_img_dir, f"seg_{idx}.mp3")
             
             if idx <= len(scenes):
                 sc = scenes[idx - 1]
