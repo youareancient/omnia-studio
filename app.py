@@ -3,8 +3,6 @@ import json
 import os
 import re
 import uuid
-import urllib.parse
-import urllib.request
 import edge_tts
 from aiohttp import web, ClientSession, FormData
 
@@ -48,12 +46,19 @@ def humanize_text_for_speech(text):
     humanized_text = re.sub(r'\.{3,}', '...', humanized_text)
     return humanized_text, paragraphs
 
-def clean_prompt_for_image(text):
+def format_timestamp(ms):
+    seconds = int(ms / 1000)
+    minutes = int(seconds / 60)
+    rem_sec = seconds % 60
+    tenths = int((ms % 1000) / 100)
+    return f"{minutes:02d}:{rem_sec:02d}.{tenths}"
+
+def build_scene_prompt(text):
     words = re.findall(r'\b[a-zA-Z]{3,}\b', text)
     stopwords = {"the", "and", "that", "have", "for", "not", "with", "you", "this", "but", "his", "from", "they", "say", "her", "she", "will", "one", "all", "would", "there", "their"}
     filtered = [w for w in words if w.lower() not in stopwords][:8]
-    prompt_str = " ".join(filtered) if filtered else text[:40]
-    return f"cinematic professional YouTube documentary illustration, {prompt_str}, 8k resolution, highly detailed"
+    prompt_keywords = " ".join(filtered) if filtered else text[:40]
+    return f"Ultra-detailed 3D cinematic YouTube documentary scene of {prompt_keywords}, dramatic volumetric lighting, high contrast, 8k resolution, photorealistic"
 
 async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode):
     try:
@@ -70,50 +75,6 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
 
         full_humanized_text, paragraphs = humanize_text_for_speech(raw_text)
         total_paras = len(paragraphs)
-
-        if mode == "storyboard":
-            images_list = []
-            target_paras = paragraphs[:6] # Process up to 6 scenes
-            total_scenes = len(target_paras)
-
-            async with ClientSession() as session:
-                for idx, para in enumerate(target_paras, start=1):
-                    BACKGROUND_JOBS[job_id]["progress"] = int((idx / total_scenes) * 90)
-                    BACKGROUND_JOBS[job_id]["status_text"] = f"Generating AI Image {idx} of {total_scenes}..."
-
-                    prompt = clean_prompt_for_image(para)
-                    encoded_prompt = urllib.parse.quote(prompt)
-                    seed = uuid.uuid4().hex[:8]
-                    img_api_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1280&height=720&nologo=true&seed={seed}"
-
-                    img_filename = f"storyboard_{job_id[:6]}_{idx}.jpg"
-                    img_filepath = os.path.join(DOWNLOADS_DIR, img_filename)
-
-                    try:
-                        async with session.get(img_api_url, timeout=15) as resp:
-                            if resp.status == 200:
-                                img_data = await resp.read()
-                                with open(img_filepath, "wb") as f:
-                                    f.write(img_data)
-                                images_list.append({
-                                    "scene": idx,
-                                    "text": para[:80] + ("..." if len(para) > 80 else ""),
-                                    "imageUrl": f"/static/generated/{img_filename}",
-                                    "filename": img_filename
-                                })
-                    except Exception as img_err:
-                        print(f"Error fetching image {idx}:", img_err)
-
-            BACKGROUND_JOBS[job_id] = {
-                "status": "completed",
-                "progress": 100,
-                "status_text": f"Generated {len(images_list)} AI Storyboard Images!",
-                "mode": "storyboard",
-                "result": {
-                    "storyboard": images_list
-                }
-            }
-            return
 
         if not filename:
             filename = f"voiceover_{voice_preset}_{job_id[:6]}.mp3"
@@ -149,7 +110,81 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
 
             progress_pct = int((i / total_paras) * 90) + 5
             BACKGROUND_JOBS[job_id]["progress"] = progress_pct
-            BACKGROUND_JOBS[job_id]["status_text"] = f"Synthesizing paragraph {i} of {total_paras} ({progress_pct}%)..."
+            BACKGROUND_JOBS[job_id]["status_text"] = f"Analyzing scene beats ({progress_pct}%)..."
+
+        if mode == "breakdown":
+            BACKGROUND_JOBS[job_id]["progress"] = 96
+            BACKGROUND_JOBS[job_id]["status_text"] = "Computing smart scene timestamps & AI prompts..."
+
+            cues = submaker.cues
+            scenes = []
+            
+            if cues:
+                curr_words = []
+                start_ms = cues[0].start
+                end_ms = cues[0].end
+                scene_num = 1
+                
+                for cue in cues:
+                    word = cue.text.strip()
+                    curr_words.append(word)
+                    end_ms = cue.end
+                    
+                    # Cut scene if word count >= 12 OR duration >= 4.0 seconds OR sentence end
+                    duration_sec = (end_ms - start_ms) / 1000.0
+                    is_sentence_end = bool(re.search(r'[.!?]$', word))
+                    
+                    if (len(curr_words) >= 12 or duration_sec >= 4.0 or (is_sentence_end and len(curr_words) >= 6)):
+                        scene_text = " ".join(curr_words)
+                        time_str = f"[{format_timestamp(start_ms)} -> {format_timestamp(end_ms)}]"
+                        prompt_str = build_scene_prompt(scene_text)
+                        
+                        scenes.append({
+                            "scene": scene_num,
+                            "timestamp": time_str,
+                            "text": scene_text,
+                            "prompt": prompt_str
+                        })
+                        scene_num += 1
+                        curr_words = []
+                        start_ms = end_ms
+                        
+                if curr_words:
+                    scene_text = " ".join(curr_words)
+                    time_str = f"[{format_timestamp(start_ms)} -> {format_timestamp(end_ms)}]"
+                    prompt_str = build_scene_prompt(scene_text)
+                    scenes.append({
+                        "scene": scene_num,
+                        "timestamp": time_str,
+                        "text": scene_text,
+                        "prompt": prompt_str
+                    })
+            else:
+                # Fallback to paragraph scene breakdown
+                for idx, para in enumerate(paragraphs, start=1):
+                    scenes.append({
+                        "scene": idx,
+                        "timestamp": f"Scene #{idx}",
+                        "text": para,
+                        "prompt": build_scene_prompt(para)
+                    })
+
+            for chunk_file in temp_chunks:
+                try:
+                    os.remove(chunk_file)
+                except Exception:
+                    pass
+
+            BACKGROUND_JOBS[job_id] = {
+                "status": "completed",
+                "progress": 100,
+                "status_text": f"Smart Scene Breakdown generated ({len(scenes)} scenes)!",
+                "mode": "breakdown",
+                "result": {
+                    "scenes": scenes
+                }
+            }
+            return
 
         if mode == "audio":
             BACKGROUND_JOBS[job_id]["progress"] = 96

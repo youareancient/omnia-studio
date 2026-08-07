@@ -482,29 +482,35 @@
             transform: scale(0.97);
         }
 
-        .storyboard-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            margin-top: 10px;
-        }
-
-        .storyboard-card {
+        .breakdown-card {
             background: var(--bg-input);
             border: 1px solid var(--border-subtle);
             border-radius: 12px;
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
         }
 
-        .storyboard-img {
-            width: 100%;
-            height: 180px;
-            border-radius: 10px;
-            object-fit: cover;
-            background: rgba(0, 0, 0, 0.4);
+        .breakdown-ts {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--accent-apple);
+            margin-bottom: 4px;
+        }
+
+        .breakdown-script {
+            font-size: 0.82rem;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+            line-height: 1.4;
+        }
+
+        .breakdown-prompt {
+            font-size: 0.76rem;
+            color: var(--text-secondary);
+            background: rgba(255, 255, 255, 0.04);
+            padding: 6px 8px;
+            border-radius: 8px;
+            font-family: monospace;
         }
     </style>
 </head>
@@ -596,8 +602,8 @@
                 <button class="btn-apple btn-apple-secondary" onclick="generateStream('srt')">
                     📝 .SRT
                 </button>
-                <button class="btn-apple btn-apple-secondary" onclick="generateStream('storyboard')">
-                    🖼️ Images
+                <button class="btn-apple btn-apple-secondary" onclick="generateStream('breakdown')">
+                    🎬 Scene Cuts
                 </button>
             </div>
 
@@ -627,10 +633,13 @@
                 <a href="#" id="downloadSrtLink" class="btn-download-single btn-apple-secondary" download>Download Subtitles (.SRT)</a>
             </div>
 
-            <!-- Storyboard Output Card -->
-            <div class="output-card" id="storyboardCard">
-                <div style="font-size: 0.88rem; font-weight: 600; color: var(--text-primary);">🖼️ AI Script Visual Storyboard Ready</div>
-                <div class="storyboard-grid" id="storyboardContainer"></div>
+            <!-- Breakdown Output Card -->
+            <div class="output-card" id="breakdownCard">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <div style="font-size: 0.88rem; font-weight: 600; color: var(--text-primary);">🎬 Scene Cuts & Visual Prompts</div>
+                    <button class="btn-apple btn-apple-secondary" style="min-height:30px; padding:4px 10px; font-size:0.72rem; width:auto;" onclick="copyAllBreakdown()">📋 Copy All</button>
+                </div>
+                <div id="breakdownContainer"></div>
             </div>
         </section>
     </main>
@@ -643,8 +652,8 @@
         <button class="btn-apple btn-apple-secondary" onclick="generateStream('srt')">
             📝 .SRT
         </button>
-        <button class="btn-apple btn-apple-secondary" onclick="generateStream('storyboard')">
-            🖼️ Images
+        <button class="btn-apple btn-apple-secondary" onclick="generateStream('breakdown')">
+            🎬 Scene Cuts
         </button>
     </div>
 
@@ -652,6 +661,7 @@
         let selectedVoice = 'andrew';
         let currentRateStr = '+1%';
         let pollInterval = null;
+        let lastBreakdownData = [];
 
         function toggleTheme() {
             const html = document.documentElement;
@@ -696,6 +706,16 @@
             estTimeEl.textContent = `~${minutes} min audio`;
         });
 
+        function copyAllBreakdown() {
+            if (!lastBreakdownData.length) return;
+            let fullText = "🎬 SMART SCENE BREAKDOWN & VISUAL PROMPTS\n\n";
+            lastBreakdownData.forEach(item => {
+                fullText += `⏱️ Scene ${item.scene} ${item.timestamp}\n📝 Line: ${item.text}\n🎨 Visual Prompt: ${item.prompt}\n\n`;
+            });
+            navigator.clipboard.writeText(fullText);
+            alert('Copied full Scene Breakdown & Visual Prompts to clipboard! 📋');
+        }
+
         async function startPollingJob(jobId) {
             if (pollInterval) clearInterval(pollInterval);
             
@@ -706,7 +726,7 @@
             
             const audioCard = document.getElementById('audioCard');
             const srtCard = document.getElementById('srtCard');
-            const storyboardCard = document.getElementById('storyboardCard');
+            const breakdownCard = document.getElementById('breakdownCard');
 
             progressBox.classList.add('active');
 
@@ -753,23 +773,23 @@
                             downloadSrtLink.download = data.result.srtFilename;
 
                             srtCard.classList.add('active');
-                        } else if (data.mode === 'storyboard' && data.result) {
-                            const container = document.getElementById('storyboardContainer');
+                        } else if (data.mode === 'breakdown' && data.result) {
+                            const container = document.getElementById('breakdownContainer');
                             container.innerHTML = '';
+                            lastBreakdownData = data.result.scenes;
 
-                            data.result.storyboard.forEach(item => {
+                            data.result.scenes.forEach(item => {
                                 const card = document.createElement('div');
-                                card.className = 'storyboard-card';
+                                card.className = 'breakdown-card';
                                 card.innerHTML = `
-                                    <img src="${item.imageUrl}" class="storyboard-img" alt="Scene ${item.scene}">
-                                    <div style="font-size:0.78rem; font-weight:600; color:var(--accent-apple);">Scene #${item.scene}</div>
-                                    <div style="font-size:0.78rem; color:var(--text-secondary);">${item.text}</div>
-                                    <a href="${item.imageUrl}" download="${item.filename}" class="btn-download-single btn-apple-secondary" style="min-height:36px; padding:6px 12px; font-size:0.78rem; margin-top:4px;">⬇️ Download Scene ${item.scene} Image</a>
+                                    <div class="breakdown-ts">Scene #${item.scene} • ${item.timestamp}</div>
+                                    <div class="breakdown-script">"${item.text}"</div>
+                                    <div class="breakdown-prompt">🎨 Prompt: ${item.prompt}</div>
                                 `;
                                 container.appendChild(card);
                             });
 
-                            storyboardCard.classList.add('active');
+                            breakdownCard.classList.add('active');
                         }
                     } else if (data.status === 'failed') {
                         clearInterval(pollInterval);
@@ -794,7 +814,7 @@
 
             document.getElementById('audioCard').classList.remove('active');
             document.getElementById('srtCard').classList.remove('active');
-            document.getElementById('storyboardCard').classList.remove('active');
+            document.getElementById('breakdownCard').classList.remove('active');
 
             try {
                 const response = await fetch('/api/start-job', {
