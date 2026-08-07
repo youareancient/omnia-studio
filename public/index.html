@@ -3,22 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YouTube Voiceover Studio Pro - Ultra HD Narration</title>
+    <title>YouTube Voiceover Studio Pro - Studio Narration</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-dark: #07090e;
-            --bg-card: rgba(15, 21, 37, 0.7);
-            --bg-card-hover: rgba(26, 35, 60, 0.85);
+            --bg-dark: #060911;
+            --bg-card: rgba(13, 18, 32, 0.75);
+            --bg-card-hover: rgba(22, 30, 52, 0.9);
             --accent-cyan: #06b6d4;
             --accent-blue: #3b82f6;
             --accent-indigo: #6366f1;
             --accent-purple: #a855f7;
             --accent-emerald: #10b981;
-            --glow-blue: rgba(59, 130, 246, 0.35);
-            --glow-cyan: rgba(6, 182, 212, 0.35);
+            --glow-blue: rgba(59, 130, 246, 0.3);
+            --glow-cyan: rgba(6, 182, 212, 0.3);
             --text-main: #f8fafc;
             --text-sub: #94a3b8;
             --text-muted: #64748b;
@@ -39,9 +39,9 @@
         body {
             background-color: var(--bg-dark);
             background-image: 
-                radial-gradient(ellipse at 20% 10%, rgba(59, 130, 246, 0.18) 0%, transparent 50%),
-                radial-gradient(ellipse at 80% 90%, rgba(168, 85, 247, 0.15) 0%, transparent 50%),
-                radial-gradient(ellipse at 50% 50%, rgba(6, 182, 212, 0.08) 0%, transparent 70%);
+                radial-gradient(ellipse at 15% 0%, rgba(59, 130, 246, 0.15) 0%, transparent 60%),
+                radial-gradient(ellipse at 85% 100%, rgba(168, 85, 247, 0.15) 0%, transparent 60%),
+                radial-gradient(ellipse at 50% 50%, rgba(6, 182, 212, 0.06) 0%, transparent 80%);
             color: var(--text-main);
             min-height: 100vh;
             display: flex;
@@ -49,43 +49,43 @@
             overflow-x: hidden;
         }
 
-        /* Animated Ambient Glowing Orbs */
-        .ambient-glow-1 {
+        /* Ambient Glowing Background Elements */
+        .ambient-orb-1 {
             position: fixed;
-            top: -100px;
-            left: -100px;
-            width: 400px;
-            height: 400px;
-            background: radial-gradient(circle, rgba(59, 130, 246, 0.25), transparent 70%);
-            filter: blur(60px);
+            top: -120px;
+            left: -120px;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.2), transparent 70%);
+            filter: blur(80px);
             pointer-events: none;
             z-index: 0;
         }
 
-        .ambient-glow-2 {
+        .ambient-orb-2 {
             position: fixed;
-            bottom: -100px;
-            right: -100px;
-            width: 400px;
-            height: 400px;
-            background: radial-gradient(circle, rgba(168, 85, 247, 0.25), transparent 70%);
-            filter: blur(60px);
+            bottom: -120px;
+            right: -120px;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(168, 85, 247, 0.2), transparent 70%);
+            filter: blur(80px);
             pointer-events: none;
             z-index: 0;
         }
 
         header {
             border-bottom: 1px solid var(--border-glass);
-            background: rgba(7, 9, 14, 0.85);
-            backdrop-filter: blur(20px);
+            background: rgba(6, 9, 17, 0.85);
+            backdrop-filter: blur(24px);
             position: sticky;
             top: 0;
             z-index: 100;
-            padding: 1.1rem 2rem;
+            padding: 1.1rem 2.5rem;
         }
 
         .header-container {
-            max-width: 1280px;
+            max-width: 1320px;
             margin: 0 auto;
             display: flex;
             justify-content: space-between;
@@ -108,19 +108,13 @@
             justify-content: center;
             font-size: 22px;
             box-shadow: 0 4px 20px var(--glow-cyan);
-            animation: pulse-glow 3s infinite alternate;
-        }
-
-        @keyframes pulse-glow {
-            0% { box-shadow: 0 0 15px rgba(6, 182, 212, 0.4); }
-            100% { box-shadow: 0 0 25px rgba(168, 85, 247, 0.6); }
         }
 
         .brand-title {
             font-size: 1.35rem;
             font-weight: 800;
             letter-spacing: -0.5px;
-            background: linear-gradient(135deg, #ffffff 30%, #94a3b8);
+            background: linear-gradient(135deg, #ffffff 40%, #cbd5e1);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
@@ -137,11 +131,22 @@
             text-transform: uppercase;
         }
 
-        .header-status {
+        .header-controls {
             display: flex;
             align-items: center;
-            gap: 10px;
-            font-size: 0.85rem;
+            gap: 16px;
+        }
+
+        .pill-badge {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 30px;
+            padding: 6px 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.82rem;
+            font-weight: 600;
             color: var(--text-sub);
         }
 
@@ -151,22 +156,22 @@
             border-radius: 50%;
             background-color: var(--accent-emerald);
             box-shadow: 0 0 10px var(--accent-emerald);
-            animation: blink 2s infinite;
+            animation: pulse-dot 2s infinite;
         }
 
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.4; }
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.85); }
         }
 
         main {
-            max-width: 1280px;
+            max-width: 1320px;
             margin: 2rem auto;
             padding: 0 1.5rem;
             flex: 1;
             width: 100%;
             display: grid;
-            grid-template-columns: 1fr 420px;
+            grid-template-columns: 1fr 430px;
             gap: 1.75rem;
             position: relative;
             z-index: 1;
@@ -184,7 +189,7 @@
             border-radius: var(--radius-xl);
             backdrop-filter: blur(24px);
             padding: 1.75rem;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
             transition: border-color 0.3s ease;
         }
 
@@ -229,24 +234,24 @@
 
         textarea {
             width: 100%;
-            height: 440px;
-            background: rgba(9, 13, 22, 0.7);
+            height: 450px;
+            background: rgba(8, 12, 22, 0.75);
             border: 1px solid var(--border-glass);
             border-radius: var(--radius-lg);
             color: var(--text-main);
             font-size: 1.02rem;
-            line-height: 1.65;
+            line-height: 1.7;
             padding: 1.35rem;
             resize: vertical;
             outline: none;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.25s ease;
             font-weight: 400;
         }
 
         textarea:focus {
             border-color: var(--accent-cyan);
-            box-shadow: 0 0 20px var(--glow-cyan), inset 0 0 10px rgba(6, 182, 212, 0.05);
-            background: rgba(9, 13, 22, 0.85);
+            box-shadow: 0 0 25px var(--glow-cyan), inset 0 0 10px rgba(6, 182, 212, 0.05);
+            background: rgba(8, 12, 22, 0.9);
         }
 
         .meta-bar {
@@ -280,7 +285,7 @@
         }
 
         .voice-card {
-            background: rgba(10, 15, 26, 0.6);
+            background: rgba(8, 12, 22, 0.65);
             border: 1px solid var(--border-glass);
             border-radius: var(--radius-lg);
             padding: 1.1rem;
@@ -327,7 +332,7 @@
 
         .tag-recommended {
             background: linear-gradient(135deg, #f59e0b, #d97706);
-            color: #07090e;
+            color: #060911;
             font-size: 0.65rem;
             font-weight: 800;
             padding: 2px 7px;
@@ -344,7 +349,7 @@
         /* Pacing & Rate Selector */
         .setting-group {
             margin-bottom: 1.5rem;
-            background: rgba(9, 13, 22, 0.5);
+            background: rgba(8, 12, 22, 0.55);
             border: 1px solid var(--border-glass);
             border-radius: var(--radius-lg);
             padding: 1rem;
@@ -425,7 +430,7 @@
         /* Real-Time Progress Tracker Container */
         .progress-box {
             margin-top: 1.5rem;
-            background: rgba(9, 13, 22, 0.85);
+            background: rgba(8, 12, 22, 0.85);
             border: 1px solid var(--border-active);
             border-radius: var(--radius-lg);
             padding: 1.25rem;
@@ -507,8 +512,8 @@
         .wave-bar:nth-child(3) { animation-delay: 0.2s; height: 28px; }
         .wave-bar:nth-child(4) { animation-delay: 0.3s; height: 14px; }
         .wave-bar:nth-child(5) { animation-delay: 0.4s; height: 32px; }
-        .wave-bar:nth-child(6) { animation-delay: 0.5s; height: 20px; }
-        .wave-bar:nth-child(7) { animation-delay: 0.6s; height: 12px; }
+        .wave-bar:nth-child(6) { animation-delay: 0.6s; height: 20px; }
+        .wave-bar:nth-child(7) { animation-delay: 0.7s; height: 12px; }
 
         @keyframes wave {
             0% { transform: scaleY(0.4); opacity: 0.5; }
@@ -518,7 +523,7 @@
         .audio-player-card {
             margin-top: 1.5rem;
             display: none;
-            background: rgba(9, 13, 22, 0.85);
+            background: rgba(8, 12, 22, 0.85);
             border: 1px solid rgba(16, 185, 129, 0.3);
             border-radius: var(--radius-lg);
             padding: 1.25rem;
@@ -559,7 +564,7 @@
 
         .btn-download {
             background: linear-gradient(135deg, var(--accent-cyan), var(--accent-emerald));
-            color: #07090e;
+            color: #060911;
             font-weight: 800;
             text-decoration: none;
             padding: 10px 20px;
@@ -577,8 +582,8 @@
 </head>
 <body>
 
-    <div class="ambient-glow-1"></div>
-    <div class="ambient-glow-2"></div>
+    <div class="ambient-orb-1"></div>
+    <div class="ambient-orb-2"></div>
 
     <header>
         <div class="header-container">
@@ -586,12 +591,17 @@
                 <div class="brand-icon">🎙️</div>
                 <div>
                     <span class="brand-title">Voiceover Studio Pro</span>
-                    <span class="brand-badge">YOUTUBE MONETIZATION EDITION</span>
+                    <span class="brand-badge">YOUTUBE EDITION</span>
                 </div>
             </div>
-            <div class="header-status">
-                <div class="status-dot"></div>
-                <span>Ultra HD Neural Speech Engine Active</span>
+            <div class="header-controls">
+                <div class="pill-badge">
+                    <div class="status-dot"></div>
+                    <span>Studio Engine Online • HD 320kbps</span>
+                </div>
+                <div class="pill-badge" style="border-color: rgba(6, 182, 212, 0.3); color: var(--accent-cyan);">
+                    <span>⚡ Direct Device Download</span>
+                </div>
             </div>
         </div>
     </header>
@@ -602,7 +612,7 @@
             <div class="card-header">
                 <div class="card-title">📝 Script Editor</div>
                 <div class="accuracy-badge">
-                    <span>✓</span> 100% Word-for-Word Accuracy Verified
+                    <span>✓</span> 100% Word-for-Word Verified
                 </div>
             </div>
             
@@ -614,7 +624,7 @@
                     <span class="meta-tag" id="charCount">0 Chars</span>
                     <span class="meta-tag" id="estTime">~0 min audio</span>
                 </div>
-                <div style="font-weight: 600; color: var(--accent-cyan);">⚡ Natural Pacing Engine Active</div>
+                <div style="font-weight: 600; color: var(--accent-cyan);">⚡ Natural Pacing Active</div>
             </div>
         </section>
 
@@ -630,7 +640,7 @@
                         <span class="voice-name">🌟 Andrew</span>
                         <span class="tag-recommended">YouTube Master</span>
                     </div>
-                    <div class="voice-desc">Warm, energetic documentary narration. High retention rate for business, tech & finance essays.</div>
+                    <div class="voice-desc">Warm, energetic documentary narration. High retention for tech, finance & business essays.</div>
                 </div>
 
                 <div class="voice-card" onclick="selectVoice('christopher', this)">
@@ -644,7 +654,7 @@
                     <div class="voice-header-row">
                         <span class="voice-name">🎙️ Ava</span>
                     </div>
-                    <div class="voice-desc">Clear, modern, expressive narrator voice for tech reviews & general commentary.</div>
+                    <div class="voice-desc">Clear, modern, expressive narrator voice for tech reviews & commentary.</div>
                 </div>
 
                 <div class="voice-card" onclick="selectVoice('guy', this)">
@@ -666,7 +676,7 @@
 
             <div style="margin-bottom: 1.5rem;">
                 <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-sub); display: block; margin-bottom: 6px;">Output Filename</label>
-                <input type="text" id="filenameInput" placeholder="e.g. data_center_narration.mp3" style="width: 100%; background: rgba(9, 13, 22, 0.7); border: 1px solid var(--border-glass); padding: 12px; border-radius: var(--radius-md); color: white; outline: none; font-size: 0.95rem;">
+                <input type="text" id="filenameInput" placeholder="e.g. data_center_narration.mp3" style="width: 100%; background: rgba(8, 12, 22, 0.75); border: 1px solid var(--border-glass); padding: 12px; border-radius: var(--radius-md); color: white; outline: none; font-size: 0.95rem;">
             </div>
 
             <button class="btn-primary" id="generateBtn" onclick="generateVoiceoverStream()">
