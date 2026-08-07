@@ -450,6 +450,189 @@ async def handle_telegram_webhook(request):
 
     return web.Response(text="OK")
 
+import zipfile
+import shutil
+
+def parse_timestamp_seconds(ts_str):
+    try:
+        parts = ts_str.split("->")
+        def to_sec(t):
+            sub = t.strip().split(":")
+            m = float(sub[0])
+            s = float(sub[1])
+            return m * 60 + s
+        start = to_sec(parts[0])
+        end = to_sec(parts[1])
+        return max(0.2, round(end - start, 3))
+    except Exception:
+        return 3.0
+
+async def process_video_assembly_async(video_job_id, original_job_id, zip_bytes, image_files_data):
+    try:
+        BACKGROUND_JOBS[video_job_id] = {
+            "status": "processing",
+            "progress": 10,
+            "status_text": "Extracting uploaded scene images...",
+            "mode": "video",
+            "result": None
+        }
+
+        orig_job = BACKGROUND_JOBS.get(original_job_id)
+        audio_filename = None
+        scenes = []
+
+        if orig_job and orig_job.get("result"):
+            res = orig_job["result"]
+            audio_filename = res.get("filename")
+            scenes = res.get("scenes", [])
+            
+        if not audio_filename:
+            mp3_files = [f for f in os.listdir(DOWNLOADS_DIR) if f.endswith(".mp3")]
+            if mp3_files:
+                mp3_files.sort(key=lambda f: os.path.getmtime(os.path.join(DOWNLOADS_DIR, f)), reverse=True)
+                audio_filename = mp3_files[0]
+
+        audio_filepath = os.path.join(DOWNLOADS_DIR, audio_filename) if audio_filename else None
+
+        if not audio_filepath or not os.path.exists(audio_filepath):
+            raise Exception("No matching voiceover MP3 audio found. Please generate voiceover first.")
+
+        temp_img_dir = os.path.join(STUDIO_DIR, f"temp_imgs_{video_job_id[:6]}")
+        os.makedirs(temp_img_dir, exist_ok=True)
+
+        extracted_imgs = []
+
+        if zip_bytes:
+            zip_path = os.path.join(temp_img_dir, "uploaded_scenes.zip")
+            with open(zip_path, "wb") as f:
+                f.write(zip_bytes)
+            with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                zip_ref.extractall(temp_img_dir)
+            
+            for root, _, files in os.walk(temp_img_dir):
+                for file in files:
+                    if file.lower().endswith(('.png', '.jpg', '.jpeg', '.webp')) and not file.startswith('.'):
+                        extracted_imgs.append(os.path.join(root, file))
+
+        if image_files_data:
+            for fname, fbytes in image_files_data:
+                fpath = os.path.join(temp_img_dir, fname)
+                with open(fpath, "wb") as f:
+                    f.write(fbytes)
+                extracted_imgs.append(fpath)
+
+        if not extracted_imgs:
+            raise Exception("No valid image files (.png, .jpg, .webp) found in upload.")
+
+        def get_img_num(path):
+            name = os.path.basename(path)
+            num_match = re.search(r'\d+', name)
+            return int(num_match.group(0)) if num_match else 9999
+
+        extracted_imgs.sort(key=get_img_num)
+
+        BACKGROUND_JOBS[video_job_id]["progress"] = 40
+        BACKGROUND_JOBS[video_job_id]["status_text"] = f"Matched {len(extracted_imgs)} images. Preparing 1080p FFmpeg timeline..."
+
+        concat_filepath = os.path.join(temp_img_dir, "input_concat.txt")
+        
+        with open(concat_filepath, "w", encoding="utf-8") as f:
+            for idx, img_path in enumerate(extracted_imgs):
+                dur = 3.0
+                if idx < len(scenes):
+                    dur = parse_timestamp_seconds(scenes[idx]["timestamp"])
+                
+                escaped_path = img_path.replace("\\", "/")
+                f.write(f"file '{escaped_path}'\n")
+                f.write(f"duration {dur:.3f}\n")
+            
+            if extracted_imgs:
+                last_path = extracted_imgs[-1].replace("\\", "/")
+                f.write(f"file '{last_path}'\n")
+
+        out_video_filename = f"video_{video_job_id[:6]}.mp4"
+        out_video_filepath = os.path.join(DOWNLOADS_DIR, out_video_filename)
+
+        BACKGROUND_JOBS[video_job_id]["progress"] = 60
+        BACKGROUND_JOBS[video_job_id]["status_text"] = "Rendering 1080p MP4 video with FFmpeg..."
+
+        ffmpeg_cmd = [
+            "ffmpeg", "-y",
+            "-f", "concat", "-safe", "0", "-i", concat_filepath,
+            "-i", audio_filepath,
+            "-vf", "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2:black,format=yuv420p",
+            "-c:v", "libx264", "-preset", "fast", "-crf", "22",
+            "-c:a", "aac", "-b:a", "192k",
+            "-shortest",
+            out_video_filepath
+        ]
+
+        proc = await asyncio.create_subprocess_exec(
+            *ffmpeg_cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+        _, stderr = await proc.communicate()
+
+        if proc.returncode != 0:
+            err_log = stderr.decode('utf-8', errors='ignore')
+            print("FFmpeg error log:", err_log)
+            raise Exception("FFmpeg video rendering failed. Please check image files.")
+
+        try:
+            shutil.rmtree(temp_img_dir)
+        except Exception:
+            pass
+
+        BACKGROUND_JOBS[video_job_id] = {
+            "status": "completed",
+            "progress": 100,
+            "status_text": "1080p Explainer Video rendered successfully!",
+            "mode": "video",
+            "result": {
+                "videoFilename": out_video_filename,
+                "videoUrl": f"/static/generated/{out_video_filename}"
+            }
+        }
+
+    except Exception as e:
+        print(f"Error assembling video {video_job_id}:", e)
+        BACKGROUND_JOBS[video_job_id] = {
+            "status": "failed",
+            "progress": 0,
+            "status_text": f"Error: {str(e)}",
+            "mode": "video",
+            "result": None
+        }
+
+async def handle_assemble_video(request):
+    try:
+        reader = await request.multipart()
+        original_job_id = ""
+        zip_bytes = None
+        image_files_data = []
+
+        while True:
+            field = await reader.next()
+            if field is None:
+                break
+            if field.name == "job_id":
+                original_job_id = (await field.read()).decode('utf-8').strip()
+            elif field.name == "zip_file":
+                zip_bytes = await field.read()
+            elif field.name == "images":
+                filename = field.filename
+                if filename:
+                    fbytes = await field.read()
+                    image_files_data.append((filename, fbytes))
+
+        video_job_id = str(uuid.uuid4())
+        asyncio.create_task(process_video_assembly_async(video_job_id, original_job_id, zip_bytes, image_files_data))
+
+        return web.json_response({"job_id": video_job_id, "status": "processing"})
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)
+
 def create_app():
     app = web.Application()
     app.router.add_get("", handle_index)
@@ -458,6 +641,7 @@ def create_app():
     app.router.add_post("/api/start-job", handle_start_job)
     app.router.add_get("/api/job-status", handle_job_status)
     app.router.add_get("/api/voices", handle_voices)
+    app.router.add_post("/api/assemble-video", handle_assemble_video)
     app.router.add_post("/telegram-webhook", handle_telegram_webhook)
     app.router.add_static("/static/", STATIC_DIR)
     return app

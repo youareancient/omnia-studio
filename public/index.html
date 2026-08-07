@@ -650,6 +650,23 @@
                     </div>
                 </div>
                 <div id="breakdownContainer"></div>
+
+                <!-- Video Assembly Step -->
+                <div style="margin-top:20px; padding:16px; background:var(--bg-card-secondary); border:1px solid var(--border-subtle); border-radius:12px;">
+                    <div style="font-weight:700; font-size:0.95rem; color:var(--text-primary); margin-bottom:4px;">⚡ Step 3: Render 1080p Explainer Video</div>
+                    <p style="font-size:0.78rem; color:var(--text-secondary); margin-bottom:12px; line-height:1.45;">Upload a ZIP of your generated images (or select multiple image files) named <code>1.png</code>, <code>2.png</code>, etc. We will auto-stitch them with the voiceover MP3 using smart transitions!</p>
+                    <div style="display:flex; flex-direction:column; gap:10px;">
+                        <input type="file" id="videoImagesInput" accept=".zip,image/*" multiple style="font-size:0.8rem; color:var(--text-primary); background:var(--bg-input); padding:8px; border-radius:8px; border:1px solid var(--border-subtle);" />
+                        <button class="btn-apple" style="background:linear-gradient(135deg, #FF9500, #FF2D55); min-height:42px;" onclick="uploadAndRenderVideo()">⚡ Render 1080p MP4 Video</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Video Output Card -->
+            <div class="output-card" id="videoCard" style="margin-top:16px;">
+                <div style="font-size: 0.88rem; font-weight: 600; color: var(--text-primary); margin-bottom: 8px;">🎬 1080p Explainer Video Ready</div>
+                <video id="videoElement" controls style="width:100%; aspect-ratio:16/9; border-radius:10px; background:#000; margin-bottom:10px;"></video>
+                <a href="#" id="downloadVideoLink" class="btn-download-single" style="background:linear-gradient(135deg, #34c759, #30b0c7);" download>Download 1080p Video (.MP4)</a>
             </div>
         </section>
     </main>
@@ -863,6 +880,7 @@
                             const container = document.getElementById('breakdownContainer');
                             container.innerHTML = '';
                             lastBreakdownData = data.result.scenes;
+                            localStorage.setItem('last_active_job_id', jobId);
 
                             data.result.scenes.forEach(item => {
                                 const card = document.createElement('div');
@@ -878,6 +896,17 @@
                             });
 
                             breakdownCard.classList.add('active');
+                        } else if (data.mode === 'video' && data.result) {
+                            const videoElement = document.getElementById('videoElement');
+                            const downloadVideoLink = document.getElementById('downloadVideoLink');
+                            const videoCard = document.getElementById('videoCard');
+
+                            videoElement.src = data.result.videoUrl;
+                            downloadVideoLink.href = data.result.videoUrl;
+                            downloadVideoLink.download = data.result.videoFilename;
+
+                            videoCard.classList.add('active');
+                            videoElement.play();
                         }
                     } else if (data.status === 'failed') {
                         clearInterval(pollInterval);
@@ -889,6 +918,62 @@
                     console.log('Polling status error:', e);
                 }
             }, 1500);
+        }
+
+        async function uploadAndRenderVideo() {
+            const fileInput = document.getElementById('videoImagesInput');
+            const files = fileInput.files;
+            if (!files || !files.length) {
+                alert('Please select a ZIP file or image files first!');
+                return;
+            }
+
+            const formData = new FormData();
+            const activeJobId = localStorage.getItem('last_active_job_id') || '';
+            formData.append('job_id', activeJobId);
+
+            if (files.length === 1 && files[0].name.toLowerCase().endsWith('.zip')) {
+                formData.append('zip_file', files[0]);
+            } else {
+                for (let i = 0; i < files.length; i++) {
+                    formData.append('images', files[i]);
+                }
+            }
+
+            document.getElementById('videoCard').classList.remove('active');
+            
+            const progressBox = document.getElementById('progressBox');
+            const progressPercent = document.getElementById('progressPercent');
+            const progressBarFill = document.getElementById('progressBarFill');
+            const progressStatus = document.getElementById('progressStatus');
+            
+            progressBox.classList.add('active');
+            progressPercent.textContent = '10%';
+            progressBarFill.style.width = '10%';
+            progressStatus.textContent = 'Uploading scene images for video assembly...';
+
+            try {
+                const res = await fetch('/api/assemble-video', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!res.ok) {
+                    const errData = await res.json();
+                    alert(errData.error || 'Video assembly failed.');
+                    progressBox.classList.remove('active');
+                    return;
+                }
+
+                const data = await res.json();
+                if (data.job_id) {
+                    startPollingJob(data.job_id);
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Network error while uploading video assets.');
+                progressBox.classList.remove('active');
+            }
         }
 
         async function generateStream(mode) {
