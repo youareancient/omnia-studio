@@ -826,7 +826,7 @@ async def trim_trailing_audio_silence(audio_path):
         return
     temp_trim_path = audio_path + ".trimmed.mp3"
     trim_cmd = [
-        "ffmpeg", "-y", "-i", audio_path,
+        "ffmpeg", "-y", "-threads", "0", "-i", audio_path,
         "-af", "silenceremove=stop_periods=-1:stop_duration=0.1:stop_threshold=-40dB",
         "-c:a", "libmp3lame", "-b:a", "192k",
         temp_trim_path
@@ -941,7 +941,7 @@ async def handle_generate_beat_clip(request):
         out_clip_filepath = os.path.join(DOWNLOADS_DIR, out_clip_filename)
 
         ffmpeg_cmd = [
-            "ffmpeg", "-y",
+            "ffmpeg", "-y", "-threads", "0",
             "-i", beat_audio_path,
             "-loop", "1", "-i", img_filepath,
             "-vf", get_ken_burns_vf(scene_idx),
