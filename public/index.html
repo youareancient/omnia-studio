@@ -348,7 +348,7 @@
             font-size: 0.82rem;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.25s ease;
+            transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, filter 0.2s ease;
             box-shadow: 0 4px 16px rgba(0, 113, 227, 0.25);
             min-height: 46px;
             display: flex;
@@ -356,6 +356,9 @@
             justify-content: center;
             gap: 4px;
             white-space: nowrap;
+            user-select: none;
+            -webkit-user-select: none;
+            position: relative;
         }
 
         .btn-apple-secondary {
@@ -365,40 +368,35 @@
             box-shadow: none;
         }
 
+        .btn-apple:hover {
+            transform: translateY(-1.5px);
+            box-shadow: 0 6px 20px rgba(0, 113, 227, 0.4);
+            filter: brightness(1.05);
+        }
+
+        .btn-apple-secondary:hover {
+            background: var(--bg-card);
+            border-color: var(--accent-apple);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+            filter: none;
+        }
+
         .btn-apple:active {
-            transform: scale(0.97);
+            transform: scale(0.93) translateY(1px) !important;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3) !important;
+            filter: brightness(0.92);
+        }
+
+        .btn-apple-secondary:active {
+            transform: scale(0.93) translateY(1px) !important;
+            background: var(--bg-card-secondary) !important;
+            box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.2) !important;
         }
 
         .btn-apple:disabled {
             opacity: 0.5;
             cursor: not-allowed;
-            transform: none;
-        }
-
-        .mobile-bottom-bar {
-            display: none;
-        }
-
-        @media (max-width: 960px) {
-            #desktopActionGrid {
-                display: none !important;
-            }
-            
-            .mobile-bottom-bar {
-                display: flex;
-                position: fixed;
-                bottom: 0;
-                left: 0;
-                right: 0;
-                background: var(--mobile-bar-bg);
-                backdrop-filter: saturate(180%) blur(20px);
-                -webkit-backdrop-filter: saturate(180%) blur(20px);
-                border-top: 1px solid var(--border-subtle);
-                padding: 0.75rem 0.75rem calc(0.75rem + env(safe-area-inset-bottom));
-                z-index: 99;
-                box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.25);
-                gap: 6px;
-            }
+            transform: none !important;
         }
 
         .progress-container {
@@ -407,6 +405,8 @@
             border-radius: 14px;
             padding: 1rem;
             display: none;
+            border: 1px solid var(--border-subtle);
+            box-shadow: var(--shadow-card);
         }
 
         .progress-container.active {
@@ -423,23 +423,37 @@
 
         .progress-bar {
             width: 100%;
-            height: 6px;
-            background: var(--border-subtle);
-            border-radius: 3px;
+            height: 10px;
+            background: var(--bg-input);
+            border-radius: 6px;
             overflow: hidden;
-            margin-bottom: 6px;
+            margin-bottom: 8px;
+            border: 1px solid var(--border-subtle);
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+            position: relative;
         }
 
         .progress-fill {
             width: 0%;
             height: 100%;
-            background: var(--accent-apple);
-            transition: width 0.3s ease;
+            background: linear-gradient(90deg, #0071e3, #34c759, #ff9500, #0071e3);
+            background-size: 300% 100%;
+            animation: progressShimmer 2s linear infinite;
+            border-radius: 6px;
+            transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 0 10px rgba(41, 151, 255, 0.6);
+        }
+
+        @keyframes progressShimmer {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
 
         .progress-sub {
             font-size: 0.75rem;
             color: var(--text-secondary);
+            font-weight: 500;
         }
 
         .output-card {
@@ -652,12 +666,13 @@
                 <div id="breakdownContainer"></div>
 
                 <!-- Video Assembly Step -->
-                <div style="margin-top:20px; padding:16px; background:var(--bg-card-secondary); border:1px solid var(--border-subtle); border-radius:12px;">
-                    <div style="font-weight:700; font-size:0.95rem; color:var(--text-primary); margin-bottom:4px;">⚡ Step 3: Render 1080p Explainer Video</div>
-                    <p style="font-size:0.78rem; color:var(--text-secondary); margin-bottom:12px; line-height:1.45;">Upload a ZIP of your generated images (or select multiple image files) named <code>1.png</code>, <code>2.png</code>, etc. We will auto-stitch them with the voiceover MP3 using smart transitions!</p>
+                <div style="margin-top:20px; padding:16px; background:var(--bg-card-secondary); border:1px solid var(--border-subtle); border-radius:14px; box-shadow: var(--shadow-card);">
+                    <div style="font-weight:700; font-size:0.95rem; color:var(--text-primary); margin-bottom:4px; display:flex; align-items:center; gap:6px;">📦 Step 3: Upload ZIP File of Images & Render Video</div>
+                    <p style="font-size:0.78rem; color:var(--text-secondary); margin-bottom:12px; line-height:1.45;">Upload a <b>ZIP file</b> containing your scene images named <code>1.png</code>, <code>2.png</code>, <code>3.png</code>... We will automatically upload, track progress, and render your 1080p MP4 video!</p>
                     <div style="display:flex; flex-direction:column; gap:10px;">
-                        <input type="file" id="videoImagesInput" accept=".zip,image/*" multiple style="font-size:0.8rem; color:var(--text-primary); background:var(--bg-input); padding:8px; border-radius:8px; border:1px solid var(--border-subtle);" />
-                        <button class="btn-apple" style="background:linear-gradient(135deg, #FF9500, #FF2D55); min-height:42px;" onclick="uploadAndRenderVideo()">⚡ Render 1080p MP4 Video</button>
+                        <label style="font-size:0.78rem; font-weight:600; color:var(--accent-apple);">Select Images ZIP File (.zip):</label>
+                        <input type="file" id="videoImagesInput" accept=".zip,image/*" multiple style="font-size:0.82rem; color:var(--text-primary); background:var(--bg-input); padding:10px 12px; border-radius:10px; border:1px dashed var(--accent-apple); cursor:pointer;" />
+                        <button class="btn-apple" style="background:linear-gradient(135deg, #FF9500, #FF2D55); min-height:46px; font-size:0.9rem;" onclick="uploadAndRenderVideo()">⚡ Render 1080p MP4 Video</button>
                     </div>
                 </div>
             </div>
@@ -820,8 +835,11 @@
             URL.revokeObjectURL(url);
         }
 
+        let jobStartTime = null;
+
         async function startPollingJob(jobId) {
             if (pollInterval) clearInterval(pollInterval);
+            jobStartTime = Date.now();
             
             const progressBox = document.getElementById('progressBox');
             const progressPercent = document.getElementById('progressPercent');
@@ -847,8 +865,19 @@
                     const data = await res.json();
                     
                     if (data.progress !== undefined) {
-                        progressPercent.textContent = `${data.progress}%`;
                         progressBarFill.style.width = `${data.progress}%`;
+
+                        if (data.progress > 5 && data.progress < 100 && jobStartTime) {
+                            const elapsedSec = (Date.now() - jobStartTime) / 1000;
+                            const estTotalSec = elapsedSec / (data.progress / 100);
+                            const remSec = Math.max(1, Math.round(estTotalSec - elapsedSec));
+                            const min = Math.floor(remSec / 60);
+                            const sec = remSec % 60;
+                            const timeStr = min > 0 ? `${min}m ${sec}s` : `${sec}s`;
+                            progressPercent.textContent = `${data.progress}% (~${timeStr} left)`;
+                        } else {
+                            progressPercent.textContent = `${data.progress}%`;
+                        }
                     }
 
                     if (data.status_text) {
@@ -921,11 +950,11 @@
             }, 1500);
         }
 
-        async function uploadAndRenderVideo() {
+        function uploadAndRenderVideo() {
             const fileInput = document.getElementById('videoImagesInput');
             const files = fileInput.files;
             if (!files || !files.length) {
-                alert('Please select a ZIP file or image files first!');
+                alert('Please select a ZIP file of scene images first!');
                 return;
             }
 
@@ -949,32 +978,53 @@
             const progressStatus = document.getElementById('progressStatus');
             
             progressBox.classList.add('active');
-            progressPercent.textContent = '10%';
-            progressBarFill.style.width = '10%';
-            progressStatus.textContent = 'Uploading scene images for video assembly...';
+            progressPercent.textContent = '0%';
+            progressBarFill.style.width = '0%';
+            progressStatus.textContent = '📦 Uploading ZIP file to server...';
 
-            try {
-                const res = await fetch('/api/assemble-video', {
-                    method: 'POST',
-                    body: formData
-                });
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/assemble-video', true);
 
-                if (!res.ok) {
-                    const errData = await res.json();
-                    alert(errData.error || 'Video assembly failed.');
+            xhr.upload.onprogress = function(e) {
+                if (e.lengthComputable) {
+                    const uploadPct = Math.round((e.loaded / e.total) * 100);
+                    const mbLoaded = (e.loaded / (1024 * 1024)).toFixed(1);
+                    const mbTotal = (e.total / (1024 * 1024)).toFixed(1);
+                    
+                    progressBarFill.style.width = `${uploadPct}%`;
+                    progressPercent.textContent = `${uploadPct}%`;
+                    progressStatus.textContent = `📦 Uploading ZIP file: ${uploadPct}% (${mbLoaded} MB / ${mbTotal} MB)...`;
+                }
+            };
+
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    try {
+                        const data = JSON.parse(xhr.responseText);
+                        if (data.job_id) {
+                            startPollingJob(data.job_id);
+                        }
+                    } catch (e) {
+                        alert('Error parsing server response.');
+                        progressBox.classList.remove('active');
+                    }
+                } else {
+                    try {
+                        const errData = JSON.parse(xhr.responseText);
+                        alert(errData.error || 'Video assembly upload failed.');
+                    } catch (e) {
+                        alert('Upload error (status ' + xhr.status + ').');
+                    }
                     progressBox.classList.remove('active');
-                    return;
                 }
+            };
 
-                const data = await res.json();
-                if (data.job_id) {
-                    startPollingJob(data.job_id);
-                }
-            } catch (e) {
-                console.error(e);
+            xhr.onerror = function() {
                 alert('Network error while uploading video assets.');
                 progressBox.classList.remove('active');
-            }
+            };
+
+            xhr.send(formData);
         }
 
         async function generateStream(mode) {
