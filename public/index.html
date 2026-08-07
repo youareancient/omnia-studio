@@ -1078,6 +1078,15 @@
                                             <button id="btnBeatClip_${item.scene}" class="btn-apple" style="font-size:0.75rem; min-height:36px; padding:4px 8px; width:100%; background:linear-gradient(135deg, #FF9500, #FF2D55);" onclick="generateBeatClip(${item.scene})">🎬 Generate Mini-Clip</button>
                                         </div>
 
+                                        <!-- Dedicated Per-Card Visual Progress Bar -->
+                                        <div id="cardProgress_${item.scene}" style="display:none; margin-top:6px; padding:8px 12px; background:var(--bg-card-secondary); border:1px solid var(--accent-apple); border-radius:10px;">
+                                            <div style="display:flex; justify-content:space-between; font-size:0.75rem; font-weight:700; color:var(--accent-apple); margin-bottom:4px;">
+                                                <span id="cardStatus_${item.scene}">⏳ Processing Beat #${item.scene}...</span>
+                                                <span style="font-size:0.7rem; color:var(--accent-apple);">Synthesizing...</span>
+                                            </div>
+                                            <div class="progress-bar" style="height:6px; margin:0;"><div id="cardFill_${item.scene}" class="progress-fill" style="width:100%;"></div></div>
+                                        </div>
+
                                         <!-- Inline Voiceover Audio Player -->
                                         <div id="beatAudioBox_${item.scene}" style="display:none; margin-top:4px;">
                                             <div style="font-size:0.72rem; font-weight:700; color:var(--accent-apple); margin-bottom:2px;">🎙️ Line Voiceover MP3:</div>
@@ -1159,6 +1168,9 @@
 
         async function generateBeatAudio(beatNum) {
             const btn = document.getElementById(`btnBeatAudio_${beatNum}`);
+            const progressBox = document.getElementById(`cardProgress_${beatNum}`);
+            const statusText = document.getElementById(`cardStatus_${beatNum}`);
+
             const activeJobId = localStorage.getItem('last_active_job_id') || '';
             if (!activeJobId) {
                 alert('Please click Scene Cuts first to initialize your job!');
@@ -1166,7 +1178,11 @@
             }
             if (btn) {
                 btn.disabled = true;
-                btn.textContent = '⏳ Synthesizing Line...';
+                btn.textContent = '⏳ Synthesizing...';
+            }
+            if (progressBox && statusText) {
+                statusText.textContent = `🎙️ Synthesizing Voiceover #${beatNum}...`;
+                progressBox.style.display = 'block';
             }
 
             try {
@@ -1215,11 +1231,17 @@
                     btn.disabled = false;
                     btn.textContent = '🎙️ Voiceover Line';
                 }
+                if (progressBox) {
+                    progressBox.style.display = 'none';
+                }
             }
         }
 
         async function generateBeatClip(beatNum) {
             const btn = document.getElementById(`btnBeatClip_${beatNum}`);
+            const progressBox = document.getElementById(`cardProgress_${beatNum}`);
+            const statusText = document.getElementById(`cardStatus_${beatNum}`);
+
             const activeJobId = localStorage.getItem('last_active_job_id') || '';
             
             if (!perBeatImages[beatNum]) {
@@ -1234,6 +1256,10 @@
             if (btn) {
                 btn.disabled = true;
                 btn.textContent = '⏳ Rendering Clip...';
+            }
+            if (progressBox && statusText) {
+                statusText.textContent = `🎬 Rendering 16:9 Mini-Clip #${beatNum}...`;
+                progressBox.style.display = 'block';
             }
 
             try {
@@ -1293,6 +1319,9 @@
                 if (btn) {
                     btn.disabled = false;
                     btn.textContent = '🎬 Generate Mini-Clip';
+                }
+                if (progressBox) {
+                    progressBox.style.display = 'none';
                 }
             }
         }
