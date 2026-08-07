@@ -799,6 +799,126 @@ async def handle_assemble_video(request):
     except Exception as e:
         return web.json_response({"error": str(e)}, status=500)
 
+async def handle_generate_beat_audio(request):
+    try:
+        data = await request.json()
+        job_id = data.get("job_id", "")
+        scene_idx = int(data.get("scene_index", 1))
+        voice = data.get("voice", "andrew").lower()
+        rate = data.get("rate", "+1%")
+
+        voice_id = VOICE_MAP.get(voice, "en-US-AndrewNeural")
+        
+        job = BACKGROUND_JOBS.get(job_id)
+        scene_text = ""
+        if job and job.get("result") and job["result"].get("scenes"):
+            scenes = job["result"]["scenes"]
+            if 1 <= scene_idx <= len(scenes):
+                scene_text = scenes[scene_idx - 1].get("text", "")
+
+        if not scene_text:
+            return web.json_response({"error": "Scene line text not found."}, status=400)
+
+        cleaned_text = humanize_script(scene_text)
+        out_filename = f"beat_audio_{job_id[:6]}_{scene_idx:02d}.mp3"
+        out_filepath = os.path.join(DOWNLOADS_DIR, out_filename)
+
+        communicate = edge_tts.Communicate(cleaned_text, voice_id, rate=rate)
+        await communicate.save(out_filepath)
+
+        return web.json_response({
+            "status": "success",
+            "filename": out_filename,
+            "audioUrl": f"/static/generated/{out_filename}",
+            "text": scene_text
+        })
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)
+
+async def handle_generate_beat_clip(request):
+    try:
+        reader = await request.multipart()
+        job_id = ""
+        scene_idx = 1
+        image_bytes = None
+        image_ext = ".png"
+
+        while True:
+            field = await reader.next()
+            if field is None:
+                break
+            if field.name == "job_id":
+                job_id = (await field.read()).decode('utf-8').strip()
+            elif field.name == "scene_index":
+                scene_idx = int((await field.read()).decode('utf-8').strip())
+            elif field.name == "image":
+                filename = field.filename or "image.png"
+                _, image_ext = os.path.splitext(filename)
+                image_bytes = await field.read()
+
+        temp_dir = os.path.join(STUDIO_DIR, f"temp_beat_{uuid.uuid4().hex[:6]}")
+        os.makedirs(temp_dir, exist_ok=True)
+
+        img_filepath = os.path.join(temp_dir, f"beat_{scene_idx}{image_ext}")
+        if image_bytes:
+            with open(img_filepath, "wb") as f:
+                f.write(image_bytes)
+        else:
+            return web.json_response({"error": "Please upload an image for this Beat Card first."}, status=400)
+
+        beat_audio_filename = f"beat_audio_{job_id[:6]}_{scene_idx:02d}.mp3"
+        beat_audio_path = os.path.join(DOWNLOADS_DIR, beat_audio_filename)
+
+        if not os.path.exists(beat_audio_path):
+            job = BACKGROUND_JOBS.get(job_id)
+            scene_text = f"Beat #{scene_idx}"
+            if job and job.get("result") and job["result"].get("scenes"):
+                scenes = job["result"]["scenes"]
+                if 1 <= scene_idx <= len(scenes):
+                    scene_text = scenes[scene_idx - 1].get("text", scene_text)
+            
+            cleaned = humanize_script(scene_text)
+            comm = edge_tts.Communicate(cleaned, "en-US-AndrewNeural", rate="+1%")
+            await comm.save(beat_audio_path)
+
+        dur_sec = await get_media_duration_sec(beat_audio_path)
+        if dur_sec <= 0.2:
+            dur_sec = 3.0
+
+        out_clip_filename = f"mini_clip_{job_id[:6]}_{scene_idx:02d}.mp4"
+        out_clip_filepath = os.path.join(DOWNLOADS_DIR, out_clip_filename)
+
+        ffmpeg_cmd = [
+            "ffmpeg", "-y",
+            "-i", beat_audio_path,
+            "-loop", "1", "-i", img_filepath,
+            "-vf", "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2:black,format=yuv420p",
+            "-c:v", "libx264", "-preset", "fast", "-crf", "22",
+            "-c:a", "aac", "-b:a", "192k",
+            "-shortest",
+            out_clip_filepath
+        ]
+
+        proc = await asyncio.create_subprocess_exec(
+            *ffmpeg_cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+        )
+        await proc.communicate()
+
+        try:
+            shutil.rmtree(temp_dir)
+        except Exception:
+            pass
+
+        return web.json_response({
+            "status": "success",
+            "sceneIndex": scene_idx,
+            "filename": out_clip_filename,
+            "clipUrl": f"/static/generated/{out_clip_filename}",
+            "durSec": round(dur_sec, 1)
+        })
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)
+
 def create_app():
     # Allow large ZIP uploads up to 500MB
     app = web.Application(client_max_size=500 * 1024 * 1024)
@@ -810,6 +930,8 @@ def create_app():
     app.router.add_get("/api/voices", handle_voices)
     app.router.add_post("/api/assemble-video", handle_assemble_video)
     app.router.add_post("/api/export-timeline", handle_export_timeline)
+    app.router.add_post("/api/generate-beat-audio", handle_generate_beat_audio)
+    app.router.add_post("/api/generate-beat-clip", handle_generate_beat_clip)
     app.router.add_post("/telegram-webhook", handle_telegram_webhook)
     app.router.add_static("/static/", STATIC_DIR)
     return app

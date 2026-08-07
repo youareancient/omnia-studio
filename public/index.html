@@ -1044,29 +1044,33 @@
                                     <div style="font-weight:700; font-size:0.78rem; color:var(--text-secondary); margin-top:6px;">### Image Prompt:</div>
                                     <div class="breakdown-prompt" style="white-space:pre-wrap; font-family:monospace;">${item.prompt}</div>
 
-                                    <!-- Per-Beat Direct Image Uploader -->
-                                    <div style="margin-top:12px; padding:10px; background:var(--bg-input); border:1px dashed var(--accent-apple); border-radius:10px;">
+                                    <!-- Per-Beat 3-Button Action Suite -->
+                                    <div style="margin-top:14px; padding:12px; background:var(--bg-input); border:1px solid var(--border-subtle); border-radius:12px; display:flex; flex-direction:column; gap:10px;">
+                                        <!-- Button 1: Upload Image -->
                                         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                                            <label style="font-size:0.78rem; font-weight:700; color:var(--text-primary);">📷 Upload Image for Beat #${item.scene}:</label>
+                                            <label style="font-size:0.78rem; font-weight:700; color:var(--text-primary);">📷 Step 1: Upload Image</label>
                                             <input type="file" accept="image/*" style="font-size:0.75rem; color:var(--text-primary);" onchange="handlePerBeatImageUpload(${item.scene}, this)" />
                                         </div>
-                                        <div id="beatPreview_${item.scene}" style="display:none; margin-top:8px;">
-                                            <img id="beatImg_${item.scene}" style="max-height:140px; border-radius:8px; border:1px solid var(--border-subtle); display:block; margin-bottom:4px;" />
+                                        <div id="beatPreview_${item.scene}" style="display:none; margin-top:4px;">
+                                            <img id="beatImg_${item.scene}" style="max-height:120px; border-radius:8px; border:1px solid var(--border-subtle); display:block; margin-bottom:4px;" />
                                             <span style="font-size:0.72rem; color:#34c759; font-weight:700;">✓ Image Loaded for Beat #${item.scene}</span>
                                         </div>
-                                    </div>
 
-                                    <!-- Per-Beat Mini-Clip Progress Bar & Player -->
-                                    <div id="beatStatusBox_${item.scene}" style="display:none; margin-top:12px; padding:10px; background:var(--bg-card-secondary); border:1px solid var(--border-subtle); border-radius:10px;">
-                                        <div id="beatProgress_${item.scene}" style="display:none;">
-                                            <div style="display:flex; justify-content:space-between; font-size:0.75rem; font-weight:700; color:var(--accent-apple); margin-bottom:4px;">
-                                                <span>⏳ Synthesizing 16:9 Mini-Clip #${item.scene}...</span>
-                                                <span>Processing</span>
-                                            </div>
-                                            <div class="progress-bar" style="height:6px; margin:0;"><div class="progress-fill" style="width:100%;"></div></div>
+                                        <!-- Buttons 2 & 3 Grid -->
+                                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:4px;">
+                                            <button id="btnBeatAudio_${item.scene}" class="btn-apple btn-apple-secondary" style="font-size:0.75rem; min-height:36px; padding:4px 8px; width:100%;" onclick="generateBeatAudio(${item.scene})">🎙️ Voiceover Line</button>
+                                            <button id="btnBeatClip_${item.scene}" class="btn-apple" style="font-size:0.75rem; min-height:36px; padding:4px 8px; width:100%; background:linear-gradient(135deg, #FF9500, #FF2D55);" onclick="generateBeatClip(${item.scene})">🎬 Generate Mini-Clip</button>
                                         </div>
-                                        <div id="beatPlayer_${item.scene}" style="display:none;">
-                                            <div style="font-size:0.75rem; font-weight:700; color:#34c759; margin-bottom:4px;">✓ 16:9 Mini-Clip #${item.scene} Ready:</div>
+
+                                        <!-- Inline Voiceover Audio Player -->
+                                        <div id="beatAudioBox_${item.scene}" style="display:none; margin-top:4px;">
+                                            <div style="font-size:0.72rem; font-weight:700; color:var(--accent-apple); margin-bottom:2px;">🎙️ Line Voiceover MP3:</div>
+                                            <audio id="beatAudioPlayer_${item.scene}" controls style="width:100%; height:32px; display:block;"></audio>
+                                        </div>
+
+                                        <!-- Inline Mini-Clip Video Player -->
+                                        <div id="beatPlayer_${item.scene}" style="display:none; margin-top:4px;">
+                                            <div style="font-size:0.72rem; font-weight:700; color:#34c759; margin-bottom:4px;">✓ 16:9 Mini-Clip #${item.scene} Video Player:</div>
                                             <video id="beatVideo_${item.scene}" controls style="width:100%; aspect-ratio:16/9; border-radius:8px; background:#000; display:block;" src=""></video>
                                         </div>
                                     </div>
@@ -1134,6 +1138,122 @@
                     }
                 };
                 reader.readAsDataURL(file);
+            }
+        }
+
+        async function generateBeatAudio(beatNum) {
+            const btn = document.getElementById(`btnBeatAudio_${beatNum}`);
+            const activeJobId = localStorage.getItem('last_active_job_id') || '';
+            if (!activeJobId) {
+                alert('Please click Scene Cuts first to initialize your job!');
+                return;
+            }
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = '⏳ Synthesizing Line...';
+            }
+
+            try {
+                const selectedVoice = selectedVoiceGlobal || 'andrew';
+                const rateVal = document.getElementById('rateSlider') ? document.getElementById('rateSlider').value + '%' : '+1%';
+
+                const res = await fetch('/api/generate-beat-audio', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        job_id: activeJobId,
+                        scene_index: beatNum,
+                        voice: selectedVoice,
+                        rate: rateVal
+                    })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    const audioBox = document.getElementById(`beatAudioBox_${beatNum}`);
+                    const audioPlayer = document.getElementById(`beatAudioPlayer_${beatNum}`);
+                    if (audioBox && audioPlayer) {
+                        audioPlayer.src = data.audioUrl;
+                        audioBox.style.display = 'block';
+                        audioPlayer.play();
+                    }
+                } else {
+                    alert(data.error || 'Failed to generate beat audio.');
+                }
+            } catch (e) {
+                alert('Error: ' + e.message);
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = '🎙️ Voiceover Line';
+                }
+            }
+        }
+
+        async function generateBeatClip(beatNum) {
+            const btn = document.getElementById(`btnBeatClip_${beatNum}`);
+            const activeJobId = localStorage.getItem('last_active_job_id') || '';
+            
+            if (!perBeatImages[beatNum]) {
+                alert(`Please upload an image for Beat #${beatNum} before generating its mini-clip!`);
+                return;
+            }
+            if (!activeJobId) {
+                alert('Please click Scene Cuts first to initialize your job!');
+                return;
+            }
+
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = '⏳ Rendering Clip...';
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append('job_id', activeJobId);
+                formData.append('scene_index', beatNum);
+                formData.append('image', perBeatImages[beatNum]);
+
+                const res = await fetch('/api/generate-beat-clip', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await res.json();
+                if (data.status === 'success') {
+                    const playerBox = document.getElementById(`beatPlayer_${beatNum}`);
+                    const videoEl = document.getElementById(`beatVideo_${beatNum}`);
+                    if (playerBox && videoEl) {
+                        videoEl.src = data.clipUrl;
+                        playerBox.style.display = 'block';
+                        videoEl.play();
+                    }
+
+                    // Update active mini-clips list for timeline studio
+                    const existingIdx = activeMiniClips.findIndex(c => c.sceneIndex === beatNum);
+                    const clipObj = {
+                        sceneIndex: beatNum,
+                        filename: data.filename,
+                        url: data.clipUrl,
+                        durSec: data.durSec,
+                        text: `Beat #${beatNum}`
+                    };
+                    if (existingIdx >= 0) {
+                        activeMiniClips[existingIdx] = clipObj;
+                    } else {
+                        activeMiniClips.push(clipObj);
+                        activeMiniClips.sort((a, b) => a.sceneIndex - b.sceneIndex);
+                    }
+                    renderMiniClipsGrid(activeMiniClips);
+                } else {
+                    alert(data.error || 'Failed to render mini-clip.');
+                }
+            } catch (e) {
+                alert('Error rendering mini-clip: ' + e.message);
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = '🎬 Generate Mini-Clip';
+                }
             }
         }
 
