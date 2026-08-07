@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Voiceover Studio Pro</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0b0f19;
+            --bg-card: rgba(18, 24, 38, 0.75);
+            --bg-card-hover: rgba(30, 41, 59, 0.8);
+            --accent-blue: #3b82f6;
+            --accent-purple: #8b5cf6;
+            --accent-cyan: #06b6d4;
+            --accent-glow: rgba(59, 130, 246, 0.25);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border-color: rgba(255, 255, 255, 0.08);
+            --border-highlight: rgba(59, 130, 246, 0.3);
+            --radius-lg: 16px;
+            --radius-md: 12px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            background-image: 
+                radial-gradient(circle at 15% 15%, rgba(59, 130, 246, 0.12) 0%, transparent 40%),
+                radial-gradient(circle at 85% 85%, rgba(139, 92, 246, 0.12) 0%, transparent 40%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(11, 15, 25, 0.8);
+            backdrop-filter: blur(12px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            padding: 1rem 2rem;
+        }
+
+        .header-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 4px 14px var(--accent-glow);
+        }
+
+        .brand-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #ffffff, #cbd5e1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .brand-badge {
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            color: var(--accent-cyan);
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 20px;
+        }
+
+        main {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+            flex: 1;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 960px) {
+            main {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .glass-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            backdrop-filter: blur(16px);
+            padding: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .editor-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        textarea {
+            width: 100%;
+            height: 420px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            font-size: 1rem;
+            line-height: 1.6;
+            padding: 1.25rem;
+            resize: vertical;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        textarea:focus {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        .meta-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        .badge-list {
+            display: flex;
+            gap: 8px;
+        }
+
+        .meta-tag {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 4px 10px;
+            border-radius: 6px;
+        }
+
+        .voice-options {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .voice-card {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .voice-card:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+            background: var(--bg-card-hover);
+        }
+
+        .voice-card.selected {
+            border-color: var(--accent-blue);
+            background: rgba(59, 130, 246, 0.1);
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
+
+        .voice-card.selected::after {
+            content: '✓ Selected';
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+        }
+
+        .voice-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-bottom: 4px;
+        }
+
+        .voice-desc {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .btn-primary {
+            width: 100%;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            padding: 1rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 20px var(--accent-glow);
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 24px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Real-Time Progress Tracker Container */
+        .progress-box {
+            margin-top: 1.5rem;
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid var(--border-highlight);
+            border-radius: var(--radius-md);
+            padding: 1.25rem;
+            display: none;
+
+            box-shadow: 0 4px 20px var(--accent-glow);
+        }
+
+        .progress-box.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .progress-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .progress-percent {
+            font-size: 1rem;
+            font-weight: 800;
+            color: var(--accent-cyan);
+        }
+
+        .progress-bar-bg {
+            width: 100%;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 6px;
+            overflow: hidden;
+            margin-bottom: 8px;
+            position: relative;
+        }
+
+        .progress-bar-fill {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan));
+            border-radius: 6px;
+            transition: width 0.3s ease;
+            box-shadow: 0 0 12px var(--accent-cyan);
+        }
+
+        .progress-status {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .audio-player-card {
+            margin-top: 1.5rem;
+            display: none;
+        }
+
+        .audio-player-card.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        audio {
+            width: 100%;
+            margin: 1rem 0;
+            border-radius: 8px;
+        }
+
+        .download-box {
+            background: rgba(6, 182, 212, 0.1);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            border-radius: var(--radius-md);
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .download-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .btn-download {
+            background: var(--accent-cyan);
+            color: #0b0f19;
+            font-weight: 700;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn-download:hover {
+            background: #22d3ee;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-container">
+            <div class="brand">
+                <div class="brand-icon">🎙️</div>
+                <div>
+                    <span class="brand-title">YouTube Voiceover Studio</span>
+                    <span class="brand-badge">PRO BRANDING</span>
+                </div>
+            </div>
+            <div style="font-size: 0.85rem; color: var(--text-muted);">
+                ⚡ Automatic Save to <b>C:\Users\Pihu\Downloads</b>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- Left Panel: Script Input -->
+        <section class="glass-card editor-container">
+            <div class="card-header">
+                <div class="card-title">📝 Paste Your YouTube Script</div>
+                <div style="font-size: 0.8rem; color: #10b981; font-weight: 600;">✓ 100% Word-for-Word Preserved</div>
+            </div>
+            
+            <textarea id="scriptText" placeholder="Paste your script here... (e.g. Okay, so you want to own a data center...)"></textarea>
+            
+            <div class="meta-bar">
+                <div class="badge-list">
+                    <span class="meta-tag" id="wordCount">0 Words</span>
+                    <span class="meta-tag" id="estTime">0 min read</span>
+                </div>
+                <div>Natural Pacing Engine Active</div>
+            </div>
+        </section>
+
+        <!-- Right Panel: Voice Selection & Settings -->
+        <section class="glass-card">
+            <div class="card-header">
+                <div class="card-title">🎯 Consistent Voice Selection</div>
+            </div>
+
+            <div class="voice-options">
+                <div class="voice-card selected" onclick="selectVoice('andrew', this)">
+                    <div class="voice-name">🌟 Andrew (YouTube Documentary)</div>
+                    <div class="voice-desc">Warm, energetic narration. (Recommended for YouTube)</div>
+                </div>
+
+                <div class="voice-card" onclick="selectVoice('christopher', this)">
+                    <div class="voice-name">🎙️ Christopher (Deep Storyteller)</div>
+                    <div class="voice-desc">Deep, authoritative, cinematic business tone.</div>
+                </div>
+
+                <div class="voice-card" onclick="selectVoice('ava', this)">
+                    <div class="voice-name">🎙️ Ava (Modern Expressive)</div>
+                    <div class="voice-desc">Clear, modern, expressive narrator voice.</div>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 6px;">Output Filename</label>
+                <input type="text" id="filenameInput" placeholder="e.g. data_center_narration.mp3" style="width: 100%; background: rgba(15,23,42,0.6); border: 1px solid var(--border-color); padding: 10px; border-radius: 8px; color: white; outline: none;">
+            </div>
+
+            <button class="btn-primary" id="generateBtn" onclick="generateVoiceoverStream()">
+                <span>Generate High-Quality Voiceover</span>
+            </button>
+
+            <!-- Real-Time Progress Tracker Box -->
+            <div class="progress-box" id="progressBox">
+                <div class="progress-header">
+                    <span class="progress-title" id="progressTitle">Synthesizing Voiceover...</span>
+                    <span class="progress-percent" id="progressPercent">0%</span>
+                </div>
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fill" id="progressBarFill"></div>
+                </div>
+                <div class="progress-status" id="progressStatus">Initializing speech engine...</div>
+            </div>
+
+            <!-- Audio Output Section -->
+            <div class="audio-player-card" id="audioCard">
+                <div class="card-title" style="color: var(--accent-cyan); font-size: 0.95rem;">🎉 Audio Generated Successfully!</div>
+                <audio id="audioElement" controls></audio>
+                
+                <div class="download-box">
+                    <div class="download-info">
+                        <span style="font-weight: 600; font-size: 0.85rem;" id="outFilename">voiceover.mp3</span>
+                        <span style="font-size: 0.75rem; color: var(--text-muted);">Saved in Downloads folder</span>
+                    </div>
+                    <a href="#" id="downloadLink" class="btn-download" download>Download MP3</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        let selectedVoice = 'andrew';
+
+        function selectVoice(voice, element) {
+            selectedVoice = voice;
+            document.querySelectorAll('.voice-card').forEach(el => el.classList.remove('selected'));
+            element.classList.add('selected');
+        }
+
+        const scriptInput = document.getElementById('scriptText');
+        const wordCountEl = document.getElementById('wordCount');
+        const estTimeEl = document.getElementById('estTime');
+
+        scriptInput.addEventListener('input', () => {
+            const text = scriptInput.value.trim();
+            const words = text ? text.split(/\s+/).length : 0;
+            const minutes = Math.ceil(words / 150);
+            wordCountEl.textContent = `${words.toLocaleString()} Words`;
+            estTimeEl.textContent = `~${minutes} min audio`;
+        });
+
+        async function generateVoiceoverStream() {
+            const text = scriptInput.value.trim();
+            if (!text) {
+                alert('Please paste a script first!');
+                return;
+            }
+
+            const btn = document.getElementById('generateBtn');
+            const customFilename = document.getElementById('filenameInput').value.trim();
+
+            const progressBox = document.getElementById('progressBox');
+            const progressPercent = document.getElementById('progressPercent');
+            const progressBarFill = document.getElementById('progressBarFill');
+            const progressStatus = document.getElementById('progressStatus');
+            const audioCard = document.getElementById('audioCard');
+
+            btn.disabled = true;
+            btn.innerHTML = `Synthesizing Audio...`;
+            audioCard.classList.remove('active');
+            
+            progressBox.classList.add('active');
+            progressPercent.textContent = '0%';
+            progressBarFill.style.width = '0%';
+            progressStatus.textContent = 'Preparing script...';
+
+            try {
+                const response = await fetch('/api/generate-stream', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        text: text,
+                        voice: selectedVoice,
+                        rate: '+1%',
+                        filename: customFilename || `youtube_voiceover_${Date.now()}.mp3`
+                    })
+                });
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder('utf-8');
+                let buffer = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n\n');
+                    buffer = lines.pop(); // Keep partial line in buffer
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const jsonStr = line.replace('data: ', '').trim();
+                            if (!jsonStr) continue;
+
+                            const evt = JSON.parse(jsonStr);
+
+                            if (evt.error) {
+                                alert('Error: ' + evt.error);
+                                progressBox.classList.remove('active');
+                                return;
+                            }
+
+                            if (evt.progress !== undefined) {
+                                progressPercent.textContent = `${evt.progress}%`;
+                                progressBarFill.style.width = `${evt.progress}%`;
+                            }
+
+                            if (evt.status) {
+                                progressStatus.textContent = evt.status;
+                            }
+
+                            if (evt.success) {
+                                const audioElement = document.getElementById('audioElement');
+                                const downloadLink = document.getElementById('downloadLink');
+                                const outFilename = document.getElementById('outFilename');
+
+                                audioElement.src = evt.audioUrl;
+                                downloadLink.href = evt.audioUrl;
+                                downloadLink.download = evt.filename;
+                                outFilename.textContent = evt.filename;
+
+                                audioCard.classList.add('active');
+                                audioElement.play();
+                            }
+                        }
+                    }
+                }
+            } catch (err) {
+                alert('Connection error: ' + err.message);
+                progressBox.classList.remove('active');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<span>Generate High-Quality Voiceover</span>`;
+            }
+        }
+    </script>
+</body>
+</html>
