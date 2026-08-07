@@ -83,26 +83,28 @@ def split_script_into_scenes(raw_text):
                     scenes.append(" ".join(curr))
                 
     return scenes if scenes else [raw_text]
-
 async def call_groq_ai_prompt_engineer(session, scene_text, scene_number):
     api_key = os.environ.get("GROQ_API_KEY", "").strip()
     if not api_key:
         return None
 
     system_prompt = (
-        "You are an Elite 2D Vector Visual Prompt Engineer for YouTube doodle explainer videos.\n"
-        "Your task: Read a 3-5 second script line and create a structured Beat Scene Prompt for a 2D flat vector doodle explainer illustration.\n\n"
+        "You are an Elite Visual Prompt Engineer for YouTube architectural, engineering, and financial explainer videos.\n"
+        "Your task: Read a 3-5 second script line and create a structured Beat Scene Prompt for a 2D hand-drawn educational technical diagram illustration (like Google Flow / graphic novel style).\n\n"
         "STRICT MASTER PROMPT PATTERN:\n"
-        "2D flat vector illustration, hand-drawn doodle explainer-video style, thick clean black outlines, flat solid color fills, no gradients, no shading.\n\n"
-        "[Describe background, main central subjects, visual props, financial charts, documents, or equipment].\n\n"
-        "[If text or numbers like '$3 million' or '$1.5M' appear in the script, describe huge bright-red or bold text labels, e.g. Large bright-red text: \"$3,000,000\"].\n\n"
+        "2D hand-drawn educational architectural vector illustration, graphic novel technical diagram style, crisp clean black outlines, soft flat color palette, polished YouTube explainer aesthetics.\n\n"
+        "LARGE BOLD TOP TITLE BANNER:\n"
+        "\"[1-3 WORD TOPIC IN BOLD CAPITAL LETTERS AT TOP OF FRAME, e.g. 'GREENS', 'BUNKERS', 'CART PATHS', 'IRRIGATION', 'DRAINAGE', 'EARTHMOVING', 'PERMITS', 'PROFESSIONAL SERVICES']\"\n\n"
+        "SCENE COMPOSITION & TECHNICAL DETAILS:\n"
+        "[Describe panoramic, isometric, or cross-sectional view of the scene. Include detailed technical elements such as soil cutaway layers, water/drainage pipelines, construction machinery like excavators/bulldozers, annotated blueprint callouts with arrows, or glowing cyan property boundary lines].\n\n"
+        "[If prices/numbers appear in script like '$3M', '$75k/acre', or '$1.5M', describe huge bright-red text callouts: Large bright-red text: \"$3,000,000\"].\n\n"
         "STRICT RULES:\n"
-        "1. Always start with: '2D flat vector illustration, hand-drawn doodle explainer-video style, thick clean black outlines, flat solid color fills, no gradients, no shading.'\n"
+        "1. Always start with: '2D hand-drawn educational architectural vector illustration, graphic novel technical diagram style, crisp clean black outlines, soft flat color palette, polished YouTube explainer aesthetics.'\n"
         "2. Set host_present to 'Yes' ONLY if the line is a direct host question or reaction (e.g. 'So the question sitting in your mind is...', 'How do you get that money back?'). Otherwise 'No'.\n"
         "3. If host_present is 'Yes', include host description: 'Foreground host.\\n\\nA simple flat 2D stick/blob-style cartoon man with a large plain circle head, solid white fill, thin clean black outline, completely bald, two simple black-outlined circular eyes with solid black pupil dots, two short thick straight black eyebrows, simple curved mouth line, no nose, no ears. Thin stick limbs, white mitten hands, dark rounded feet.'\n"
-        "4. NEVER include handle names, channel names, or social media tags (like @misterfinanceyt or @TheWealthCortexx)!\n\n"
+        "4. NEVER include social media handles or channel tags!\n\n"
         "Respond strictly in JSON format:\n"
-        '{\n  "host_present": "Yes" or "No",\n  "prompt": "2D flat vector illustration, hand-drawn doodle explainer-video style..."\n}'
+        '{\n  "host_present": "Yes" or "No",\n  "prompt": "2D hand-drawn educational architectural vector illustration, graphic novel technical diagram style..."\n}'
     )
 
     user_prompt = f"Script Line (Beat {scene_number}): \"{scene_text}\""
@@ -148,33 +150,35 @@ def build_vector_art_scene_prompt_fallback(text):
         "your", "want", "need", "just", "what", "when", "make", "first", "then", "also",
         "about", "how", "does", "done", "could", "should", "here", "know", "take", "look"
     }
-    filtered = [w.capitalize() for w in words if w.lower() not in stopwords][:3]
-    topic_str = " ".join(filtered) if filtered else "Business Capital"
+    filtered = [w.upper() for w in words if w.lower() not in stopwords][:3]
+    topic_title = " ".join(filtered) if filtered else "OVERVIEW"
 
     money_match = re.search(r'(\$?\d+[\d,.]*\s*(million|billion|thousand|k|m)?)', text, re.IGNORECASE)
     money_label = ""
     if money_match and len(money_match.group(0)) > 1:
-        money_label = f"\n\nHuge bright-red text:\n\"{money_match.group(0).upper()}\""
+        money_label = f"\n\nHuge bright-red text callout:\n\"{money_match.group(0).upper()}\""
 
     if host_present == "Yes":
         prompt_str = (
-            "2D flat vector illustration, hand-drawn doodle explainer-video style, thick clean black outlines, flat solid color fills, no gradients, no shading.\n\n"
+            "2D hand-drawn educational architectural vector illustration, graphic novel technical diagram style, crisp clean black outlines, soft flat color palette, polished YouTube explainer aesthetics.\n\n"
+            f"LARGE BOLD TOP TITLE BANNER:\n\"{topic_title}\"\n\n"
             "Foreground host.\n\n"
             "A simple flat 2D stick/blob-style cartoon man with a large plain circle head, solid white fill, thin clean black outline, completely bald, two simple black-outlined circular eyes with solid black pupil dots, two short thick straight black eyebrows, simple curved mouth line, no nose, no ears. Thin stick limbs, white mitten hands, dark rounded feet.\n\n"
-            f"Standing beside a clean 2D infographic board illustrating {topic_str}.\n"
-            "Scratching his head while looking at the figures."
+            f"Standing beside an isometric technical architectural diagram explaining {topic_title}.\n"
+            "Annotated blueprint arrows and callouts visible."
             f"{money_label}"
         )
     else:
         prompt_str = (
-            "2D flat vector illustration, hand-drawn doodle explainer-video style, thick clean black outlines, flat solid color fills, no gradients, no shading.\n\n"
-            f"Flat light-gray finance background.\n\n"
-            f"Key visual assets and infrastructure icons for {topic_str}.\n\n"
-            "Simple icons, clean layout, high contrast."
+            "2D hand-drawn educational architectural vector illustration, graphic novel technical diagram style, crisp clean black outlines, soft flat color palette, polished YouTube explainer aesthetics.\n\n"
+            f"LARGE BOLD TOP TITLE BANNER:\n\"{topic_title}\"\n\n"
+            f"Detailed 16:9 panoramic technical diagram view of {topic_title}.\n\n"
+            "Cross-sectional cutaway layers, annotated callout arrows, machinery icons, and glowing cyan boundary outlines.\n"
+            "Clean paper background, generous negative space, high contrast composition."
             f"{money_label}"
         )
 
-    return {"host_present": host_present, "prompt": prompt_str}
+    return {"host_present": host_present, "prompt": prompt_str}r}
 
 async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode):
     try:
