@@ -487,14 +487,14 @@ def natural_sort_key(s):
 def get_ken_burns_vf(scene_idx):
     preset = int(scene_idx) % 3
     if preset == 0:
-        # Smooth Float Center Zoom-In (1.000 -> 1.024 max, zero text/header crop, zero shutter jitter)
-        kp = "zoompan=z='1.012+0.012*sin(in_time*1.2)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=125:s=1920x1080:fps=30"
+        # Real active smooth zoom-in (1.00 -> 1.06 max, d=1 advances on every frame)
+        kp = "zoompan=z='min(pzoom+0.0008,1.06)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=1920x1080:fps=30"
     elif preset == 1:
-        # Smooth Float Steady Drift (1.018 steady zoom, centered)
-        kp = "zoompan=z='1.018+0.008*cos(in_time*1.5)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=125:s=1920x1080:fps=30"
+        # Real active smooth float pan left-to-right
+        kp = "zoompan=z='1.05':x='(iw-iw/zoom)*(0.5+0.35*sin(on/35))':y='ih/2-(ih/zoom/2)':d=1:s=1920x1080:fps=30"
     else:
-        # Smooth Float Reveal Zoom-Out (1.024 -> 1.000)
-        kp = "zoompan=z='1.012-0.012*sin(in_time*1.2)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=125:s=1920x1080:fps=30"
+        # Real active smooth zoom-out (1.06 -> 1.00)
+        kp = "zoompan=z='if(eq(on,0),1.06,max(pzoom-0.0008,1.00))':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=1920x1080:fps=30"
     
     return f"scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2:black,{kp},format=yuv420p"
 
