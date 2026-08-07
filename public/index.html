@@ -743,20 +743,21 @@
                 alert('No prompts available to copy.');
                 return;
             }
-            const formattedBlocks = lastBreakdownData.map(item => {
-                return `# Beat ${item.scene}\n\n### Script line:\n"${item.text}"\n\n### Image Prompt:\n${item.prompt}`;
-            }).join('\n\n---\n\n');
+            const rawPromptsStr = lastBreakdownData
+                .map(item => (item.prompt || '').trim())
+                .filter(p => p.length > 0)
+                .join('\n\n');
 
-            navigator.clipboard.writeText(formattedBlocks).then(() => {
-                alert(`Copied ${lastBreakdownData.length} Beat Scene Prompts to clipboard! 📋`);
+            navigator.clipboard.writeText(rawPromptsStr).then(() => {
+                alert(`Copied ${lastBreakdownData.length} raw prompts to clipboard! 📋`);
             }).catch(err => {
                 const textArea = document.createElement('textarea');
-                textArea.value = formattedBlocks;
+                textArea.value = rawPromptsStr;
                 document.body.appendChild(textArea);
                 textArea.select();
                 document.execCommand('copy');
                 document.body.removeChild(textArea);
-                alert(`Copied ${lastBreakdownData.length} Beat Scene Prompts to clipboard! 📋`);
+                alert(`Copied ${lastBreakdownData.length} raw prompts to clipboard! 📋`);
             });
         }
 
