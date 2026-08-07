@@ -719,6 +719,7 @@
             <!-- Video Output Card -->
             <div class="output-card" id="videoCard" style="margin-top:16px;">
                 <div style="font-size: 0.88rem; font-weight: 600; color: var(--text-primary); margin-bottom: 8px;">🎬 1080p Explainer Video Ready</div>
+                <div id="qaReportBadge" style="display:none; margin-bottom:12px; font-size:0.82rem; font-weight:700; color:#34c759; background:rgba(52, 199, 89, 0.12); padding:10px 14px; border-radius:10px; border:1px solid rgba(52, 199, 89, 0.3);"></div>
                 <video id="videoElement" controls style="width:100%; aspect-ratio:16/9; border-radius:10px; background:#000; margin-bottom:10px;"></video>
                 <a href="#" id="downloadVideoLink" class="btn-download-single" style="background:linear-gradient(135deg, #34c759, #30b0c7);" download>Download 1080p Video (.MP4)</a>
             </div>
@@ -985,10 +986,16 @@
                             const videoElement = document.getElementById('videoElement');
                             const downloadVideoLink = document.getElementById('downloadVideoLink');
                             const videoCard = document.getElementById('videoCard');
+                            const qaReportBadge = document.getElementById('qaReportBadge');
 
                             videoElement.src = data.result.videoUrl;
                             downloadVideoLink.href = data.result.videoUrl;
                             downloadVideoLink.download = data.result.videoFilename;
+
+                            if (data.result.qaReport && qaReportBadge) {
+                                qaReportBadge.textContent = data.result.qaReport;
+                                qaReportBadge.style.display = 'block';
+                            }
 
                             videoCard.classList.add('active');
                             videoElement.play();
