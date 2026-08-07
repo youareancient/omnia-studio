@@ -648,7 +648,7 @@
             <div class="output-card" id="breakdownCard">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                     <div style="font-size: 0.88rem; font-weight: 600; color: var(--text-primary);">🎬 Scene Cuts & Stock Keywords</div>
-                    <button class="btn-apple btn-apple-secondary" style="min-height:30px; padding:4px 10px; font-size:0.72rem; width:auto;" onclick="copyAllBreakdown()">📋 Copy All</button>
+                    <button class="btn-apple btn-apple-secondary" style="min-height:30px; padding:4px 10px; font-size:0.72rem; width:auto;" onclick="copyAllPromptsOnly()">📋 Copy Prompts Only (Bulk)</button>
                 </div>
                 <div id="breakdownContainer"></div>
             </div>
@@ -717,16 +717,12 @@
             estTimeEl.textContent = `~${minutes} min audio`;
         });
 
-        function copyAllBreakdown() {
+        function copyAllPromptsOnly() {
             if (!lastBreakdownData.length) return;
-            let fullText = "🎬 3-5 SECOND SCENE BREAKDOWN, STOCK KEYWORDS & VECTOR PROMPTS\n\n";
-            lastBreakdownData.forEach(item => {
-                fullText += `Scene ${item.scene}: ${item.text}\n\n`;
-                fullText += `Pexels/Pixabay Stock Keywords: ${item.stockKeywords}\n\n`;
-                fullText += `Image Prompt - ${item.prompt}\n\n------------------------\n\n`;
-            });
-            navigator.clipboard.writeText(fullText);
-            alert('Copied full Scene Breakdown, Stock Keywords & Vector Prompts to clipboard! 📋');
+            // Copies ONLY raw prompts separated by double newlines (\n\n) for bulk AI generation
+            const promptsOnlyStr = lastBreakdownData.map(item => item.prompt).join('\n\n');
+            navigator.clipboard.writeText(promptsOnlyStr);
+            alert(`Copied ${lastBreakdownData.length} raw prompts (with double line breaks) for bulk AI generation! 📋`);
         }
 
         async function startPollingJob(jobId) {
