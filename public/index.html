@@ -716,12 +716,17 @@
                 </div>
             </div>
 
-            <!-- Video Output Card -->
-            <div class="output-card" id="videoCard" style="margin-top:16px;">
-                <div style="font-size: 0.88rem; font-weight: 600; color: var(--text-primary); margin-bottom: 8px;">🎬 1080p Explainer Video Ready</div>
-                <div id="qaReportBadge" style="display:none; margin-bottom:12px; font-size:0.82rem; font-weight:700; color:#34c759; background:rgba(52, 199, 89, 0.12); padding:10px 14px; border-radius:10px; border:1px solid rgba(52, 199, 89, 0.3);"></div>
-                <video id="videoElement" controls style="width:100%; aspect-ratio:16/9; border-radius:10px; background:#000; margin-bottom:10px;"></video>
-                <a href="#" id="downloadVideoLink" class="btn-download-single" style="background:linear-gradient(135deg, #34c759, #30b0c7);" download>Download 1080p Video (.MP4)</a>
+            <!-- Full Width Cinematic Video Output Card -->
+            <div class="output-card" id="videoCard" style="grid-column: 1 / -1; margin-top: 24px; padding: 24px; background: var(--bg-card); border-radius: 20px; border: 1px solid var(--accent-apple); box-shadow: 0 12px 40px rgba(0, 113, 227, 0.25);">
+                <div style="font-size: 1.15rem; font-weight: 800; color: var(--text-primary); margin-bottom: 12px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+                    <span>🎬 1080p HD Video Preview (Cinematic 16:9 Player)</span>
+                    <span style="font-size:0.75rem; font-weight:600; color:var(--accent-apple); background:rgba(41,151,255,0.12); padding:4px 10px; border-radius:12px;">Full 1920x1080 HD</span>
+                </div>
+                <div id="qaReportBadge" style="display:none; margin-bottom:14px; font-size:0.88rem; font-weight:700; color:#34c759; background:rgba(52, 199, 89, 0.12); padding:12px 16px; border-radius:12px; border:1px solid rgba(52, 199, 89, 0.3);"></div>
+                <div style="position:relative; width:100%; border-radius:14px; overflow:hidden; box-shadow:0 8px 30px rgba(0,0,0,0.5); background:#000; margin-bottom:16px;">
+                    <video id="videoElement" controls style="width:100%; max-height:580px; aspect-ratio:16/9; display:block; outline:none; object-fit:contain;"></video>
+                </div>
+                <a href="#" id="downloadVideoLink" class="btn-apple" style="background:linear-gradient(135deg, #34c759, #0071e3); min-height:50px; font-size:1rem; font-weight:700; width:100%; box-shadow:0 6px 24px rgba(52, 199, 89, 0.35);" download>⏬ Download 1080p Explainer Video (.MP4)</a>
             </div>
         </section>
     </main>
