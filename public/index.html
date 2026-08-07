@@ -599,6 +599,31 @@
                 </div>
                 <span style="color: var(--accent-apple); font-weight: 500;">📱 Background Processing Active</span>
             </div>
+
+            <!-- Desktop Action Grid: 3 Buttons directly under script box -->
+            <div class="action-btn-grid" id="desktopActionGrid" style="margin-top:16px;">
+                <button class="btn-apple" onclick="generateStream('audio')">
+                    🎵 Voiceover
+                </button>
+                <button class="btn-apple btn-apple-secondary" onclick="generateStream('srt')">
+                    📝 .SRT
+                </button>
+                <button class="btn-apple btn-apple-secondary" onclick="generateStream('breakdown')">
+                    🎬 Scene Cuts
+                </button>
+            </div>
+
+            <!-- Real-Time Background Progress Indicator -->
+            <div class="progress-container" id="progressBox" style="margin-top:14px;">
+                <div class="progress-header">
+                    <span id="progressTitle">Processing...</span>
+                    <span id="progressPercent" style="color: var(--accent-apple);">0%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressBarFill"></div>
+                </div>
+                <div class="progress-sub" id="progressStatus">Cloud background job active...</div>
+            </div>
         </section>
 
         <!-- Voice & Settings -->
@@ -642,30 +667,7 @@
                 <input type="text" id="filenameInput" placeholder="e.g. data_center_narration.mp3" style="width: 100%; background: var(--bg-input); border: 1px solid var(--border-subtle); padding: 10px 12px; border-radius: 12px; color: var(--text-primary); outline: none; font-size: 0.88rem;">
             </div>
 
-            <!-- Desktop Action Grid: 3 Buttons -->
-            <div class="action-btn-grid" id="desktopActionGrid">
-                <button class="btn-apple" onclick="generateStream('audio')">
-                    🎵 Voiceover
-                </button>
-                <button class="btn-apple btn-apple-secondary" onclick="generateStream('srt')">
-                    📝 .SRT
-                </button>
-                <button class="btn-apple btn-apple-secondary" onclick="generateStream('breakdown')">
-                    🎬 Scene Cuts
-                </button>
-            </div>
-
-            <!-- Real-Time Background Progress Indicator -->
-            <div class="progress-container" id="progressBox">
-                <div class="progress-header">
-                    <span id="progressTitle">Processing...</span>
-                    <span id="progressPercent" style="color: var(--accent-apple);">0%</span>
-                </div>
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progressBarFill"></div>
-                </div>
-                <div class="progress-sub" id="progressStatus">Cloud background job active...</div>
-            </div>
+        </section>
 
             <!-- Breakdown Output Card (Primary Workspace Grid Gallery) -->
             <div class="output-card" id="breakdownCard" style="margin-top: 24px; padding: 24px; background: var(--bg-card); border-radius: 20px; border: 1px solid var(--accent-apple); box-shadow: 0 12px 40px rgba(0, 113, 227, 0.25);">
@@ -972,6 +974,28 @@
                     if (data.status_text) {
                         progressStatus.textContent = data.status_text;
                         if (videoProgressStatus) videoProgressStatus.textContent = data.status_text;
+
+                        const match = data.status_text.match(/Mini-Clip (\d+)\/(\d+)/);
+                        if (match) {
+                            const activeBeat = parseInt(match[1]);
+                            const totalBeats = parseInt(match[2]);
+                            for (let b = 1; b <= totalBeats; b++) {
+                                const statusBox = document.getElementById(`beatStatusBox_${b}`);
+                                const progressEl = document.getElementById(`beatProgress_${b}`);
+                                const playerEl = document.getElementById(`beatPlayer_${b}`);
+                                if (statusBox) {
+                                    if (b === activeBeat) {
+                                        statusBox.style.display = 'block';
+                                        if (progressEl) progressEl.style.display = 'block';
+                                        if (playerEl) playerEl.style.display = 'none';
+                                    } else if (b < activeBeat) {
+                                        statusBox.style.display = 'block';
+                                        if (progressEl) progressEl.style.display = 'none';
+                                        if (playerEl) playerEl.style.display = 'block';
+                                    }
+                                }
+                            }
+                        }
                     }
 
                     if (data.status === 'completed') {
@@ -1029,6 +1053,21 @@
                                         <div id="beatPreview_${item.scene}" style="display:none; margin-top:8px;">
                                             <img id="beatImg_${item.scene}" style="max-height:140px; border-radius:8px; border:1px solid var(--border-subtle); display:block; margin-bottom:4px;" />
                                             <span style="font-size:0.72rem; color:#34c759; font-weight:700;">✓ Image Loaded for Beat #${item.scene}</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Per-Beat Mini-Clip Progress Bar & Player -->
+                                    <div id="beatStatusBox_${item.scene}" style="display:none; margin-top:12px; padding:10px; background:var(--bg-card-secondary); border:1px solid var(--border-subtle); border-radius:10px;">
+                                        <div id="beatProgress_${item.scene}" style="display:none;">
+                                            <div style="display:flex; justify-content:space-between; font-size:0.75rem; font-weight:700; color:var(--accent-apple); margin-bottom:4px;">
+                                                <span>⏳ Synthesizing 16:9 Mini-Clip #${item.scene}...</span>
+                                                <span>Processing</span>
+                                            </div>
+                                            <div class="progress-bar" style="height:6px; margin:0;"><div class="progress-fill" style="width:100%;"></div></div>
+                                        </div>
+                                        <div id="beatPlayer_${item.scene}" style="display:none;">
+                                            <div style="font-size:0.75rem; font-weight:700; color:#34c759; margin-bottom:4px;">✓ 16:9 Mini-Clip #${item.scene} Ready:</div>
+                                            <video id="beatVideo_${item.scene}" controls style="width:100%; aspect-ratio:16/9; border-radius:8px; background:#000; display:block;" src=""></video>
                                         </div>
                                     </div>
                                 `;

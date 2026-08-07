@@ -590,43 +590,47 @@ async def process_video_assembly_async(video_job_id, original_job_id, zip_bytes,
         # Render Per-Scene Individual Mini-Clips sequentially for Grid Gallery & Previewing
         mini_clips_data = []
         for idx, (img_path, dur) in enumerate(zip(extracted_imgs, image_durations), start=1):
-            pct = 20 + int((idx / total_images) * 60)
-            BACKGROUND_JOBS[video_job_id]["progress"] = pct
-            BACKGROUND_JOBS[video_job_id]["status_text"] = f"🎬 Synthesizing 16:9 Mini-Clip {idx}/{total_images} for Beat #{idx} ({dur:.1f}s)..."
+            try:
+                pct = 20 + int((idx / total_images) * 60)
+                BACKGROUND_JOBS[video_job_id]["progress"] = pct
+                BACKGROUND_JOBS[video_job_id]["status_text"] = f"🎬 Synthesizing 16:9 Mini-Clip {idx}/{total_images} for Beat #{idx} ({dur:.1f}s)..."
 
-            mini_filename = f"mini_clip_{video_job_id[:6]}_{idx:02d}.mp4"
-            mini_filepath = os.path.join(DOWNLOADS_DIR, mini_filename)
-            
-            if idx <= len(scenes):
-                sc = scenes[idx - 1]
-                st_sec = sc.get("start_ms", 0) / 1000.0
-            else:
-                st_sec = (idx - 1) * (total_audio_duration / total_images)
+                mini_filename = f"mini_clip_{video_job_id[:6]}_{idx:02d}.mp4"
+                mini_filepath = os.path.join(DOWNLOADS_DIR, mini_filename)
+                
+                if idx <= len(scenes):
+                    sc = scenes[idx - 1]
+                    st_sec = sc.get("start_ms", 0) / 1000.0
+                else:
+                    st_sec = (idx - 1) * (total_audio_duration / total_images)
 
-            ffmpeg_mini = [
-                "ffmpeg", "-y",
-                "-ss", f"{st_sec:.3f}", "-t", f"{dur:.3f}", "-i", audio_filepath,
-                "-loop", "1", "-i", img_path,
-                "-vf", "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2:black,format=yuv420p",
-                "-c:v", "libx264", "-preset", "fast", "-crf", "22",
-                "-c:a", "aac", "-b:a", "192k",
-                "-shortest",
-                mini_filepath
-            ]
+                ffmpeg_mini = [
+                    "ffmpeg", "-y",
+                    "-ss", f"{st_sec:.3f}", "-t", f"{dur:.3f}", "-i", audio_filepath,
+                    "-loop", "1", "-i", img_path,
+                    "-vf", "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2:black,format=yuv420p",
+                    "-c:v", "libx264", "-preset", "fast", "-crf", "22",
+                    "-c:a", "aac", "-b:a", "192k",
+                    "-shortest",
+                    mini_filepath
+                ]
 
-            proc_mini = await asyncio.create_subprocess_exec(
-                *ffmpeg_mini, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
-            )
-            await proc_mini.communicate()
-            
-            scene_text = scenes[idx - 1].get("text", f"Beat #{idx}") if idx <= len(scenes) else f"Beat #{idx}"
-            mini_clips_data.append({
-                "sceneIndex": idx,
-                "filename": mini_filename,
-                "url": f"/static/generated/{mini_filename}",
-                "durSec": dur,
-                "text": scene_text
-            })
+                proc_mini = await asyncio.create_subprocess_exec(
+                    *ffmpeg_mini, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+                )
+                await proc_mini.communicate()
+                
+                scene_text = scenes[idx - 1].get("text", f"Beat #{idx}") if idx <= len(scenes) else f"Beat #{idx}"
+                mini_clips_data.append({
+                    "sceneIndex": idx,
+                    "filename": mini_filename,
+                    "url": f"/static/generated/{mini_filename}",
+                    "durSec": dur,
+                    "text": scene_text
+                })
+                await asyncio.sleep(0.05)
+            except Exception as clip_err:
+                print(f"Non-fatal error encoding mini clip {idx}:", clip_err)
 
         concat_filepath = os.path.join(temp_img_dir, "input_concat.txt")
         
