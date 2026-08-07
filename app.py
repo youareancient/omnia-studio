@@ -178,7 +178,7 @@ def build_vector_art_scene_prompt_fallback(text):
             f"{money_label}"
         )
 
-    return {"host_present": host_present, "prompt": prompt_str}r}
+    return {"host_present": host_present, "prompt": prompt_str}
 
 async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode):
     try:
