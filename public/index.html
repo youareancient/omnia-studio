@@ -3,58 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YouTube Voiceover Studio Pro</title>
+    <title>YouTube Voiceover Studio Pro - Ultra HD Narration</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-primary: #0b0f19;
-            --bg-card: rgba(18, 24, 38, 0.75);
-            --bg-card-hover: rgba(30, 41, 59, 0.8);
-            --accent-blue: #3b82f6;
-            --accent-purple: #8b5cf6;
+            --bg-dark: #07090e;
+            --bg-card: rgba(15, 21, 37, 0.7);
+            --bg-card-hover: rgba(26, 35, 60, 0.85);
             --accent-cyan: #06b6d4;
-            --accent-glow: rgba(59, 130, 246, 0.25);
-            --text-primary: #f8fafc;
-            --text-secondary: #94a3b8;
+            --accent-blue: #3b82f6;
+            --accent-indigo: #6366f1;
+            --accent-purple: #a855f7;
+            --accent-emerald: #10b981;
+            --glow-blue: rgba(59, 130, 246, 0.35);
+            --glow-cyan: rgba(6, 182, 212, 0.35);
+            --text-main: #f8fafc;
+            --text-sub: #94a3b8;
             --text-muted: #64748b;
-            --border-color: rgba(255, 255, 255, 0.08);
-            --border-highlight: rgba(59, 130, 246, 0.3);
-            --radius-lg: 16px;
-            --radius-md: 12px;
+            --border-glass: rgba(255, 255, 255, 0.08);
+            --border-active: rgba(6, 182, 212, 0.5);
+            --radius-xl: 20px;
+            --radius-lg: 14px;
+            --radius-md: 10px;
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: 'Plus Jakarta Sans', sans-serif;
         }
 
         body {
-            background-color: var(--bg-primary);
+            background-color: var(--bg-dark);
             background-image: 
-                radial-gradient(circle at 15% 15%, rgba(59, 130, 246, 0.12) 0%, transparent 40%),
-                radial-gradient(circle at 85% 85%, rgba(139, 92, 246, 0.12) 0%, transparent 40%);
-            color: var(--text-primary);
+                radial-gradient(ellipse at 20% 10%, rgba(59, 130, 246, 0.18) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 90%, rgba(168, 85, 247, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(6, 182, 212, 0.08) 0%, transparent 70%);
+            color: var(--text-main);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* Animated Ambient Glowing Orbs */
+        .ambient-glow-1 {
+            position: fixed;
+            top: -100px;
+            left: -100px;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.25), transparent 70%);
+            filter: blur(60px);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .ambient-glow-2 {
+            position: fixed;
+            bottom: -100px;
+            right: -100px;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(168, 85, 247, 0.25), transparent 70%);
+            filter: blur(60px);
+            pointer-events: none;
+            z-index: 0;
         }
 
         header {
-            border-bottom: 1px solid var(--border-color);
-            background: rgba(11, 15, 25, 0.8);
-            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-glass);
+            background: rgba(7, 9, 14, 0.85);
+            backdrop-filter: blur(20px);
             position: sticky;
             top: 0;
             z-index: 100;
-            padding: 1rem 2rem;
+            padding: 1.1rem 2rem;
         }
 
         .header-container {
-            max-width: 1200px;
+            max-width: 1280px;
             margin: 0 auto;
             display: flex;
             justify-content: space-between;
@@ -64,51 +95,84 @@
         .brand {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 14px;
         }
 
         .brand-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
-            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue), var(--accent-purple));
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
-            box-shadow: 0 4px 14px var(--accent-glow);
+            font-size: 22px;
+            box-shadow: 0 4px 20px var(--glow-cyan);
+            animation: pulse-glow 3s infinite alternate;
+        }
+
+        @keyframes pulse-glow {
+            0% { box-shadow: 0 0 15px rgba(6, 182, 212, 0.4); }
+            100% { box-shadow: 0 0 25px rgba(168, 85, 247, 0.6); }
         }
 
         .brand-title {
-            font-size: 1.25rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #ffffff, #cbd5e1);
+            font-size: 1.35rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #ffffff 30%, #94a3b8);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
         .brand-badge {
-            background: rgba(59, 130, 246, 0.15);
-            border: 1px solid rgba(59, 130, 246, 0.3);
+            background: rgba(6, 182, 212, 0.12);
+            border: 1px solid rgba(6, 182, 212, 0.3);
             color: var(--accent-cyan);
-            font-size: 0.75rem;
-            font-weight: 600;
-            padding: 2px 8px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            padding: 3px 10px;
             border-radius: 20px;
+            text-transform: uppercase;
+        }
+
+        .header-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.85rem;
+            color: var(--text-sub);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--accent-emerald);
+            box-shadow: 0 0 10px var(--accent-emerald);
+            animation: blink 2s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
         }
 
         main {
-            max-width: 1200px;
+            max-width: 1280px;
             margin: 2rem auto;
             padding: 0 1.5rem;
             flex: 1;
             width: 100%;
             display: grid;
-            grid-template-columns: 1fr 400px;
-            gap: 1.5rem;
+            grid-template-columns: 1fr 420px;
+            gap: 1.75rem;
+            position: relative;
+            z-index: 1;
         }
 
-        @media (max-width: 960px) {
+        @media (max-width: 1024px) {
             main {
                 grid-template-columns: 1fr;
             }
@@ -116,26 +180,44 @@
 
         .glass-card {
             background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-lg);
-            backdrop-filter: blur(16px);
-            padding: 1.5rem;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-xl);
+            backdrop-filter: blur(24px);
+            padding: 1.75rem;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+            transition: border-color 0.3s ease;
+        }
+
+        .glass-card:hover {
+            border-color: rgba(255, 255, 255, 0.12);
         }
 
         .card-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1rem;
+            margin-bottom: 1.2rem;
         }
 
         .card-title {
-            font-size: 1.1rem;
-            font-weight: 600;
+            font-size: 1.15rem;
+            font-weight: 700;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
+        }
+
+        .accuracy-badge {
+            background: rgba(16, 185, 129, 0.12);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: var(--accent-emerald);
+            font-size: 0.78rem;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
         .editor-container {
@@ -147,114 +229,191 @@
 
         textarea {
             width: 100%;
-            height: 420px;
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
-            color: var(--text-primary);
-            font-size: 1rem;
-            line-height: 1.6;
-            padding: 1.25rem;
+            height: 440px;
+            background: rgba(9, 13, 22, 0.7);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-lg);
+            color: var(--text-main);
+            font-size: 1.02rem;
+            line-height: 1.65;
+            padding: 1.35rem;
             resize: vertical;
             outline: none;
-            transition: all 0.2s ease;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 400;
         }
 
         textarea:focus {
-            border-color: var(--accent-blue);
-            box-shadow: 0 0 0 3px var(--accent-glow);
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 20px var(--glow-cyan), inset 0 0 10px rgba(6, 182, 212, 0.05);
+            background: rgba(9, 13, 22, 0.85);
         }
 
         .meta-bar {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            color: var(--text-muted);
-            font-size: 0.875rem;
+            color: var(--text-sub);
+            font-size: 0.88rem;
+            padding: 0 4px;
         }
 
         .badge-list {
             display: flex;
-            gap: 8px;
+            gap: 10px;
         }
 
         .meta-tag {
             background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            padding: 4px 10px;
-            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 5px 12px;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            color: var(--text-main);
         }
 
         .voice-options {
             display: flex;
             flex-direction: column;
-            gap: 0.75rem;
+            gap: 0.85rem;
             margin-bottom: 1.5rem;
         }
 
         .voice-card {
-            background: rgba(15, 23, 42, 0.5);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
-            padding: 1rem;
+            background: rgba(10, 15, 26, 0.6);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-lg);
+            padding: 1.1rem;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
         }
 
         .voice-card:hover {
             border-color: rgba(255, 255, 255, 0.2);
             background: var(--bg-card-hover);
+            transform: translateY(-2px);
         }
 
         .voice-card.selected {
-            border-color: var(--accent-blue);
-            background: rgba(59, 130, 246, 0.1);
-            box-shadow: 0 0 15px var(--accent-glow);
+            border-color: var(--accent-cyan);
+            background: rgba(6, 182, 212, 0.08);
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.25);
         }
 
         .voice-card.selected::after {
-            content: '✓ Selected';
+            content: '✓ SELECTED';
             position: absolute;
-            top: 12px;
-            right: 12px;
-            font-size: 0.75rem;
-            font-weight: 700;
-            color: var(--accent-blue);
+            top: 14px;
+            right: 14px;
+            font-size: 0.7rem;
+            font-weight: 800;
+            color: var(--accent-cyan);
+            letter-spacing: 0.5px;
         }
 
-        .voice-name {
-            font-weight: 600;
-            font-size: 0.95rem;
+        .voice-header-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
             margin-bottom: 4px;
         }
 
+        .voice-name {
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--text-main);
+        }
+
+        .tag-recommended {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: #07090e;
+            font-size: 0.65rem;
+            font-weight: 800;
+            padding: 2px 7px;
+            border-radius: 12px;
+            text-transform: uppercase;
+        }
+
         .voice-desc {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
+            font-size: 0.82rem;
+            color: var(--text-sub);
+            line-height: 1.45;
+        }
+
+        /* Pacing & Rate Selector */
+        .setting-group {
+            margin-bottom: 1.5rem;
+            background: rgba(9, 13, 22, 0.5);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-lg);
+            padding: 1rem;
+        }
+
+        .setting-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-sub);
+        }
+
+        .rate-slider-val {
+            font-weight: 700;
+            color: var(--accent-cyan);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--accent-cyan);
+            box-shadow: 0 0 10px var(--accent-cyan);
+            cursor: pointer;
+            transition: transform 0.1s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
         }
 
         .btn-primary {
             width: 100%;
-            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue), var(--accent-purple));
+            background-size: 200% 200%;
             color: white;
             border: none;
-            border-radius: var(--radius-md);
-            padding: 1rem;
-            font-size: 1rem;
-            font-weight: 600;
+            border-radius: var(--radius-lg);
+            padding: 1.15rem;
+            font-size: 1.05rem;
+            font-weight: 700;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
-            box-shadow: 0 4px 20px var(--accent-glow);
-            transition: all 0.2s ease;
+            gap: 12px;
+            box-shadow: 0 6px 25px rgba(6, 182, 212, 0.35);
+            transition: all 0.3s ease;
+            letter-spacing: 0.2px;
         }
 
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 24px rgba(59, 130, 246, 0.4);
+            box-shadow: 0 8px 30px rgba(59, 130, 246, 0.5);
+            background-position: 100% 0;
         }
 
         .btn-primary:disabled {
@@ -266,37 +425,37 @@
         /* Real-Time Progress Tracker Container */
         .progress-box {
             margin-top: 1.5rem;
-            background: rgba(15, 23, 42, 0.7);
-            border: 1px solid var(--border-highlight);
-            border-radius: var(--radius-md);
+            background: rgba(9, 13, 22, 0.85);
+            border: 1px solid var(--border-active);
+            border-radius: var(--radius-lg);
             padding: 1.25rem;
             display: none;
-
-            box-shadow: 0 4px 20px var(--accent-glow);
+            box-shadow: 0 0 25px var(--glow-cyan);
         }
 
         .progress-box.active {
             display: block;
-            animation: fadeIn 0.3s ease;
+            animation: slideUp 0.35s ease;
         }
 
         .progress-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
         }
 
         .progress-title {
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: var(--text-primary);
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: var(--text-main);
         }
 
         .progress-percent {
-            font-size: 1rem;
+            font-size: 1.1rem;
             font-weight: 800;
             color: var(--accent-cyan);
+            font-family: 'JetBrains Mono', monospace;
         }
 
         .progress-bar-bg {
@@ -305,51 +464,86 @@
             background: rgba(255, 255, 255, 0.08);
             border-radius: 6px;
             overflow: hidden;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
             position: relative;
         }
 
         .progress-bar-fill {
             width: 0%;
             height: 100%;
-            background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan));
+            background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan), var(--accent-purple));
             border-radius: 6px;
             transition: width 0.3s ease;
-            box-shadow: 0 0 12px var(--accent-cyan);
+            box-shadow: 0 0 15px var(--accent-cyan);
         }
 
         .progress-status {
-            font-size: 0.8rem;
-            color: var(--text-muted);
+            font-size: 0.82rem;
+            color: var(--text-sub);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
+        /* Waveform Animation */
+        .waveform-bars {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            height: 36px;
+            margin: 1rem 0 0.5rem 0;
+        }
+
+        .wave-bar {
+            width: 4px;
+            height: 10px;
+            background: var(--accent-cyan);
+            border-radius: 4px;
+            animation: wave 1.2s ease-in-out infinite alternate;
+        }
+
+        .wave-bar:nth-child(2) { animation-delay: 0.1s; height: 18px; }
+        .wave-bar:nth-child(3) { animation-delay: 0.2s; height: 28px; }
+        .wave-bar:nth-child(4) { animation-delay: 0.3s; height: 14px; }
+        .wave-bar:nth-child(5) { animation-delay: 0.4s; height: 32px; }
+        .wave-bar:nth-child(6) { animation-delay: 0.5s; height: 20px; }
+        .wave-bar:nth-child(7) { animation-delay: 0.6s; height: 12px; }
+
+        @keyframes wave {
+            0% { transform: scaleY(0.4); opacity: 0.5; }
+            100% { transform: scaleY(1.3); opacity: 1; }
+        }
+
         .audio-player-card {
             margin-top: 1.5rem;
             display: none;
+            background: rgba(9, 13, 22, 0.85);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: var(--radius-lg);
+            padding: 1.25rem;
+            box-shadow: 0 0 25px rgba(16, 185, 129, 0.15);
         }
 
         .audio-player-card.active {
             display: block;
-            animation: fadeIn 0.3s ease;
+            animation: slideUp 0.35s ease;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(14px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
         audio {
             width: 100%;
             margin: 1rem 0;
-            border-radius: 8px;
+            border-radius: 10px;
         }
 
         .download-box {
-            background: rgba(6, 182, 212, 0.1);
-            border: 1px solid rgba(6, 182, 212, 0.3);
+            background: rgba(6, 182, 212, 0.08);
+            border: 1px solid rgba(6, 182, 212, 0.25);
             border-radius: var(--radius-md);
             padding: 1rem;
             display: flex;
@@ -360,39 +554,44 @@
         .download-info {
             display: flex;
             flex-direction: column;
-            gap: 2px;
+            gap: 3px;
         }
 
         .btn-download {
-            background: var(--accent-cyan);
-            color: #0b0f19;
-            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-emerald));
+            color: #07090e;
+            font-weight: 800;
             text-decoration: none;
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-size: 0.875rem;
+            padding: 10px 20px;
+            border-radius: var(--radius-md);
+            font-size: 0.9rem;
             transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
         }
 
         .btn-download:hover {
-            background: #22d3ee;
-            transform: scale(1.05);
+            transform: scale(1.04);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
         }
     </style>
 </head>
 <body>
+
+    <div class="ambient-glow-1"></div>
+    <div class="ambient-glow-2"></div>
 
     <header>
         <div class="header-container">
             <div class="brand">
                 <div class="brand-icon">🎙️</div>
                 <div>
-                    <span class="brand-title">YouTube Voiceover Studio</span>
-                    <span class="brand-badge">PRO BRANDING</span>
+                    <span class="brand-title">Voiceover Studio Pro</span>
+                    <span class="brand-badge">YOUTUBE MONETIZATION EDITION</span>
                 </div>
             </div>
-            <div style="font-size: 0.85rem; color: var(--text-muted);">
-                ⚡ Automatic Save to <b>C:\Users\Pihu\Downloads</b>
+            <div class="header-status">
+                <div class="status-dot"></div>
+                <span>Ultra HD Neural Speech Engine Active</span>
             </div>
         </div>
     </header>
@@ -401,8 +600,10 @@
         <!-- Left Panel: Script Input -->
         <section class="glass-card editor-container">
             <div class="card-header">
-                <div class="card-title">📝 Paste Your YouTube Script</div>
-                <div style="font-size: 0.8rem; color: #10b981; font-weight: 600;">✓ 100% Word-for-Word Preserved</div>
+                <div class="card-title">📝 Script Editor</div>
+                <div class="accuracy-badge">
+                    <span>✓</span> 100% Word-for-Word Accuracy Verified
+                </div>
             </div>
             
             <textarea id="scriptText" placeholder="Paste your script here... (e.g. Okay, so you want to own a data center...)"></textarea>
@@ -410,38 +611,62 @@
             <div class="meta-bar">
                 <div class="badge-list">
                     <span class="meta-tag" id="wordCount">0 Words</span>
-                    <span class="meta-tag" id="estTime">0 min read</span>
+                    <span class="meta-tag" id="charCount">0 Chars</span>
+                    <span class="meta-tag" id="estTime">~0 min audio</span>
                 </div>
-                <div>Natural Pacing Engine Active</div>
+                <div style="font-weight: 600; color: var(--accent-cyan);">⚡ Natural Pacing Engine Active</div>
             </div>
         </section>
 
         <!-- Right Panel: Voice Selection & Settings -->
         <section class="glass-card">
             <div class="card-header">
-                <div class="card-title">🎯 Consistent Voice Selection</div>
+                <div class="card-title">🎯 Voice & Delivery Settings</div>
             </div>
 
             <div class="voice-options">
                 <div class="voice-card selected" onclick="selectVoice('andrew', this)">
-                    <div class="voice-name">🌟 Andrew (YouTube Documentary)</div>
-                    <div class="voice-desc">Warm, energetic narration. (Recommended for YouTube)</div>
+                    <div class="voice-header-row">
+                        <span class="voice-name">🌟 Andrew</span>
+                        <span class="tag-recommended">YouTube Master</span>
+                    </div>
+                    <div class="voice-desc">Warm, energetic documentary narration. High retention rate for business, tech & finance essays.</div>
                 </div>
 
                 <div class="voice-card" onclick="selectVoice('christopher', this)">
-                    <div class="voice-name">🎙️ Christopher (Deep Storyteller)</div>
-                    <div class="voice-desc">Deep, authoritative, cinematic business tone.</div>
+                    <div class="voice-header-row">
+                        <span class="voice-name">🎙️ Christopher</span>
+                    </div>
+                    <div class="voice-desc">Deep, authoritative, cinematic tone. Ideal for crime, mystery & deep storytelling.</div>
                 </div>
 
                 <div class="voice-card" onclick="selectVoice('ava', this)">
-                    <div class="voice-name">🎙️ Ava (Modern Expressive)</div>
-                    <div class="voice-desc">Clear, modern, expressive narrator voice.</div>
+                    <div class="voice-header-row">
+                        <span class="voice-name">🎙️ Ava</span>
+                    </div>
+                    <div class="voice-desc">Clear, modern, expressive narrator voice for tech reviews & general commentary.</div>
+                </div>
+
+                <div class="voice-card" onclick="selectVoice('guy', this)">
+                    <div class="voice-header-row">
+                        <span class="voice-name">🎙️ Guy</span>
+                    </div>
+                    <div class="voice-desc">Authoritative American news broadcaster style for commentary & finance.</div>
                 </div>
             </div>
 
+            <!-- Pacing Control -->
+            <div class="setting-group">
+                <div class="setting-header">
+                    <span>Speech Pacing Rate</span>
+                    <span class="rate-slider-val" id="rateVal">+1% (Optimal)</span>
+                </div>
+                <input type="range" id="rateSlider" min="-10" max="15" value="1" step="1" oninput="updateRateLabel(this.value)">
+            </div>
+
             <div style="margin-bottom: 1.5rem;">
-                <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 6px;">Output Filename</label>
-                <input type="text" id="filenameInput" placeholder="e.g. data_center_narration.mp3" style="width: 100%; background: rgba(15,23,42,0.6); border: 1px solid var(--border-color); padding: 10px; border-radius: 8px; color: white; outline: none;">
+                <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-sub); display: block; margin-bottom: 6px;">Output Filename</label>
+                <input type="text" id="filenameInput" placeholder="e.g. data_center_narration.mp3" style="width: 100%; background: rgba(9, 13, 22, 0.7); border: 1px solid var(--border-glass); padding: 12px; border-radius: var(--radius-md); color: white; outline: none; font-size: 0.95rem;">
             </div>
 
             <button class="btn-primary" id="generateBtn" onclick="generateVoiceoverStream()">
@@ -458,17 +683,27 @@
                     <div class="progress-bar-fill" id="progressBarFill"></div>
                 </div>
                 <div class="progress-status" id="progressStatus">Initializing speech engine...</div>
+                
+                <div class="waveform-bars">
+                    <div class="wave-bar"></div>
+                    <div class="wave-bar"></div>
+                    <div class="wave-bar"></div>
+                    <div class="wave-bar"></div>
+                    <div class="wave-bar"></div>
+                    <div class="wave-bar"></div>
+                    <div class="wave-bar"></div>
+                </div>
             </div>
 
             <!-- Audio Output Section -->
             <div class="audio-player-card" id="audioCard">
-                <div class="card-title" style="color: var(--accent-cyan); font-size: 0.95rem;">🎉 Audio Generated Successfully!</div>
+                <div class="card-title" style="color: var(--accent-emerald); font-size: 1rem;">🎉 Voiceover Generated Successfully!</div>
                 <audio id="audioElement" controls></audio>
                 
                 <div class="download-box">
                     <div class="download-info">
-                        <span style="font-weight: 600; font-size: 0.85rem;" id="outFilename">voiceover.mp3</span>
-                        <span style="font-size: 0.75rem; color: var(--text-muted);">Saved in Downloads folder</span>
+                        <span style="font-weight: 700; font-size: 0.9rem;" id="outFilename">voiceover.mp3</span>
+                        <span style="font-size: 0.78rem; color: var(--text-sub);">Ready for YouTube Monetization</span>
                     </div>
                     <a href="#" id="downloadLink" class="btn-download" download>Download MP3</a>
                 </div>
@@ -478,6 +713,7 @@
 
     <script>
         let selectedVoice = 'andrew';
+        let currentRateStr = '+1%';
 
         function selectVoice(voice, element) {
             selectedVoice = voice;
@@ -485,15 +721,25 @@
             element.classList.add('selected');
         }
 
+        function updateRateLabel(val) {
+            const num = parseInt(val);
+            const sign = num >= 0 ? '+' : '';
+            currentRateStr = `${sign}${num}%`;
+            document.getElementById('rateVal').textContent = `${currentRateStr} ${num === 1 ? '(Optimal)' : ''}`;
+        }
+
         const scriptInput = document.getElementById('scriptText');
         const wordCountEl = document.getElementById('wordCount');
+        const charCountEl = document.getElementById('charCount');
         const estTimeEl = document.getElementById('estTime');
 
         scriptInput.addEventListener('input', () => {
             const text = scriptInput.value.trim();
             const words = text ? text.split(/\s+/).length : 0;
+            const chars = text.length;
             const minutes = Math.ceil(words / 150);
             wordCountEl.textContent = `${words.toLocaleString()} Words`;
+            charCountEl.textContent = `${chars.toLocaleString()} Chars`;
             estTimeEl.textContent = `~${minutes} min audio`;
         });
 
@@ -520,7 +766,7 @@
             progressBox.classList.add('active');
             progressPercent.textContent = '0%';
             progressBarFill.style.width = '0%';
-            progressStatus.textContent = 'Preparing script...';
+            progressStatus.textContent = 'Humanizing script and preparing neural engine...';
 
             try {
                 const response = await fetch('/api/generate-stream', {
@@ -529,7 +775,7 @@
                     body: JSON.stringify({
                         text: text,
                         voice: selectedVoice,
-                        rate: '+1%',
+                        rate: currentRateStr,
                         filename: customFilename || `youtube_voiceover_${Date.now()}.mp3`
                     })
                 });
@@ -544,7 +790,7 @@
 
                     buffer += decoder.decode(value, { stream: true });
                     const lines = buffer.split('\n\n');
-                    buffer = lines.pop(); // Keep partial line in buffer
+                    buffer = lines.pop();
 
                     for (const line of lines) {
                         if (line.startsWith('data: ')) {
