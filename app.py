@@ -135,9 +135,14 @@ async def call_groq_ai_prompt_engineer(session, scene_text, scene_number):
 
 def build_vector_art_scene_prompt_fallback(text):
     words = re.findall(r'\b[a-zA-Z]{3,}\b', text)
-    stopwords = {"that", "have", "with", "this", "from", "they", "will", "would", "there", "their", "were", "been", "some", "into", "than", "more", "like", "over"}
-    filtered = [w for w in words if w.lower() not in stopwords][:5]
-    topic_str = " ".join(filtered) if filtered else "technology and business"
+    stopwords = {
+        "that", "have", "with", "this", "from", "they", "will", "would", "there", "their",
+        "were", "been", "some", "into", "than", "more", "like", "over", "okay", "you",
+        "your", "want", "need", "just", "what", "when", "make", "first", "then", "also",
+        "about", "how", "does", "done", "could", "should", "here", "know", "take", "look"
+    }
+    filtered = [w for w in words if w.lower() not in stopwords][:4]
+    topic_str = " ".join(filtered) if filtered else "technology and business concept"
 
     return (
         f"Image Prompt - Hand-drawn professional educational 2D vector cartoon illustration in 16:9 widescreen aspect ratio, "
