@@ -972,6 +972,7 @@
                             container.innerHTML = '';
                             lastBreakdownData = data.result.scenes;
                             localStorage.setItem('last_active_job_id', jobId);
+                            perBeatImages = {};
 
                             data.result.scenes.forEach(item => {
                                 const card = document.createElement('div');
@@ -982,6 +983,18 @@
                                     <div class="breakdown-script">"${item.text}"</div>
                                     <div style="font-weight:700; font-size:0.78rem; color:var(--text-secondary); margin-top:6px;">### Image Prompt:</div>
                                     <div class="breakdown-prompt" style="white-space:pre-wrap; font-family:monospace;">${item.prompt}</div>
+
+                                    <!-- Per-Beat Direct Image Uploader -->
+                                    <div style="margin-top:12px; padding:10px; background:var(--bg-input); border:1px dashed var(--accent-apple); border-radius:10px;">
+                                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                                            <label style="font-size:0.78rem; font-weight:700; color:var(--text-primary);">📷 Upload Image for Beat #${item.scene}:</label>
+                                            <input type="file" accept="image/*" style="font-size:0.75rem; color:var(--text-primary);" onchange="handlePerBeatImageUpload(${item.scene}, this)" />
+                                        </div>
+                                        <div id="beatPreview_${item.scene}" style="display:none; margin-top:8px;">
+                                            <img id="beatImg_${item.scene}" style="max-height:140px; border-radius:8px; border:1px solid var(--border-subtle); display:block; margin-bottom:4px;" />
+                                            <span style="font-size:0.72rem; color:#34c759; font-weight:700;">✓ Image Loaded for Beat #${item.scene}</span>
+                                        </div>
+                                    </div>
                                 `;
                                 container.appendChild(card);
                             });
@@ -1024,11 +1037,35 @@
             }, 1500);
         }
 
+        let perBeatImages = {};
+
+        function handlePerBeatImageUpload(beatNum, inputEl) {
+            if (inputEl.files && inputEl.files[0]) {
+                const file = inputEl.files[0];
+                perBeatImages[beatNum] = file;
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const previewBox = document.getElementById(`beatPreview_${beatNum}`);
+                    const previewImg = document.getElementById(`beatImg_${beatNum}`);
+                    if (previewBox && previewImg) {
+                        previewImg.src = e.target.result;
+                        previewBox.style.display = 'block';
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
         function uploadAndRenderVideo() {
             const fileInput = document.getElementById('videoImagesInput');
-            const files = fileInput.files;
-            if (!files || !files.length) {
-                alert('Please select a ZIP file containing your scene images first!');
+            const zipOrBatchFiles = fileInput.files;
+            
+            const hasPerBeatImgs = Object.keys(perBeatImages).length > 0;
+            const hasZipOrBatch = zipOrBatchFiles && zipOrBatchFiles.length > 0;
+
+            if (!hasPerBeatImgs && !hasZipOrBatch) {
+                alert('Please upload your images on each Beat Card or select a ZIP file!');
                 return;
             }
 
@@ -1036,11 +1073,19 @@
             const activeJobId = localStorage.getItem('last_active_job_id') || '';
             formData.append('job_id', activeJobId);
 
-            if (files.length === 1 && files[0].name.toLowerCase().endsWith('.zip')) {
-                formData.append('zip_file', files[0]);
-            } else {
-                for (let i = 0; i < files.length; i++) {
-                    formData.append('images', files[i]);
+            if (hasPerBeatImgs) {
+                for (const beatNum in perBeatImages) {
+                    formData.append(`beat_image_${beatNum}`, perBeatImages[beatNum]);
+                }
+            }
+
+            if (hasZipOrBatch) {
+                if (zipOrBatchFiles.length === 1 && zipOrBatchFiles[0].name.toLowerCase().endsWith('.zip')) {
+                    formData.append('zip_file', zipOrBatchFiles[0]);
+                } else {
+                    for (let i = 0; i < zipOrBatchFiles.length; i++) {
+                        formData.append('images', zipOrBatchFiles[i]);
+                    }
                 }
             }
 

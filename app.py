@@ -692,6 +692,14 @@ async def handle_assemble_video(request):
                 if filename:
                     fbytes = await field.read()
                     image_files_data.append((filename, fbytes))
+            elif field.name and field.name.startswith("beat_image_"):
+                try:
+                    beat_num = int(field.name.replace("beat_image_", ""))
+                    filename = field.filename or f"beat_{beat_num}.png"
+                    fbytes = await field.read()
+                    image_files_data.append((f"{beat_num:03d}_{filename}", fbytes))
+                except Exception:
+                    pass
 
         video_job_id = str(uuid.uuid4())
         asyncio.create_task(process_video_assembly_async(video_job_id, original_job_id, zip_bytes, image_files_data))
