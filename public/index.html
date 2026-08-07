@@ -693,13 +693,25 @@
                 <div id="breakdownContainer"></div>
 
                 <!-- Video Assembly Step -->
-                <div style="margin-top:20px; padding:16px; background:var(--bg-card-secondary); border:1px solid var(--border-subtle); border-radius:14px; box-shadow: var(--shadow-card);">
+                <div style="margin-top:20px; padding:16px; background:var(--bg-card-secondary); border:1px solid var(--border-subtle); border-radius:14px; box-shadow: var(--shadow-card);" id="step3Container">
                     <div style="font-weight:700; font-size:0.95rem; color:var(--text-primary); margin-bottom:4px; display:flex; align-items:center; gap:6px;">📦 Step 3: Upload ZIP File of Images & Render Video</div>
-                    <p style="font-size:0.78rem; color:var(--text-secondary); margin-bottom:12px; line-height:1.45;">Upload a <b>ZIP file</b> containing your scene images named <code>1.png</code>, <code>2.png</code>, <code>3.png</code>... We will automatically upload, track progress, and render your 1080p MP4 video!</p>
+                    <p style="font-size:0.78rem; color:var(--text-secondary); margin-bottom:12px; line-height:1.45;">Upload a <b>ZIP file</b> containing your scene images named <code>1.png</code>, <code>2.png</code>, <code>3.png</code>... We will automatically upload, track progress, and render your 1080p MP4 video with frame-perfect audio sync!</p>
                     <div style="display:flex; flex-direction:column; gap:10px;">
                         <label style="font-size:0.78rem; font-weight:600; color:var(--accent-apple);">Select Images ZIP File (.zip):</label>
                         <input type="file" id="videoImagesInput" accept=".zip,image/*" multiple style="font-size:0.82rem; color:var(--text-primary); background:var(--bg-input); padding:10px 12px; border-radius:10px; border:1px dashed var(--accent-apple); cursor:pointer;" />
-                        <button class="btn-apple" style="background:linear-gradient(135deg, #FF9500, #FF2D55); min-height:46px; font-size:0.9rem;" onclick="uploadAndRenderVideo()">⚡ Render 1080p MP4 Video</button>
+                        <button id="renderVideoBtn" class="btn-apple" style="background:linear-gradient(135deg, #FF9500, #FF2D55); min-height:46px; font-size:0.9rem;" onclick="uploadAndRenderVideo()">⚡ Render 1080p MP4 Video</button>
+                    </div>
+
+                    <!-- Inline Real-Time Step 3 Progress Box -->
+                    <div class="progress-container" id="videoProgressBox" style="margin-top:14px;">
+                        <div class="progress-header">
+                            <span style="font-weight:700;">⚡ Video Assembly Status</span>
+                            <span id="videoProgressPercent" style="color: var(--accent-apple); font-weight:700;">0%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="videoProgressBarFill"></div>
+                        </div>
+                        <div class="progress-sub" id="videoProgressStatus">Uploading ZIP file...</div>
                     </div>
                 </div>
             </div>
@@ -872,6 +884,11 @@
             const progressPercent = document.getElementById('progressPercent');
             const progressBarFill = document.getElementById('progressBarFill');
             const progressStatus = document.getElementById('progressStatus');
+
+            const videoProgressBox = document.getElementById('videoProgressBox');
+            const videoProgressPercent = document.getElementById('videoProgressPercent');
+            const videoProgressBarFill = document.getElementById('videoProgressBarFill');
+            const videoProgressStatus = document.getElementById('videoProgressStatus');
             
             const audioCard = document.getElementById('audioCard');
             const srtCard = document.getElementById('srtCard');
@@ -886,6 +903,7 @@
                         clearInterval(pollInterval);
                         localStorage.removeItem('active_job_id');
                         progressBox.classList.remove('active');
+                        if (videoProgressBox) videoProgressBox.classList.remove('active');
                         return;
                     }
                     
@@ -893,7 +911,9 @@
                     
                     if (data.progress !== undefined) {
                         progressBarFill.style.width = `${data.progress}%`;
+                        if (videoProgressBarFill) videoProgressBarFill.style.width = `${data.progress}%`;
 
+                        let pctText = `${data.progress}%`;
                         if (data.progress > 5 && data.progress < 100 && jobStartTime) {
                             const elapsedSec = (Date.now() - jobStartTime) / 1000;
                             const estTotalSec = elapsedSec / (data.progress / 100);
@@ -901,20 +921,28 @@
                             const min = Math.floor(remSec / 60);
                             const sec = remSec % 60;
                             const timeStr = min > 0 ? `${min}m ${sec}s` : `${sec}s`;
-                            progressPercent.textContent = `${data.progress}% (~${timeStr} left)`;
-                        } else {
-                            progressPercent.textContent = `${data.progress}%`;
+                            pctText = `${data.progress}% (~${timeStr} left)`;
                         }
+                        progressPercent.textContent = pctText;
+                        if (videoProgressPercent) videoProgressPercent.textContent = pctText;
                     }
 
                     if (data.status_text) {
                         progressStatus.textContent = data.status_text;
+                        if (videoProgressStatus) videoProgressStatus.textContent = data.status_text;
                     }
 
                     if (data.status === 'completed') {
                         clearInterval(pollInterval);
                         localStorage.removeItem('active_job_id');
                         progressBox.classList.remove('active');
+                        if (videoProgressBox) videoProgressBox.classList.remove('active');
+
+                        const renderBtn = document.getElementById('renderVideoBtn');
+                        if (renderBtn) {
+                            renderBtn.disabled = false;
+                            renderBtn.innerHTML = '⚡ Render 1080p MP4 Video';
+                        }
 
                         if (data.mode === 'audio' && data.result) {
                             const audioElement = document.getElementById('audioElement');
@@ -964,11 +992,18 @@
 
                             videoCard.classList.add('active');
                             videoElement.play();
+                            videoCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
                         }
                     } else if (data.status === 'failed') {
                         clearInterval(pollInterval);
                         localStorage.removeItem('active_job_id');
                         progressBox.classList.remove('active');
+                        if (videoProgressBox) videoProgressBox.classList.remove('active');
+                        const renderBtn = document.getElementById('renderVideoBtn');
+                        if (renderBtn) {
+                            renderBtn.disabled = false;
+                            renderBtn.innerHTML = '⚡ Render 1080p MP4 Video';
+                        }
                         alert(data.status_text || 'Job failed');
                     }
                 } catch (e) {
@@ -981,7 +1016,7 @@
             const fileInput = document.getElementById('videoImagesInput');
             const files = fileInput.files;
             if (!files || !files.length) {
-                alert('Please select a ZIP file of scene images first!');
+                alert('Please select a ZIP file containing your scene images first!');
                 return;
             }
 
@@ -1003,11 +1038,34 @@
             const progressPercent = document.getElementById('progressPercent');
             const progressBarFill = document.getElementById('progressBarFill');
             const progressStatus = document.getElementById('progressStatus');
-            
+
+            const videoProgressBox = document.getElementById('videoProgressBox');
+            const videoProgressPercent = document.getElementById('videoProgressPercent');
+            const videoProgressBarFill = document.getElementById('videoProgressBarFill');
+            const videoProgressStatus = document.getElementById('videoProgressStatus');
+
+            const renderBtn = document.getElementById('renderVideoBtn');
+            if (renderBtn) {
+                renderBtn.disabled = true;
+                renderBtn.innerHTML = '⏳ Uploading & Rendering 1080p Video...';
+            }
+
             progressBox.classList.add('active');
-            progressPercent.textContent = '0%';
-            progressBarFill.style.width = '0%';
-            progressStatus.textContent = '📦 Uploading ZIP file to server...';
+            if (videoProgressBox) {
+                videoProgressBox.classList.add('active');
+                videoProgressBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+
+            const initPct = '0%';
+            progressPercent.textContent = initPct;
+            if (videoProgressPercent) videoProgressPercent.textContent = initPct;
+
+            progressBarFill.style.width = initPct;
+            if (videoProgressBarFill) videoProgressBarFill.style.width = initPct;
+
+            const initStatus = '📦 Uploading ZIP file to server...';
+            progressStatus.textContent = initStatus;
+            if (videoProgressStatus) videoProgressStatus.textContent = initStatus;
 
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/assemble-video', true);
@@ -1018,9 +1076,17 @@
                     const mbLoaded = (e.loaded / (1024 * 1024)).toFixed(1);
                     const mbTotal = (e.total / (1024 * 1024)).toFixed(1);
                     
-                    progressBarFill.style.width = `${uploadPct}%`;
-                    progressPercent.textContent = `${uploadPct}%`;
-                    progressStatus.textContent = `📦 Uploading ZIP file: ${uploadPct}% (${mbLoaded} MB / ${mbTotal} MB)...`;
+                    const pctStr = `${uploadPct}%`;
+                    const statusStr = `📦 Uploading ZIP file: ${uploadPct}% (${mbLoaded} MB / ${mbTotal} MB)...`;
+
+                    progressBarFill.style.width = pctStr;
+                    if (videoProgressBarFill) videoProgressBarFill.style.width = pctStr;
+
+                    progressPercent.textContent = pctStr;
+                    if (videoProgressPercent) videoProgressPercent.textContent = pctStr;
+
+                    progressStatus.textContent = statusStr;
+                    if (videoProgressStatus) videoProgressStatus.textContent = statusStr;
                 }
             };
 
@@ -1034,6 +1100,8 @@
                     } catch (e) {
                         alert('Error parsing server response.');
                         progressBox.classList.remove('active');
+                        if (videoProgressBox) videoProgressBox.classList.remove('active');
+                        if (renderBtn) { renderBtn.disabled = false; renderBtn.innerHTML = '⚡ Render 1080p MP4 Video'; }
                     }
                 } else {
                     try {
@@ -1043,12 +1111,16 @@
                         alert('Upload error (status ' + xhr.status + ').');
                     }
                     progressBox.classList.remove('active');
+                    if (videoProgressBox) videoProgressBox.classList.remove('active');
+                    if (renderBtn) { renderBtn.disabled = false; renderBtn.innerHTML = '⚡ Render 1080p MP4 Video'; }
                 }
             };
 
             xhr.onerror = function() {
                 alert('Network error while uploading video assets.');
                 progressBox.classList.remove('active');
+                if (videoProgressBox) videoProgressBox.classList.remove('active');
+                if (renderBtn) { renderBtn.disabled = false; renderBtn.innerHTML = '⚡ Render 1080p MP4 Video'; }
             };
 
             xhr.send(formData);

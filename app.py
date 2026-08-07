@@ -190,30 +190,18 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
         out_filepath = os.path.join(DOWNLOADS_DIR, filename)
         srt_filepath = os.path.join(DOWNLOADS_DIR, srt_filename)
 
-        temp_chunks = []
-        temp_dir = os.path.join(STUDIO_DIR, "temp_chunks")
-        os.makedirs(temp_dir, exist_ok=True)
         submaker = edge_tts.SubMaker()
+        communicate = edge_tts.Communicate(full_humanized_text, voice_id, rate=rate, pitch="+0Hz")
 
-        for i, para in enumerate(paragraphs, start=1):
-            if not para.strip():
-                continue
-            
-            chunk_path = os.path.join(temp_dir, f"chunk_{uuid.uuid4().hex}.mp3")
-            communicate = edge_tts.Communicate(para, voice_id, rate=rate, pitch="+0Hz")
-            
-            with open(chunk_path, "wb") as f:
-                async for chunk in communicate.stream():
-                    if chunk["type"] == "audio":
-                        f.write(chunk["data"])
-                    elif chunk["type"] == "WordBoundary":
-                        submaker.feed(chunk)
+        BACKGROUND_JOBS[job_id]["progress"] = 15
+        BACKGROUND_JOBS[job_id]["status_text"] = "Generating HD Voiceover & frame-perfect timing analysis..."
 
-            temp_chunks.append(chunk_path)
-
-            progress_pct = int((i / total_paras) * 40) + 5
-            BACKGROUND_JOBS[job_id]["progress"] = progress_pct
-            BACKGROUND_JOBS[job_id]["status_text"] = f"Audio timing analysis ({progress_pct}%)..."
+        with open(out_filepath, "wb") as f:
+            async for chunk in communicate.stream():
+                if chunk["type"] == "audio":
+                    f.write(chunk["data"])
+                elif chunk["type"] == "WordBoundary":
+                    submaker.feed(chunk)
 
         if mode == "breakdown":
             BACKGROUND_JOBS[job_id]["progress"] = 50
@@ -280,18 +268,6 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
                     "prompt": prompt_res if isinstance(prompt_res, str) else prompt_res.get("prompt", "")
                 })
 
-            # Save merged voiceover MP3 automatically for video rendering
-            with open(out_filepath, "wb") as outfile:
-                for chunk_file in temp_chunks:
-                    with open(chunk_file, "rb") as infile:
-                        outfile.write(infile.read())
-
-            for chunk_file in temp_chunks:
-                try:
-                    os.remove(chunk_file)
-                except Exception:
-                    pass
-
             BACKGROUND_JOBS[job_id] = {
                 "status": "completed",
                 "progress": 100,
@@ -306,14 +282,6 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
             return
 
         if mode == "audio":
-            BACKGROUND_JOBS[job_id]["progress"] = 96
-            BACKGROUND_JOBS[job_id]["status_text"] = "Merging audio tracks into HD MP3..."
-
-            with open(out_filepath, "wb") as outfile:
-                for chunk_file in temp_chunks:
-                    with open(chunk_file, "rb") as infile:
-                        outfile.write(infile.read())
-
             BACKGROUND_JOBS[job_id] = {
                 "status": "completed",
                 "progress": 100,
