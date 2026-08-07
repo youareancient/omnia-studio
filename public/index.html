@@ -50,7 +50,7 @@
             --border-focus: #0071e3;
             --shadow-card: 0 12px 40px rgba(0, 0, 0, 0.04);
             --toggle-bg: #e5e5ea;
-            --mobile-bar-bg: rgba(255, 255, 255, 0.95);
+            --mobile-bar-bg: rgba(24, 24, 26, 0.95);
         }
 
         * {
@@ -500,28 +500,23 @@
         .breakdown-script {
             font-size: 0.82rem;
             color: var(--text-primary);
-            margin-bottom: 6px;
+            margin-bottom: 8px;
             line-height: 1.4;
-        }
-
-        .breakdown-stock {
-            font-size: 0.74rem;
-            color: #ff9f0a;
-            background: rgba(255, 159, 10, 0.08);
-            padding: 4px 8px;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 6px 10px;
             border-radius: 6px;
-            margin-bottom: 6px;
-            font-weight: 500;
+            border-left: 3px solid var(--accent-apple);
         }
 
         .breakdown-prompt {
             font-size: 0.76rem;
             color: var(--text-secondary);
-            background: rgba(255, 255, 255, 0.04);
-            padding: 6px 8px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 8px 10px;
             border-radius: 8px;
             font-family: monospace;
-            line-height: 1.4;
+            line-height: 1.45;
+            border: 1px solid var(--border-subtle);
         }
     </style>
 </head>
@@ -647,7 +642,7 @@
             <!-- Breakdown Output Card -->
             <div class="output-card" id="breakdownCard">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                    <div style="font-size: 0.88rem; font-weight: 600; color: var(--text-primary);">🎬 Scene Cuts & Stock Keywords</div>
+                    <div style="font-size: 0.88rem; font-weight: 600; color: var(--text-primary);">🎬 Scene Cuts & Visual Prompts Preview</div>
                     <button class="btn-apple btn-apple-secondary" style="min-height:30px; padding:4px 10px; font-size:0.72rem; width:auto;" onclick="copyAllPromptsOnly()">📋 Copy Prompts Only (Bulk)</button>
                 </div>
                 <div id="breakdownContainer"></div>
@@ -719,10 +714,9 @@
 
         function copyAllPromptsOnly() {
             if (!lastBreakdownData.length) return;
-            // Copies ONLY raw prompts separated by double newlines (\n\n) for bulk AI generation
             const promptsOnlyStr = lastBreakdownData.map(item => item.prompt).join('\n\n');
             navigator.clipboard.writeText(promptsOnlyStr);
-            alert(`Copied ${lastBreakdownData.length} raw prompts (with double line breaks) for bulk AI generation! 📋`);
+            alert(`Copied ${lastBreakdownData.length} Groq AI Visual Prompts to clipboard! 📋`);
         }
 
         async function startPollingJob(jobId) {
@@ -792,9 +786,8 @@
                                 card.className = 'breakdown-card';
                                 card.innerHTML = `
                                     <div class="breakdown-ts">Scene #${item.scene} • ${item.timestamp}</div>
-                                    <div class="breakdown-script">"${item.text}"</div>
-                                    <div class="breakdown-stock">🔍 Pexels/Pixabay Stock Keywords: ${item.stockKeywords}</div>
-                                    <div class="breakdown-prompt">🎨 Image Prompt - ${item.prompt}</div>
+                                    <div class="breakdown-script">🗣️ "${item.text}"</div>
+                                    <div class="breakdown-prompt">🎨 ${item.prompt}</div>
                                 `;
                                 container.appendChild(card);
                             });
