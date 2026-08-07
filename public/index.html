@@ -1154,7 +1154,7 @@
             }
 
             try {
-                const selectedVoice = selectedVoiceGlobal || 'andrew';
+                const chosenVoice = (typeof selectedVoice !== 'undefined' && selectedVoice) ? selectedVoice : 'andrew';
                 const rateVal = document.getElementById('rateSlider') ? document.getElementById('rateSlider').value + '%' : '+1%';
 
                 const res = await fetch('/api/generate-beat-audio', {
@@ -1163,7 +1163,7 @@
                     body: JSON.stringify({
                         job_id: activeJobId,
                         scene_index: beatNum,
-                        voice: selectedVoice,
+                        voice: chosenVoice,
                         rate: rateVal
                     })
                 });
