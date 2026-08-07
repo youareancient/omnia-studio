@@ -681,6 +681,22 @@
                         <button class="btn-apple" style="min-height:36px; padding:6px 14px; font-size:0.8rem; width:auto; background: linear-gradient(135deg, #0071e3, #34c759);" onclick="downloadWordDoc()">📄 Download Word Doc (.docx)</button>
                     </div>
                 </div>
+
+                <!-- 1-Click Master Automation Suite Toolbar -->
+                <div style="margin-bottom:18px; padding:16px; background:var(--bg-card-secondary); border:1px solid var(--accent-apple); border-radius:14px; box-shadow:0 6px 20px rgba(0, 113, 227, 0.15);">
+                    <div style="font-size:0.95rem; font-weight:800; color:var(--text-primary); margin-bottom:8px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+                        <span>⚡ 1-Click Master Automation Suite</span>
+                        <span id="autoStatusText" style="font-size:0.78rem; font-weight:700; color:var(--accent-apple); display:none;">Ready</span>
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; flex-wrap:wrap;">
+                        <button id="btnAutoAllVoiceovers" class="btn-apple" style="font-size:0.85rem; min-height:44px; padding:8px 14px; background:linear-gradient(135deg, #0071e3, #34c759);" onclick="autoGenerateAllBeatVoiceovers()">🎙️ 1-Click Auto-Generate All Beat Voiceovers</button>
+                        <button id="btnAutoAllMiniClips" class="btn-apple" style="font-size:0.85rem; min-height:44px; padding:8px 14px; background:linear-gradient(135deg, #FF9500, #FF2D55);" onclick="autoRenderAllSceneMiniClips()">🎬 1-Click Auto-Render All Scene Mini-Clips</button>
+                    </div>
+                    <div id="autoProgressContainer" style="display:none; margin-top:10px;">
+                        <div class="progress-bar" style="height:8px; margin:0;"><div id="autoProgressBarFill" class="progress-fill" style="width:0%;"></div></div>
+                    </div>
+                </div>
+
                 <div id="breakdownContainer" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap:16px; margin-top:16px;"></div>
 
                 <!-- Micro-Clip Video Assembly & Render Section -->
@@ -1279,6 +1295,72 @@
                     btn.textContent = '🎬 Generate Mini-Clip';
                 }
             }
+        }
+
+        async function autoGenerateAllBeatVoiceovers() {
+            if (!lastBreakdownData || !lastBreakdownData.length) {
+                alert('Please click Scene Cuts first to generate your beat cards!');
+                return;
+            }
+
+            const masterBtn = document.getElementById('btnAutoAllVoiceovers');
+            const autoStatus = document.getElementById('autoStatusText');
+            const autoBarBox = document.getElementById('autoProgressContainer');
+            const autoFill = document.getElementById('autoProgressBarFill');
+
+            if (masterBtn) { masterBtn.disabled = true; }
+            if (autoStatus) { autoStatus.style.display = 'inline'; autoStatus.textContent = '⏳ Synthesizing Voiceovers...'; }
+            if (autoBarBox) { autoBarBox.style.display = 'block'; }
+
+            const total = lastBreakdownData.length;
+            for (let i = 0; i < total; i++) {
+                const beatNum = lastBreakdownData[i].scene;
+                const pct = Math.round(((i + 1) / total) * 100);
+                if (autoFill) autoFill.style.width = `${pct}%`;
+                if (autoStatus) autoStatus.textContent = `🎙️ Synthesizing Voiceover ${i + 1}/${total} (Beat #${beatNum})...`;
+
+                await generateBeatAudio(beatNum);
+            }
+
+            if (autoStatus) autoStatus.textContent = `✓ All ${total} Beat Voiceovers Synthesized & Trimmed Clean!`;
+            if (masterBtn) { masterBtn.disabled = false; }
+        }
+
+        async function autoRenderAllSceneMiniClips() {
+            if (!lastBreakdownData || !lastBreakdownData.length) {
+                alert('Please click Scene Cuts first to generate your beat cards!');
+                return;
+            }
+
+            const uploadedBeats = Object.keys(perBeatImages);
+            if (!uploadedBeats.length) {
+                alert('Please upload an image for at least one Beat Card before running 1-Click Auto-Render!');
+                return;
+            }
+
+            const masterBtn = document.getElementById('btnAutoAllMiniClips');
+            const autoStatus = document.getElementById('autoStatusText');
+            const autoBarBox = document.getElementById('autoProgressContainer');
+            const autoFill = document.getElementById('autoProgressBarFill');
+
+            if (masterBtn) { masterBtn.disabled = true; }
+            if (autoStatus) { autoStatus.style.display = 'inline'; autoStatus.textContent = '⏳ Auto-Rendering Mini-Clips...'; }
+            if (autoBarBox) { autoBarBox.style.display = 'block'; }
+
+            const total = lastBreakdownData.length;
+            for (let i = 0; i < total; i++) {
+                const beatNum = lastBreakdownData[i].scene;
+                if (perBeatImages[beatNum]) {
+                    const pct = Math.round(((i + 1) / total) * 100);
+                    if (autoFill) autoFill.style.width = `${pct}%`;
+                    if (autoStatus) autoStatus.textContent = `🎬 Auto-Rendering Mini-Clip ${i + 1}/${total} (Beat #${beatNum})...`;
+
+                    await generateBeatClip(beatNum);
+                }
+            }
+
+            if (autoStatus) autoStatus.textContent = `✓ All Scene Mini-Clips Auto-Rendered & Loaded into Timeline Studio!`;
+            if (masterBtn) { masterBtn.disabled = false; }
         }
 
         function renderMiniClipsGrid(clips) {
