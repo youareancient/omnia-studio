@@ -7,12 +7,14 @@ import edge_tts
 from aiohttp import web
 
 HOST = "0.0.0.0"
-PORT = int(os.environ.get("PORT", 7860))  # 7860 is default port for Hugging Face Spaces & Render
+PORT = int(os.environ.get("PORT", 7860))
 
 STUDIO_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(STUDIO_DIR, "public")
-DOWNLOADS_DIR = os.path.join(STUDIO_DIR, "public", "generated")
+DOWNLOADS_DIR = os.path.join(STATIC_DIR, "generated")
 os.makedirs(DOWNLOADS_DIR, exist_ok=True)
+
+INDEX_HTML_PATH = os.path.join(STATIC_DIR, "index.html")
 
 VOICE_PRESETS = {
     "andrew": {"id": "en-US-AndrewNeural", "name": "Andrew (YouTube Documentary)", "desc": "High energy, warm & engaging (Recommended for YouTube monetization)"},
@@ -42,7 +44,11 @@ def humanize_text_for_speech(text):
     return humanized_text, paragraphs
 
 async def handle_index(request):
-    return web.FileResponse(os.path.join(STATIC_DIR, "index.html"))
+    if os.path.exists(INDEX_HTML_PATH):
+        with open(INDEX_HTML_PATH, "r", encoding="utf-8") as f:
+            content = f.read()
+        return web.Response(text=content, content_type="text/html", charset="utf-8")
+    return web.Response(text="<h1>YouTube Voiceover Studio</h1><p>Index file initializing...</p>", content_type="text/html")
 
 async def handle_voices(request):
     return web.json_response(VOICE_PRESETS)
@@ -86,7 +92,6 @@ async def handle_generate_stream(request):
 
         out_filepath = os.path.join(DOWNLOADS_DIR, filename)
 
-        # Notify start
         init_evt = json.dumps({"progress": 5, "status": f"Humanized text prepared ({total_paras} paragraphs)..."})
         await response.write(f"data: {init_evt}\n\n".encode("utf-8"))
         await asyncio.sleep(0.1)
@@ -111,7 +116,6 @@ async def handle_generate_stream(request):
             })
             await response.write(f"data: {evt}\n\n".encode("utf-8"))
 
-        # Merge chunks into final MP3 file
         merging_evt = json.dumps({"progress": 96, "status": "Merging audio tracks into HD MP3..."})
         await response.write(f"data: {merging_evt}\n\n".encode("utf-8"))
 
@@ -146,7 +150,9 @@ async def handle_generate_stream(request):
 
 def create_app():
     app = web.Application()
+    app.router.add_get("", handle_index)
     app.router.add_get("/", handle_index)
+    app.router.add_get("/index.html", handle_index)
     app.router.add_post("/api/generate-stream", handle_generate_stream)
     app.router.add_get("/api/voices", handle_voices)
     app.router.add_static("/static/", STATIC_DIR)
