@@ -332,11 +332,10 @@
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         }
 
-        /* Action Buttons Grid */
         .action-btn-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
         }
 
         .btn-apple {
@@ -345,17 +344,18 @@
             color: #ffffff;
             border: none;
             border-radius: 980px;
-            padding: 0.95rem 0.5rem;
-            font-size: 0.88rem;
+            padding: 0.85rem 0.4rem;
+            font-size: 0.82rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.25s ease;
             box-shadow: 0 4px 16px rgba(0, 113, 227, 0.25);
-            min-height: 48px;
+            min-height: 46px;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 6px;
+            gap: 4px;
+            white-space: nowrap;
         }
 
         .btn-apple-secondary {
@@ -394,10 +394,10 @@
                 backdrop-filter: saturate(180%) blur(20px);
                 -webkit-backdrop-filter: saturate(180%) blur(20px);
                 border-top: 1px solid var(--border-subtle);
-                padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom));
+                padding: 0.75rem 0.75rem calc(0.75rem + env(safe-area-inset-bottom));
                 z-index: 99;
                 box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.25);
-                gap: 10px;
+                gap: 6px;
             }
         }
 
@@ -442,7 +442,6 @@
             color: var(--text-secondary);
         }
 
-        /* Separate Result Output Cards */
         .output-card {
             margin-top: 1.1rem;
             background: var(--bg-card-secondary);
@@ -479,8 +478,20 @@
             margin-top: 8px;
         }
 
-        .btn-download-single:active {
-            transform: scale(0.97);
+        .prompt-textarea {
+            width: 100%;
+            height: 130px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 0.8rem;
+            line-height: 1.4;
+            padding: 10px;
+            resize: vertical;
+            outline: none;
+            font-family: monospace;
+            margin: 8px 0;
         }
     </style>
 </head>
@@ -564,13 +575,16 @@
                 <input type="text" id="filenameInput" placeholder="e.g. data_center_narration.mp3" style="width: 100%; background: var(--bg-input); border: 1px solid var(--border-subtle); padding: 10px 12px; border-radius: 12px; color: var(--text-primary); outline: none; font-size: 0.88rem;">
             </div>
 
-            <!-- Desktop Action Grid: Two Distinct Separate Buttons -->
+            <!-- Desktop 3-Button Action Grid -->
             <div class="action-btn-grid" id="desktopActionGrid">
                 <button class="btn-apple" onclick="generateStream('audio')">
-                    🎵 Generate Voiceover
+                    🎵 Voiceover
                 </button>
                 <button class="btn-apple btn-apple-secondary" onclick="generateStream('srt')">
-                    📝 Generate .SRT
+                    📝 .SRT
+                </button>
+                <button class="btn-apple btn-apple-secondary" onclick="generateStream('thumbnail')">
+                    🎨 Thumbnail
                 </button>
             </div>
 
@@ -586,29 +600,40 @@
                 <div class="progress-sub" id="progressStatus">Initializing...</div>
             </div>
 
-            <!-- SEPARATE Standalone Audio Result Card -->
+            <!-- Audio Output Card -->
             <div class="output-card" id="audioCard">
                 <div style="font-size: 0.88rem; font-weight: 600; color: var(--text-primary);">🎙️ Voiceover MP3 Ready</div>
                 <audio id="audioElement" controls></audio>
                 <a href="#" id="downloadAudioLink" class="btn-download-single" download>Download Voiceover MP3</a>
             </div>
 
-            <!-- SEPARATE Standalone SRT Subtitle Result Card -->
+            <!-- SRT Subtitle Output Card -->
             <div class="output-card" id="srtCard">
                 <div style="font-size: 0.88rem; font-weight: 600; color: var(--text-primary);">📝 .SRT Subtitle File Ready</div>
                 <p style="font-size: 0.78rem; color: var(--text-secondary); margin: 6px 0 10px 0;">Word-level subtitle file generated for CapCut & Premiere Pro.</p>
                 <a href="#" id="downloadSrtLink" class="btn-download-single btn-apple-secondary" download>Download Subtitles (.SRT)</a>
             </div>
+
+            <!-- Thumbnail Prompt Output Card -->
+            <div class="output-card" id="thumbnailCard">
+                <div style="font-size: 0.88rem; font-weight: 600; color: var(--text-primary);">🎨 Thumbnail Master Prompt Generated</div>
+                <p style="font-size: 0.78rem; color: var(--text-secondary); margin: 4px 0;">Paste this prompt into Midjourney, ChatGPT, or Leonardo AI:</p>
+                <textarea id="thumbnailPromptText" class="prompt-textarea" readonly></textarea>
+                <button class="btn-download-single" onclick="copyThumbnailPrompt()">📋 Copy Master Prompt</button>
+            </div>
         </section>
     </main>
 
-    <!-- Mobile Sticky Floating Bar: Two Separate Action Buttons -->
+    <!-- Mobile Sticky Floating Bar: 3 Action Buttons -->
     <div class="mobile-bottom-bar">
         <button class="btn-apple" onclick="generateStream('audio')">
             🎵 Voiceover
         </button>
         <button class="btn-apple btn-apple-secondary" onclick="generateStream('srt')">
-            📝 Subtitles (.SRT)
+            📝 .SRT
+        </button>
+        <button class="btn-apple btn-apple-secondary" onclick="generateStream('thumbnail')">
+            🎨 Thumbnail
         </button>
     </div>
 
@@ -659,6 +684,14 @@
             estTimeEl.textContent = `~${minutes} min audio`;
         });
 
+        function copyThumbnailPrompt() {
+            const copyText = document.getElementById("thumbnailPromptText");
+            copyText.select();
+            copyText.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(copyText.value);
+            alert("Copied Master Thumbnail Prompt to Clipboard! 📋");
+        }
+
         async function generateStream(mode) {
             const text = scriptInput.value.trim();
             if (!text) {
@@ -675,12 +708,11 @@
             
             const audioCard = document.getElementById('audioCard');
             const srtCard = document.getElementById('srtCard');
+            const thumbnailCard = document.getElementById('thumbnailCard');
 
-            if (mode === 'audio') {
-                audioCard.classList.remove('active');
-            } else {
-                srtCard.classList.remove('active');
-            }
+            if (mode === 'audio') audioCard.classList.remove('active');
+            if (mode === 'srt') srtCard.classList.remove('active');
+            if (mode === 'thumbnail') thumbnailCard.classList.remove('active');
             
             progressBox.classList.add('active');
             progressPercent.textContent = '0%';
@@ -754,6 +786,11 @@
                                     downloadSrtLink.download = evt.srtFilename;
 
                                     srtCard.classList.add('active');
+                                } else if (evt.mode === 'thumbnail') {
+                                    const thumbnailPromptText = document.getElementById('thumbnailPromptText');
+                                    thumbnailPromptText.value = evt.thumbnailPrompt;
+
+                                    thumbnailCard.classList.add('active');
                                 }
                             }
                         }
