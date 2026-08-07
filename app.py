@@ -9,7 +9,6 @@ from aiohttp import web, ClientSession, FormData
 HOST = "0.0.0.0"
 PORT = int(os.environ.get("PORT", 7860))
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
-GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "").strip()
 
 STUDIO_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(STUDIO_DIR, "public")
@@ -55,48 +54,56 @@ def format_timestamp(ms):
     return f"{minutes:02d}:{rem_sec:02d}.{tenths}"
 
 async def call_groq_ai_prompt_engineer(scene_text, scene_number):
-    api_key = GROQ_API_KEY or os.environ.get("GROQ_API_KEY", "").strip()
+    api_key = os.environ.get("GROQ_API_KEY", "").strip()
     if not api_key:
+        print(f"CRITICAL WARNING: GROQ_API_KEY environment variable is missing on server!")
         return None
 
     system_prompt = (
         "You are an Elite 16:9 Visual Prompt Engineer for top educational YouTube channels like @misterfinanceyt and @TheWealthCortexx.\n"
-        "Your task: Read a 3-5 second script line and create a stunning, long, highly-detailed 16:9 standalone image prompt packed with vibrant visual props, character poses, and visual humor.\n\n"
+        "Your task: Take a 3-5 second script line and write a rich, long, highly-detailed 16:9 standalone image prompt packed with vibrant visual props, character poses, and visual humor.\n\n"
         "STRICT MASTER PROMPT PATTERN:\n"
         "Image Prompt - Hand-drawn professional educational 2D vector cartoon illustration in 16:9 widescreen aspect ratio, clean studio-quality digital vector artwork with thick, smooth black outlines, crisp linework, vibrant soft flat colors, and polished modern explainer-animation aesthetics inspired by @misterfinanceyt and @TheWealthCortexx. [Describe character pose, facial expression, and action on the left/center]. FEATURED VISUAL PROPS: [List 3-5 rich, specific, vibrant physical props, tech equipment, financial charts, glowing cables, coins, or meters relevant to the concept]. Above his head, a large white thought bubble with bold black outlines contains [describe a minimal 2D vector icon or silhouette]. Pure white background, generous negative space, balanced 16:9 composition, zero clutter, ultra-crisp 2D vector style --ar 16:9\n\n"
         "RULES:\n"
-        "1. Do NOT repeat the script line verbatim. Write a rich, detailed visual description with characters & props.\n"
+        "1. Do NOT repeat the script line verbatim. Describe a unique visual scene with characters & props.\n"
         "2. Always include FEATURED VISUAL PROPS with 3 to 5 vivid physical objects.\n"
         "3. Always end with '--ar 16:9'.\n\n"
-        "OUTPUT FORMAT (JSON ONLY):\n"
-        "{\"prompt\": \"Image Prompt - Hand-drawn professional educational 2D vector... --ar 16:9\"}"
+        "Respond strictly in json format: {\"prompt\": \"Image Prompt - Hand-drawn professional educational 2D vector... --ar 16:9\"}"
     )
 
     user_prompt = f"Script Line (Scene {scene_number}): \"{scene_text}\""
 
-    try:
-        async with ClientSession() as session:
-            payload = {
-                "model": "llama-3.3-70b-versatile",
-                "messages": [
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
-                ],
-                "temperature": 0.75,
-                "response_format": {"type": "json_object"}
-            }
-            headers = {
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json"
-            }
-            async with session.post("https://api.groq.com/openai/v1/chat/completions", json=payload, headers=headers, timeout=15) as resp:
-                if resp.status == 200:
-                    data = await resp.json()
-                    content = data["choices"][0]["message"]["content"]
-                    parsed = json.loads(content)
-                    return parsed.get("prompt")
-    except Exception as e:
-        print("Groq API Exception:", e)
+    models_to_try = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"]
+
+    for model in models_to_try:
+        try:
+            async with ClientSession() as session:
+                payload = {
+                    "model": model,
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt}
+                    ],
+                    "temperature": 0.7,
+                    "response_format": {"type": "json_object"}
+                }
+                headers = {
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json"
+                }
+                async with session.post("https://api.groq.com/openai/v1/chat/completions", json=payload, headers=headers, timeout=12) as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        content = data["choices"][0]["message"]["content"]
+                        parsed = json.loads(content)
+                        prompt_val = parsed.get("prompt")
+                        if prompt_val and len(prompt_val) > 40:
+                            return prompt_val
+                    else:
+                        err_body = await resp.text()
+                        print(f"Groq API Error on model {model} (status {resp.status}): {err_body}")
+        except Exception as e:
+            print(f"Groq API exception on model {model}: {e}")
 
     return None
 
@@ -106,8 +113,8 @@ def build_vector_art_scene_prompt_fallback(text):
         f"Image Prompt - Hand-drawn professional educational 2D vector cartoon illustration in 16:9 widescreen aspect ratio, "
         f"clean studio-quality digital vector artwork with thick, smooth black outlines, crisp linework, vibrant soft flat colors, "
         f"and polished modern explainer-animation aesthetics inspired by @misterfinanceyt and @TheWealthCortexx. "
-        f"A relaxed character sitting in a chair daydreaming about {clean_text}. FEATURED VISUAL PROPS: glowing 3D golden coins, "
-        f"a sleek black tech server rack with cyan LEDs, and a percentage chart board. Large white thought bubble overhead. "
+        f"A relaxed young boy in a white chair daydreaming about {clean_text}. FEATURED VISUAL PROPS: glowing 3D golden coins, "
+        f"a sleek black tech server rack chassis with cyan LEDs, and a percentage chart board. Large white thought bubble overhead. "
         f"Pure white background, generous negative space, zero clutter, 2D vector style --ar 16:9"
     )
 
