@@ -96,7 +96,11 @@ async def handle_generate_stream(request):
         elif not filename.endswith(".mp3"):
             filename += ".mp3"
 
+        base_name = os.path.splitext(filename)[0]
+        srt_filename = f"{base_name}.srt"
+
         out_filepath = os.path.join(DOWNLOADS_DIR, filename)
+        srt_filepath = os.path.join(DOWNLOADS_DIR, srt_filename)
 
         init_evt = json.dumps({"progress": 5, "status": f"Humanized text prepared ({total_paras} paragraphs)..."})
         await response.write(f"data: {init_evt}\n\n".encode("utf-8"))
@@ -105,6 +109,7 @@ async def handle_generate_stream(request):
         temp_chunks = []
         temp_dir = os.path.join(STUDIO_DIR, "temp_chunks")
         os.makedirs(temp_dir, exist_ok=True)
+        submaker = edge_tts.SubMaker()
 
         for i, para in enumerate(paragraphs, start=1):
             if not para.strip():
@@ -112,7 +117,14 @@ async def handle_generate_stream(request):
             
             chunk_path = os.path.join(temp_dir, f"chunk_{uuid.uuid4().hex}.mp3")
             communicate = edge_tts.Communicate(para, voice_id, rate=rate, pitch="+0Hz")
-            await communicate.save(chunk_path)
+            
+            with open(chunk_path, "wb") as f:
+                async for chunk in communicate.stream():
+                    if chunk["type"] == "audio":
+                        f.write(chunk["data"])
+                    elif chunk["type"] == "WordBoundary":
+                        submaker.feed(chunk)
+
             temp_chunks.append(chunk_path)
 
             progress_pct = int((i / total_paras) * 90) + 5
@@ -122,13 +134,21 @@ async def handle_generate_stream(request):
             })
             await response.write(f"data: {evt}\n\n".encode("utf-8"))
 
-        merging_evt = json.dumps({"progress": 96, "status": "Merging audio tracks into HD MP3..."})
+        merging_evt = json.dumps({"progress": 96, "status": "Merging audio tracks and generating .SRT subtitles..."})
         await response.write(f"data: {merging_evt}\n\n".encode("utf-8"))
 
         with open(out_filepath, "wb") as outfile:
             for chunk_file in temp_chunks:
                 with open(chunk_file, "rb") as infile:
                     outfile.write(infile.read())
+
+        # Generate SRT subtitle content
+        try:
+            srt_content = submaker.get_srt()
+            with open(srt_filepath, "w", encoding="utf-8") as srt_file:
+                srt_file.write(srt_content)
+        except Exception as srt_err:
+            print("SRT generation error:", srt_err)
 
         for chunk_file in temp_chunks:
             try:
@@ -139,9 +159,11 @@ async def handle_generate_stream(request):
         final_evt = json.dumps({
             "success": True,
             "progress": 100,
-            "status": "Voiceover completed successfully!",
+            "status": "Voiceover and subtitles completed!",
             "filename": filename,
+            "srtFilename": srt_filename,
             "audioUrl": f"/static/generated/{filename}",
+            "srtUrl": f"/static/generated/{srt_filename}",
             "voice": voice_info["name"],
             "wordCount": len(full_humanized_text.split())
         })
@@ -154,7 +176,6 @@ async def handle_generate_stream(request):
 
     return response
 
-# Telegram Bot Handler
 async def handle_telegram_webhook(request):
     token = TELEGRAM_BOT_TOKEN or os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
     if not token:
@@ -185,14 +206,12 @@ async def handle_telegram_webhook(request):
                 })
             return web.Response(text="OK")
 
-        # Send processing status message
         async with ClientSession() as session:
             await session.post(f"https://api.telegram.org/bot{token}/sendMessage", json={
                 "chat_id": chat_id,
                 "text": "⚡ Processing script and generating HD Voiceover MP3..."
             })
 
-        # Synthesize audio
         humanized_text, paragraphs = humanize_text_for_speech(text)
         out_filename = f"voiceover_tg_{uuid.uuid4().hex[:6]}.mp3"
         out_filepath = os.path.join(DOWNLOADS_DIR, out_filename)
@@ -200,7 +219,6 @@ async def handle_telegram_webhook(request):
         communicate = edge_tts.Communicate(humanized_text, "en-US-AndrewNeural", rate="+1%", pitch="+0Hz")
         await communicate.save(out_filepath)
 
-        # Send MP3 back to Telegram user
         async with ClientSession() as session:
             form = FormData()
             form.add_field("chat_id", str(chat_id))

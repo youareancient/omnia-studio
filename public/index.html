@@ -73,7 +73,7 @@
 
         @media (max-width: 960px) {
             body {
-                padding-bottom: 90px; /* Safe padding for mobile bottom bar */
+                padding-bottom: 90px;
             }
         }
 
@@ -357,18 +357,15 @@
             transform: none;
         }
 
-        /* Responsive Button Ergonomics: Single Button Rule */
         .mobile-bottom-bar {
             display: none;
         }
 
         @media (max-width: 960px) {
-            /* Hide duplicate in-card button on mobile screens */
             #generateBtn {
                 display: none !important;
             }
             
-            /* Show ONLY single sticky bottom button for mobile thumbs */
             .mobile-bottom-bar {
                 display: flex;
                 position: fixed;
@@ -443,20 +440,41 @@
             margin: 0.75rem 0;
         }
 
+        .download-btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        @media (max-width: 480px) {
+            .download-btn-group {
+                grid-template-columns: 1fr;
+            }
+        }
+
         .btn-download-apple {
             display: flex;
             align-items: center;
             justify-content: center;
+            gap: 6px;
             width: 100%;
             text-align: center;
             background: var(--accent-apple);
             color: #ffffff;
             font-weight: 600;
-            font-size: 0.9rem;
+            font-size: 0.88rem;
             text-decoration: none;
-            padding: 12px;
+            padding: 12px 10px;
             border-radius: 980px;
             min-height: 44px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-download-srt {
+            background: var(--bg-input);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-primary);
         }
 
         .btn-download-apple:active {
@@ -544,9 +562,8 @@
                 <input type="text" id="filenameInput" placeholder="e.g. data_center_narration.mp3" style="width: 100%; background: var(--bg-input); border: 1px solid var(--border-subtle); padding: 10px 12px; border-radius: 12px; color: var(--text-primary); outline: none; font-size: 0.88rem;">
             </div>
 
-            <!-- In-Card Button: Active on PC/Desktop, hidden on mobile -->
             <button class="btn-apple" id="generateBtn" onclick="generateVoiceoverStream()">
-                Generate Voiceover
+                Generate Voiceover & Subtitles
             </button>
 
             <!-- Real-Time Progress Indicator -->
@@ -558,22 +575,26 @@
                 <div class="progress-bar">
                     <div class="progress-fill" id="progressBarFill"></div>
                 </div>
-                <div class="progress-sub" id="progressStatus">Humanizing pacing...</div>
+                <div class="progress-sub" id="progressStatus">Humanizing pacing and creating subtitles...</div>
             </div>
 
-            <!-- Audio Output -->
+            <!-- Audio Output & Subtitle Downloads -->
             <div class="audio-card" id="audioCard">
-                <div style="font-size: 0.88rem; font-weight: 600; color: var(--text-primary);">Voiceover Ready</div>
+                <div style="font-size: 0.88rem; font-weight: 600; color: var(--text-primary);">Voiceover & Subtitles Ready</div>
                 <audio id="audioElement" controls></audio>
-                <a href="#" id="downloadLink" class="btn-download-apple" download>Download MP3 Audio</a>
+                
+                <div class="download-btn-group">
+                    <a href="#" id="downloadLink" class="btn-download-apple" download>🎵 Download MP3</a>
+                    <a href="#" id="downloadSrtLink" class="btn-download-apple btn-download-srt" download>📝 Download .SRT</a>
+                </div>
             </div>
         </section>
     </main>
 
-    <!-- Mobile Sticky Floating Bar: Active on Mobile Phones ONLY -->
+    <!-- Mobile Sticky Floating Bar -->
     <div class="mobile-bottom-bar">
         <button class="btn-apple" id="mobileGenerateBtn" onclick="generateVoiceoverStream()">
-            ⚡ Generate Voiceover
+            ⚡ Generate Voiceover & .SRT
         </button>
     </div>
 
@@ -701,10 +722,14 @@
                             if (evt.success) {
                                 const audioElement = document.getElementById('audioElement');
                                 const downloadLink = document.getElementById('downloadLink');
+                                const downloadSrtLink = document.getElementById('downloadSrtLink');
 
                                 audioElement.src = evt.audioUrl;
                                 downloadLink.href = evt.audioUrl;
                                 downloadLink.download = evt.filename;
+
+                                downloadSrtLink.href = evt.srtUrl;
+                                downloadSrtLink.download = evt.srtFilename;
 
                                 audioCard.classList.add('active');
                                 audioElement.play();
@@ -718,8 +743,8 @@
             } finally {
                 btn.disabled = false;
                 if(mBtn) mBtn.disabled = false;
-                btn.textContent = 'Generate Voiceover';
-                if(mBtn) mBtn.textContent = '⚡ Generate Voiceover';
+                btn.textContent = 'Generate Voiceover & Subtitles';
+                if(mBtn) mBtn.textContent = '⚡ Generate Voiceover & .SRT';
             }
         }
     </script>
