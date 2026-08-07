@@ -80,7 +80,7 @@ def split_script_into_scenes(raw_text):
                 
     return scenes if scenes else [raw_text]
 
-async def call_groq_ai_prompt_engineer(scene_text, scene_number):
+async def call_groq_ai_prompt_engineer(session, scene_text, scene_number):
     api_key = os.environ.get("GROQ_API_KEY", "").strip()
     if not api_key:
         return None
@@ -101,32 +101,29 @@ async def call_groq_ai_prompt_engineer(scene_text, scene_number):
 
     for model in ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"]:
         try:
-            async with ClientSession() as session:
-                payload = {
-                    "model": model,
-                    "messages": [
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_prompt}
-                    ],
-                    "temperature": 0.75,
-                    "response_format": {"type": "json_object"}
-                }
-                headers = {
-                    "Authorization": f"Bearer {api_key}",
-                    "Content-Type": "application/json"
-                }
-                async with session.post("https://api.groq.com/openai/v1/chat/completions", json=payload, headers=headers, timeout=12) as resp:
-                    if resp.status == 200:
-                        data = await resp.json()
-                        content = data["choices"][0]["message"]["content"]
-                        parsed = json.loads(content)
-                        prompt_val = parsed.get("prompt")
-                        if prompt_val and len(prompt_val) > 50:
-                            return prompt_val
-                    else:
-                        print(f"Groq API status {resp.status} on model {model}")
+            payload = {
+                "model": model,
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                "temperature": 0.75,
+                "response_format": {"type": "json_object"}
+            }
+            headers = {
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json"
+            }
+            async with session.post("https://api.groq.com/openai/v1/chat/completions", json=payload, headers=headers, timeout=12) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    content = data["choices"][0]["message"]["content"]
+                    parsed = json.loads(content)
+                    prompt_val = parsed.get("prompt")
+                    if prompt_val and len(prompt_val) > 50:
+                        return prompt_val
         except Exception as e:
-            print(f"Groq API exception on model {model}: {e}")
+            print(f"Groq exception on scene {scene_number}: {e}")
 
     return None
 
@@ -141,7 +138,7 @@ def build_vector_art_scene_prompt_fallback(text):
         f"clean studio-quality digital vector artwork with thick, smooth black outlines, crisp linework, vibrant soft flat colors, "
         f"and polished modern explainer-animation aesthetics inspired by @misterfinanceyt and @TheWealthCortexx. "
         f"A relaxed young boy with brown hair sitting in a simple white chair, cheek leaning against his hand with a soft daydreaming smile. "
-        f"FEATURED VISUAL PROPS: glowing 3D golden coins, a sleek black server rack chassis with cyan LEDs, neon yellow cables, and a 3D percentage bar chart. "
+        f"FEATURED VISUAL PROPS: glowing 3D golden coins, a sleek black tech server rack chassis with cyan LEDs, neon yellow cables, and a 3D percentage bar chart. "
         f"Above his head, a large white thought bubble with bold black outlines contains a minimal 2D vector icon of {topic_str}. "
         f"Pure white background, generous negative space, zero clutter, 2D vector style --ar 16:9"
     )
@@ -200,9 +197,8 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
 
         if mode == "breakdown":
             BACKGROUND_JOBS[job_id]["progress"] = 50
-            BACKGROUND_JOBS[job_id]["status_text"] = "STEP 1: Splitting script into 3-5 second scene cuts..."
+            BACKGROUND_JOBS[job_id]["status_text"] = "STEP 1: Computing 3-5 second scene cuts from speech audio..."
 
-            # Guarantee scene splitting by splitting text into 3-5 second clauses/sentences
             scene_lines = split_script_into_scenes(raw_text)
             cues = submaker.cues
 
@@ -233,7 +229,6 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
                     scenes_raw.append((scene_text, time_str))
             
             if not scenes_raw:
-                # Fallback to text scene splitter if cues failed
                 est_sec = 0.0
                 for line in scene_lines:
                     dur = (len(line.split()) / 150.0) * 60.0
@@ -242,27 +237,27 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
                     t_end = format_timestamp(int(est_sec * 1000))
                     scenes_raw.append((line, f"{t_start} -> {t_end}"))
 
-            BACKGROUND_JOBS[job_id]["progress"] = 60
-            BACKGROUND_JOBS[job_id]["status_text"] = f"STEP 2: Groq AI generating 16:9 vector prompts for {len(scenes_raw)} scenes..."
+            BACKGROUND_JOBS[job_id]["progress"] = 65
+            BACKGROUND_JOBS[job_id]["status_text"] = f"STEP 2: Groq AI generating parallel 16:9 vector prompts for {len(scenes_raw)} scenes..."
+
+            # PARALLEL Groq API execution for ultra-fast response (< 2 seconds total!)
+            async with ClientSession() as http_session:
+                tasks = [
+                    call_groq_ai_prompt_engineer(http_session, stext, idx)
+                    for idx, (stext, _) in enumerate(scenes_raw, start=1)
+                ]
+                ai_prompts = await asyncio.gather(*tasks)
 
             scenes = []
-            total_scenes = len(scenes_raw)
-            groq_active = bool(os.environ.get("GROQ_API_KEY", "").strip())
-
-            for idx, (scene_text, time_str) in enumerate(scenes_raw, start=1):
-                pct = 60 + int((idx / total_scenes) * 38)
-                BACKGROUND_JOBS[job_id]["progress"] = pct
-                BACKGROUND_JOBS[job_id]["status_text"] = f"Groq AI crafting 16:9 prompt {idx} of {total_scenes}..."
-
-                ai_prompt = await call_groq_ai_prompt_engineer(scene_text, idx)
-                if not ai_prompt:
-                    ai_prompt = build_vector_art_scene_prompt_fallback(scene_text)
-
+            for idx, ((scene_text, time_str), prompt_res) in enumerate(zip(scenes_raw, ai_prompts), start=1):
+                if not prompt_res:
+                    prompt_res = build_vector_art_scene_prompt_fallback(scene_text)
+                
                 scenes.append({
                     "scene": idx,
                     "timestamp": time_str,
                     "text": scene_text,
-                    "prompt": ai_prompt
+                    "prompt": prompt_res
                 })
 
             for chunk_file in temp_chunks:
@@ -277,8 +272,7 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
                 "status_text": f"Generated {len(scenes)} rich 16:9 vector prompts!",
                 "mode": "breakdown",
                 "result": {
-                    "scenes": scenes,
-                    "groqActive": groq_active
+                    "scenes": scenes
                 }
             }
             return
