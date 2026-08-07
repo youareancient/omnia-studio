@@ -223,18 +223,29 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
                     duration_sec = (end_ms - start_ms) / 1000.0
                     is_punct = bool(re.search(r'[.!?]$', word))
                     
-                    # Natural 3-5 second cuts (7 to 10 words minimum per scene cut)
                     if (len(curr_words) >= 8 or duration_sec >= 3.5 or (is_punct and len(curr_words) >= 6)):
                         scene_text = " ".join(curr_words)
                         time_str = f"{format_timestamp(start_ms)} -> {format_timestamp(end_ms)}"
-                        scenes_raw.append((scene_text, time_str))
+                        scenes_raw.append({
+                            "text": scene_text,
+                            "time_str": time_str,
+                            "start_ms": start_ms,
+                            "end_ms": end_ms,
+                            "dur_sec": round((end_ms - start_ms) / 1000.0, 3)
+                        })
                         curr_words = []
                         start_ms = end_ms
                         
                 if curr_words:
                     scene_text = " ".join(curr_words)
                     time_str = f"{format_timestamp(start_ms)} -> {format_timestamp(end_ms)}"
-                    scenes_raw.append((scene_text, time_str))
+                    scenes_raw.append({
+                        "text": scene_text,
+                        "time_str": time_str,
+                        "start_ms": start_ms,
+                        "end_ms": end_ms,
+                        "dur_sec": round((end_ms - start_ms) / 1000.0, 3)
+                    })
             
             if not scenes_raw:
                 scene_lines = split_script_into_scenes(raw_text)
@@ -242,30 +253,41 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
                 for line in scene_lines:
                     dur = (len(line.split()) / 150.0) * 60.0
                     t_start = format_timestamp(int(est_sec * 1000))
+                    t_start_ms = int(est_sec * 1000)
                     est_sec += dur
                     t_end = format_timestamp(int(est_sec * 1000))
-                    scenes_raw.append((line, f"{t_start} -> {t_end}"))
+                    t_end_ms = int(est_sec * 1000)
+                    scenes_raw.append({
+                        "text": line,
+                        "time_str": f"{t_start} -> {t_end}",
+                        "start_ms": t_start_ms,
+                        "end_ms": t_end_ms,
+                        "dur_sec": round(dur, 3)
+                    })
 
             BACKGROUND_JOBS[job_id]["progress"] = 65
-            BACKGROUND_JOBS[job_id]["status_text"] = f"STEP 2: Groq AI generating parallel 2D doodle prompts for {len(scenes_raw)} beats..."
+            BACKGROUND_JOBS[job_id]["status_text"] = f"STEP 2: Speech Alignment Agent mapping {len(scenes_raw)} spoken scene beats to AI prompts..."
 
             async with ClientSession() as http_session:
                 tasks = [
-                    call_groq_ai_prompt_engineer(http_session, stext, idx)
-                    for idx, (stext, _) in enumerate(scenes_raw, start=1)
+                    call_groq_ai_prompt_engineer(http_session, sitem["text"], idx)
+                    for idx, (sitem) in enumerate(scenes_raw, start=1)
                 ]
                 ai_prompts = await asyncio.gather(*tasks)
 
             scenes = []
-            for idx, ((scene_text, time_str), prompt_res) in enumerate(zip(scenes_raw, ai_prompts), start=1):
+            for idx, (sitem, prompt_res) in enumerate(zip(scenes_raw, ai_prompts), start=1):
                 if not prompt_res:
-                    prompt_res = build_vector_art_scene_prompt_fallback(scene_text)
+                    prompt_res = build_vector_art_scene_prompt_fallback(sitem["text"])
                 
                 scenes.append({
                     "scene": idx,
-                    "timestamp": time_str,
-                    "text": scene_text,
-                    "prompt": prompt_res if isinstance(prompt_res, str) else prompt_res.get("prompt", "")
+                    "timestamp": sitem["time_str"],
+                    "text": sitem["text"],
+                    "prompt": prompt_res if isinstance(prompt_res, str) else prompt_res.get("prompt", ""),
+                    "start_ms": sitem["start_ms"],
+                    "end_ms": sitem["end_ms"],
+                    "dur_sec": sitem["dur_sec"]
                 })
 
             BACKGROUND_JOBS[job_id] = {
@@ -540,11 +562,13 @@ async def process_video_assembly_async(video_job_id, original_job_id, zip_bytes,
         BACKGROUND_JOBS[video_job_id]["progress"] = 35
         BACKGROUND_JOBS[video_job_id]["status_text"] = f"🎬 Production Director: Sanitized {total_images} images & aligned audio timeline ({total_audio_duration:.1f}s)..."
 
-        # Production Director Dynamic Timeline Calculator (Zero dropped images guarantee!)
+        # Speech Recognition & Word-Boundary Alignment Agent (Exact Spoken Audio Timings)
         image_durations = []
         if total_images == len(scenes) and len(scenes) > 0:
             for scene in scenes:
-                dur = parse_timestamp_seconds(scene["timestamp"])
+                dur = scene.get("dur_sec")
+                if not dur or dur <= 0.1:
+                    dur = parse_timestamp_seconds(scene.get("timestamp", ""))
                 image_durations.append(dur)
         else:
             per_img_dur = total_audio_duration / total_images
