@@ -484,6 +484,20 @@ async def get_media_duration_sec(filepath):
 def natural_sort_key(s):
     return [int(text) if text.isdigit() else text.lower() for text in re.split(r'(\d+)', os.path.basename(s))]
 
+def get_ken_burns_vf(scene_idx):
+    preset = int(scene_idx) % 3
+    if preset == 0:
+        # Slow Smooth Zoom In to Center
+        kp = "zoompan=z='min(zoom+0.0012,1.15)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=125:s=1920x1080:fps=25"
+    elif preset == 1:
+        # Slow Panoramic Pan Left to Right
+        kp = "zoompan=z='1.12':x='if(eq(on,1),0,x+1.2)':y='ih/2-(ih/zoom/2)':d=125:s=1920x1080:fps=25"
+    else:
+        # Slow Reveal Zoom Out
+        kp = "zoompan=z='max(1.15-0.0012*on,1.0)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=125:s=1920x1080:fps=25"
+    
+    return f"scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2:black,{kp},format=yuv420p"
+
 async def process_video_assembly_async(video_job_id, original_job_id, zip_bytes, image_files_data):
     try:
         BACKGROUND_JOBS[video_job_id] = {
@@ -608,8 +622,8 @@ async def process_video_assembly_async(video_job_id, original_job_id, zip_bytes,
                     "ffmpeg", "-y",
                     "-ss", f"{st_sec:.3f}", "-t", f"{dur:.3f}", "-i", audio_filepath,
                     "-loop", "1", "-i", img_path,
-                    "-vf", "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2:black,format=yuv420p",
-                    "-c:v", "libx264", "-preset", "ultrafast", "-tune", "stillimage", "-crf", "26",
+                    "-vf", get_ken_burns_vf(idx),
+                    "-c:v", "libx264", "-preset", "ultrafast", "-crf", "26",
                     "-c:a", "aac", "-b:a", "192k",
                     "-shortest",
                     mini_filepath
@@ -802,8 +816,9 @@ async def handle_assemble_video(request):
 def humanize_script(text):
     if not text:
         return ""
-    # Strip unnecessary punctuation formatting for clean edge-tts reading
     clean = re.sub(r'[\r\n]+', ' ', text).strip()
+    clean = re.sub(r',\s*', ', ', clean)
+    clean = re.sub(r'\.\s*', '. ', clean)
     return clean
 
 async def trim_trailing_audio_silence(audio_path):
@@ -830,9 +845,11 @@ async def handle_generate_beat_audio(request):
         job_id = data.get("job_id", "")
         scene_idx = int(data.get("scene_index", 1))
         voice = data.get("voice", "andrew").lower()
-        rate = str(data.get("rate", "+1%")).strip()
+        rate = str(data.get("rate", "-4%")).strip()
+        if rate in ["+1%", "+0%", "0%"]:
+            rate = "-4%"
         if not rate.startswith("+") and not rate.startswith("-"):
-            rate = "+" + rate
+            rate = "-" + rate
 
         preset = VOICE_PRESETS.get(voice, {})
         voice_id = preset.get("id", "en-US-AndrewNeural")
@@ -910,7 +927,7 @@ async def handle_generate_beat_clip(request):
                     scene_text = scenes[scene_idx - 1].get("text", scene_text)
             
             cleaned = humanize_script(scene_text)
-            comm = edge_tts.Communicate(cleaned, "en-US-AndrewNeural", rate="+1%")
+            comm = edge_tts.Communicate(cleaned, "en-US-AndrewNeural", rate="-4%")
             await comm.save(beat_audio_path)
             await trim_trailing_audio_silence(beat_audio_path)
         else:
@@ -927,8 +944,8 @@ async def handle_generate_beat_clip(request):
             "ffmpeg", "-y",
             "-i", beat_audio_path,
             "-loop", "1", "-i", img_filepath,
-            "-vf", "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2:black,format=yuv420p",
-            "-c:v", "libx264", "-preset", "ultrafast", "-tune", "stillimage", "-crf", "26",
+            "-vf", get_ken_burns_vf(scene_idx),
+            "-c:v", "libx264", "-preset", "ultrafast", "-crf", "26",
             "-c:a", "aac", "-b:a", "192k",
             "-shortest",
             out_clip_filepath
