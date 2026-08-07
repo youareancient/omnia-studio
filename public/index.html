@@ -332,19 +332,37 @@
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         }
 
+        /* Action Buttons Grid */
+        .action-btn-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
         .btn-apple {
             width: 100%;
             background: var(--accent-apple);
             color: #ffffff;
             border: none;
             border-radius: 980px;
-            padding: 0.95rem;
-            font-size: 0.95rem;
+            padding: 0.95rem 0.5rem;
+            font-size: 0.88rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.25s ease;
             box-shadow: 0 4px 16px rgba(0, 113, 227, 0.25);
             min-height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .btn-apple-secondary {
+            background: var(--bg-card-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-subtle);
+            box-shadow: none;
         }
 
         .btn-apple:active {
@@ -362,7 +380,7 @@
         }
 
         @media (max-width: 960px) {
-            #generateBtn {
+            #desktopActionGrid {
                 display: none !important;
             }
             
@@ -379,6 +397,7 @@
                 padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom));
                 z-index: 99;
                 box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.25);
+                gap: 10px;
             }
         }
 
@@ -423,15 +442,16 @@
             color: var(--text-secondary);
         }
 
-        .audio-card {
+        /* Separate Result Output Cards */
+        .output-card {
             margin-top: 1.1rem;
             background: var(--bg-card-secondary);
             border-radius: 14px;
-            padding: 1rem;
+            padding: 1.1rem;
             display: none;
         }
 
-        .audio-card.active {
+        .output-card.active {
             display: block;
         }
 
@@ -440,20 +460,7 @@
             margin: 0.75rem 0;
         }
 
-        .download-btn-group {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        @media (max-width: 480px) {
-            .download-btn-group {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .btn-download-apple {
+        .btn-download-single {
             display: flex;
             align-items: center;
             justify-content: center;
@@ -463,21 +470,16 @@
             background: var(--accent-apple);
             color: #ffffff;
             font-weight: 600;
-            font-size: 0.88rem;
+            font-size: 0.9rem;
             text-decoration: none;
             padding: 12px 10px;
             border-radius: 980px;
             min-height: 44px;
             transition: all 0.2s ease;
+            margin-top: 8px;
         }
 
-        .btn-download-srt {
-            background: var(--bg-input);
-            border: 1px solid var(--border-subtle);
-            color: var(--text-primary);
-        }
-
-        .btn-download-apple:active {
+        .btn-download-single:active {
             transform: scale(0.97);
         }
     </style>
@@ -562,39 +564,51 @@
                 <input type="text" id="filenameInput" placeholder="e.g. data_center_narration.mp3" style="width: 100%; background: var(--bg-input); border: 1px solid var(--border-subtle); padding: 10px 12px; border-radius: 12px; color: var(--text-primary); outline: none; font-size: 0.88rem;">
             </div>
 
-            <button class="btn-apple" id="generateBtn" onclick="generateVoiceoverStream()">
-                Generate Voiceover & Subtitles
-            </button>
+            <!-- Desktop Action Grid: Two Distinct Separate Buttons -->
+            <div class="action-btn-grid" id="desktopActionGrid">
+                <button class="btn-apple" onclick="generateStream('audio')">
+                    🎵 Generate Voiceover
+                </button>
+                <button class="btn-apple btn-apple-secondary" onclick="generateStream('srt')">
+                    📝 Generate .SRT
+                </button>
+            </div>
 
             <!-- Real-Time Progress Indicator -->
             <div class="progress-container" id="progressBox">
                 <div class="progress-header">
-                    <span id="progressTitle">Synthesizing...</span>
+                    <span id="progressTitle">Processing...</span>
                     <span id="progressPercent" style="color: var(--accent-apple);">0%</span>
                 </div>
                 <div class="progress-bar">
                     <div class="progress-fill" id="progressBarFill"></div>
                 </div>
-                <div class="progress-sub" id="progressStatus">Humanizing pacing and creating subtitles...</div>
+                <div class="progress-sub" id="progressStatus">Initializing...</div>
             </div>
 
-            <!-- Audio Output & Subtitle Downloads -->
-            <div class="audio-card" id="audioCard">
-                <div style="font-size: 0.88rem; font-weight: 600; color: var(--text-primary);">Voiceover & Subtitles Ready</div>
+            <!-- SEPARATE Standalone Audio Result Card -->
+            <div class="output-card" id="audioCard">
+                <div style="font-size: 0.88rem; font-weight: 600; color: var(--text-primary);">🎙️ Voiceover MP3 Ready</div>
                 <audio id="audioElement" controls></audio>
-                
-                <div class="download-btn-group">
-                    <a href="#" id="downloadLink" class="btn-download-apple" download>🎵 Download MP3</a>
-                    <a href="#" id="downloadSrtLink" class="btn-download-apple btn-download-srt" download>📝 Download .SRT</a>
-                </div>
+                <a href="#" id="downloadAudioLink" class="btn-download-single" download>Download Voiceover MP3</a>
+            </div>
+
+            <!-- SEPARATE Standalone SRT Subtitle Result Card -->
+            <div class="output-card" id="srtCard">
+                <div style="font-size: 0.88rem; font-weight: 600; color: var(--text-primary);">📝 .SRT Subtitle File Ready</div>
+                <p style="font-size: 0.78rem; color: var(--text-secondary); margin: 6px 0 10px 0;">Word-level subtitle file generated for CapCut & Premiere Pro.</p>
+                <a href="#" id="downloadSrtLink" class="btn-download-single btn-apple-secondary" download>Download Subtitles (.SRT)</a>
             </div>
         </section>
     </main>
 
-    <!-- Mobile Sticky Floating Bar -->
+    <!-- Mobile Sticky Floating Bar: Two Separate Action Buttons -->
     <div class="mobile-bottom-bar">
-        <button class="btn-apple" id="mobileGenerateBtn" onclick="generateVoiceoverStream()">
-            ⚡ Generate Voiceover & .SRT
+        <button class="btn-apple" onclick="generateStream('audio')">
+            🎵 Voiceover
+        </button>
+        <button class="btn-apple btn-apple-secondary" onclick="generateStream('srt')">
+            📝 Subtitles (.SRT)
         </button>
     </div>
 
@@ -645,33 +659,33 @@
             estTimeEl.textContent = `~${minutes} min audio`;
         });
 
-        async function generateVoiceoverStream() {
+        async function generateStream(mode) {
             const text = scriptInput.value.trim();
             if (!text) {
                 alert('Please paste a script first!');
                 return;
             }
 
-            const btn = document.getElementById('generateBtn');
-            const mBtn = document.getElementById('mobileGenerateBtn');
             const customFilename = document.getElementById('filenameInput').value.trim();
 
             const progressBox = document.getElementById('progressBox');
             const progressPercent = document.getElementById('progressPercent');
             const progressBarFill = document.getElementById('progressBarFill');
             const progressStatus = document.getElementById('progressStatus');
+            
             const audioCard = document.getElementById('audioCard');
+            const srtCard = document.getElementById('srtCard');
 
-            btn.disabled = true;
-            if(mBtn) mBtn.disabled = true;
-            btn.textContent = 'Synthesizing...';
-            if(mBtn) mBtn.textContent = 'Synthesizing...';
-            audioCard.classList.remove('active');
+            if (mode === 'audio') {
+                audioCard.classList.remove('active');
+            } else {
+                srtCard.classList.remove('active');
+            }
             
             progressBox.classList.add('active');
             progressPercent.textContent = '0%';
             progressBarFill.style.width = '0%';
-            progressStatus.textContent = 'Humanizing script and preparing neural engine...';
+            progressStatus.textContent = `Preparing ${mode.toUpperCase()} generation...`;
 
             try {
                 const response = await fetch('/api/generate-stream', {
@@ -681,7 +695,8 @@
                         text: text,
                         voice: selectedVoice,
                         rate: currentRateStr,
-                        filename: customFilename || `youtube_voiceover_${Date.now()}.mp3`
+                        filename: customFilename || `youtube_voiceover_${Date.now()}.mp3`,
+                        mode: mode
                     })
                 });
 
@@ -720,19 +735,26 @@
                             }
 
                             if (evt.success) {
-                                const audioElement = document.getElementById('audioElement');
-                                const downloadLink = document.getElementById('downloadLink');
-                                const downloadSrtLink = document.getElementById('downloadSrtLink');
+                                progressBox.classList.remove('active');
 
-                                audioElement.src = evt.audioUrl;
-                                downloadLink.href = evt.audioUrl;
-                                downloadLink.download = evt.filename;
+                                if (evt.mode === 'audio') {
+                                    const audioElement = document.getElementById('audioElement');
+                                    const downloadAudioLink = document.getElementById('downloadAudioLink');
 
-                                downloadSrtLink.href = evt.srtUrl;
-                                downloadSrtLink.download = evt.srtFilename;
+                                    audioElement.src = evt.audioUrl;
+                                    downloadAudioLink.href = evt.audioUrl;
+                                    downloadAudioLink.download = evt.filename;
 
-                                audioCard.classList.add('active');
-                                audioElement.play();
+                                    audioCard.classList.add('active');
+                                    audioElement.play();
+                                } else if (evt.mode === 'srt') {
+                                    const downloadSrtLink = document.getElementById('downloadSrtLink');
+
+                                    downloadSrtLink.href = evt.srtUrl;
+                                    downloadSrtLink.download = evt.srtFilename;
+
+                                    srtCard.classList.add('active');
+                                }
                             }
                         }
                     }
@@ -740,11 +762,6 @@
             } catch (err) {
                 alert('Connection error: ' + err.message);
                 progressBox.classList.remove('active');
-            } finally {
-                btn.disabled = false;
-                if(mBtn) mBtn.disabled = false;
-                btn.textContent = 'Generate Voiceover & Subtitles';
-                if(mBtn) mBtn.textContent = '⚡ Generate Voiceover & .SRT';
             }
         }
     </script>

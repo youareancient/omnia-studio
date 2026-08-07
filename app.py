@@ -78,6 +78,7 @@ async def handle_generate_stream(request):
         voice_preset = data.get("voice", "andrew")
         rate = data.get("rate", "+1%")
         filename = data.get("filename", "").strip()
+        mode = data.get("mode", "audio") # "audio" or "srt"
 
         if not raw_text:
             err_msg = json.dumps({"error": "Script text cannot be empty"})
@@ -90,8 +91,8 @@ async def handle_generate_stream(request):
         full_humanized_text, paragraphs = humanize_text_for_speech(raw_text)
         total_paras = len(paragraphs)
 
+        short_id = str(uuid.uuid4())[:6]
         if not filename:
-            short_id = str(uuid.uuid4())[:6]
             filename = f"voiceover_{voice_preset}_{short_id}.mp3"
         elif not filename.endswith(".mp3"):
             filename += ".mp3"
@@ -102,7 +103,7 @@ async def handle_generate_stream(request):
         out_filepath = os.path.join(DOWNLOADS_DIR, filename)
         srt_filepath = os.path.join(DOWNLOADS_DIR, srt_filename)
 
-        init_evt = json.dumps({"progress": 5, "status": f"Humanized text prepared ({total_paras} paragraphs)..."})
+        init_evt = json.dumps({"progress": 5, "status": f"Processing {mode.upper()} request ({total_paras} paragraphs)..."})
         await response.write(f"data: {init_evt}\n\n".encode("utf-8"))
         await asyncio.sleep(0.1)
 
@@ -130,25 +131,45 @@ async def handle_generate_stream(request):
             progress_pct = int((i / total_paras) * 90) + 5
             evt = json.dumps({
                 "progress": progress_pct,
-                "status": f"Synthesizing paragraph {i} of {total_paras} ({progress_pct}%)..."
+                "status": f"Synthesizing {mode.upper()} paragraph {i} of {total_paras} ({progress_pct}%)..."
             })
             await response.write(f"data: {evt}\n\n".encode("utf-8"))
 
-        merging_evt = json.dumps({"progress": 96, "status": "Merging audio tracks and generating .SRT subtitles..."})
-        await response.write(f"data: {merging_evt}\n\n".encode("utf-8"))
+        if mode == "audio":
+            merging_evt = json.dumps({"progress": 96, "status": "Merging audio tracks into HD MP3..."})
+            await response.write(f"data: {merging_evt}\n\n".encode("utf-8"))
 
-        with open(out_filepath, "wb") as outfile:
-            for chunk_file in temp_chunks:
-                with open(chunk_file, "rb") as infile:
-                    outfile.write(infile.read())
+            with open(out_filepath, "wb") as outfile:
+                for chunk_file in temp_chunks:
+                    with open(chunk_file, "rb") as infile:
+                        outfile.write(infile.read())
 
-        # Generate SRT subtitle content
-        try:
+            final_evt = json.dumps({
+                "success": True,
+                "mode": "audio",
+                "progress": 100,
+                "status": "Voiceover MP3 generated successfully!",
+                "filename": filename,
+                "audioUrl": f"/static/generated/{filename}",
+                "wordCount": len(full_humanized_text.split())
+            })
+        else: # mode == "srt"
+            merging_evt = json.dumps({"progress": 96, "status": "Generating .SRT subtitle timestamps..."})
+            await response.write(f"data: {merging_evt}\n\n".encode("utf-8"))
+
             srt_content = submaker.get_srt()
             with open(srt_filepath, "w", encoding="utf-8") as srt_file:
                 srt_file.write(srt_content)
-        except Exception as srt_err:
-            print("SRT generation error:", srt_err)
+
+            final_evt = json.dumps({
+                "success": True,
+                "mode": "srt",
+                "progress": 100,
+                "status": ".SRT Subtitles generated successfully!",
+                "srtFilename": srt_filename,
+                "srtUrl": f"/static/generated/{srt_filename}",
+                "wordCount": len(full_humanized_text.split())
+            })
 
         for chunk_file in temp_chunks:
             try:
@@ -156,17 +177,6 @@ async def handle_generate_stream(request):
             except Exception:
                 pass
 
-        final_evt = json.dumps({
-            "success": True,
-            "progress": 100,
-            "status": "Voiceover and subtitles completed!",
-            "filename": filename,
-            "srtFilename": srt_filename,
-            "audioUrl": f"/static/generated/{filename}",
-            "srtUrl": f"/static/generated/{srt_filename}",
-            "voice": voice_info["name"],
-            "wordCount": len(full_humanized_text.split())
-        })
         await response.write(f"data: {final_evt}\n\n".encode("utf-8"))
 
     except Exception as e:
