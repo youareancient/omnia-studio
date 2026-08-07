@@ -692,20 +692,25 @@
                 </div>
                 <div id="breakdownContainer"></div>
 
-                <!-- Clean Render Video Action Box -->
-                <div style="margin-top:20px;">
-                    <button id="renderVideoBtn" class="btn-apple" style="background:linear-gradient(135deg, #FF9500, #FF2D55); min-height:48px; font-size:1rem; font-weight:700; width:100%; box-shadow:0 6px 20px rgba(255, 149, 0, 0.35);" onclick="uploadAndRenderVideo()">⚡ Render 1080p MP4 Video</button>
+                <!-- Micro-Clip Video Assembly & Render Section -->
+                <div style="margin-top:24px; padding:18px; background:var(--bg-card-secondary); border:1px solid var(--accent-apple); border-radius:16px; box-shadow:0 8px 30px rgba(0, 113, 227, 0.2);">
+                    <div style="font-weight:800; font-size:1.05rem; color:var(--text-primary); margin-bottom:6px; display:flex; align-items:center; gap:8px;">
+                        <span>🎬 Step 3: Assemble Per-Scene Micro-Clips & Merge Video</span>
+                    </div>
+                    <p style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:14px; line-height:1.45;">After uploading your images on each Beat Card, click below. The server will synthesize individual zero-pause micro-clips for each scene line and merge them sequentially into your master 1080p video!</p>
+                    
+                    <button id="renderVideoBtn" class="btn-apple" style="background:linear-gradient(135deg, #FF9500, #FF2D55); min-height:50px; font-size:1.05rem; font-weight:800; width:100%; box-shadow:0 6px 24px rgba(255, 149, 0, 0.4);" onclick="uploadAndRenderVideo()">⚡ Synthesize Micro-Clips & Render 1080p MP4 Video</button>
 
                     <!-- Inline Real-Time Video Render Progress Box -->
                     <div class="progress-container" id="videoProgressBox" style="margin-top:14px;">
                         <div class="progress-header">
-                            <span style="font-weight:700;">⚡ Video Assembly Status</span>
+                            <span style="font-weight:700;">⚡ Micro-Clip Synthesis & Assembly Status</span>
                             <span id="videoProgressPercent" style="color: var(--accent-apple); font-weight:700;">0%</span>
                         </div>
                         <div class="progress-bar">
                             <div class="progress-fill" id="videoProgressBarFill"></div>
                         </div>
-                        <div class="progress-sub" id="videoProgressStatus">Assembling micro-clips...</div>
+                        <div class="progress-sub" id="videoProgressStatus">Synthesizing per-scene micro-clips...</div>
                     </div>
                 </div>
             </div>
