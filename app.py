@@ -17,8 +17,6 @@ os.makedirs(DOWNLOADS_DIR, exist_ok=True)
 
 INDEX_HTML_PATH = os.path.join(STATIC_DIR, "index.html")
 
-MASTER_THUMBNAIL_PROMPT_TEMPLATE = """Generate a premium-quality, designer-level 16:9 image based on the video title: "{VIDEO_TITLE}". The thumbnail should instantly communicate the business, brand, industry, product, or concept mentioned in the title while emphasizing its money, investment, costs, revenue, profitability, and business economics. At the very top, create an oversized, bold, uppercase headline derived directly from the video title using a clean sans-serif font. The headline should occupy approximately the top 30–40% of the canvas with strong hierarchy and maximum readability. Keep the wording extremely short by extracting only the most impactful words from the title (for example: "SO YOU WANT TO OWN A RESTAURANT", "BUY A HOTEL", "OPEN A COFFEE SHOP", "BUILD A TESLA FACTORY", "RUN A YOUTUBE CHANNEL", etc.). Use solid black typography on a clean white background with generous spacing and a thin red underline beneath the headline to create a strong visual divider. Directly below the headline, place a professionally illustrated, highly recognizable hero scene representing the business or subject from the title. If the title references a company, depict its signature products, headquarters, stores, ecosystem, or branding cues without copying copyrighted artwork exactly. If it references an industry, show its most recognizable environment, equipment, architecture, vehicles, products, or operations. The central illustration should feel like a polished editorial infographic with clean perspective, premium lighting, realistic proportions, crisp outlines, subtle shadows, vibrant yet controlled colors, and an overall handcrafted digital illustration style that resembles artwork created by a professional thumbnail designer rather than AI. Surround the main subject with only 6–10 carefully selected business or financial callouts, each connected by elegant hand-drawn arrows pointing toward the relevant area of the illustration. Every label should be handwritten-style black text with a simple red underline, positioned cleanly around the composition without clutter. The labels must be intelligently generated from the video title and should represent topics such as startup costs, capital investment, infrastructure, equipment, employees, operations, manufacturing, supply chain, logistics, maintenance, utilities, marketing, branding, advertising, licensing, inventory, software, technology, customer acquisition, subscriptions, labor, regulations, insurance, taxes, scalability, competition, revenue streams, cash flow, margins, pricing, profitability, ROI, risks, or other concepts that naturally fit the subject. Never use generic or irrelevant labels, generate them dynamically so they accurately match the specific business or brand in the title. Include a few clean supporting objects that reinforce the economics theme, such as stacks of cash, coins, profit charts, invoices, machinery, products, customers, vehicles, tools, factory equipment, storefront items, digital dashboards, or service icons, but only when they naturally fit the topic. Every supporting element should help explain where money is spent or earned, creating an immediate "business breakdown" visual. Maintain a spacious composition with plenty of white space, avoiding unnecessary decorations, excessive text, busy backgrounds, glowing effects, lens flares, random icons, stickers, or visual noise. The thumbnail should look modern, premium, educational, highly clickable, and trustworthy, with a clean infographic aesthetic suitable for finance, entrepreneurship, business case studies, economics, and documentary-style YouTube content. Prioritize excellent composition, perfect typography, consistent spacing, sharp edges, high contrast, accurate visual storytelling, and flawless readability even on mobile devices. The final output should appear as if it were designed by an experienced professional YouTube thumbnail artist."""
-
 VOICE_PRESETS = {
     "andrew": {"id": "en-US-AndrewNeural", "name": "Andrew (YouTube Documentary)", "desc": "High energy, warm & engaging (Recommended for YouTube monetization)"},
     "christopher": {"id": "en-US-ChristopherNeural", "name": "Christopher (Deep Storyteller)", "desc": "Deep, authoritative, cinematic business tone"},
@@ -26,7 +24,6 @@ VOICE_PRESETS = {
     "guy": {"id": "en-US-GuyNeural", "name": "Guy (News & Commentary)", "desc": "Clear American news broadcaster style"}
 }
 
-# Global Background Jobs Dictionary
 BACKGROUND_JOBS = {}
 
 def humanize_text_for_speech(text):
@@ -49,19 +46,6 @@ def humanize_text_for_speech(text):
     humanized_text = re.sub(r'\.{3,}', '...', humanized_text)
     return humanized_text, paragraphs
 
-def extract_video_title(text, custom_filename=""):
-    if custom_filename:
-        title = custom_filename.replace('.mp3', '').replace('_', ' ').replace('-', ' ').title()
-        if len(title) > 5:
-            return title
-    
-    lines = [line.strip() for line in text.strip().split('\n') if line.strip()]
-    if lines:
-        first_line = lines[0]
-        words = first_line.split()[:10]
-        return " ".join(words).upper()
-    return "YOUR VIDEO TITLE"
-
 async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode):
     try:
         BACKGROUND_JOBS[job_id] = {
@@ -77,22 +61,6 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
 
         full_humanized_text, paragraphs = humanize_text_for_speech(raw_text)
         total_paras = len(paragraphs)
-
-        video_title = extract_video_title(raw_text, filename)
-        thumbnail_prompt = MASTER_THUMBNAIL_PROMPT_TEMPLATE.replace("{VIDEO_TITLE}", video_title)
-
-        if mode == "thumbnail":
-            BACKGROUND_JOBS[job_id] = {
-                "status": "completed",
-                "progress": 100,
-                "status_text": "Thumbnail Master Prompt generated!",
-                "mode": "thumbnail",
-                "result": {
-                    "videoTitle": video_title,
-                    "thumbnailPrompt": thumbnail_prompt
-                }
-            }
-            return
 
         if not filename:
             filename = f"voiceover_{voice_preset}_{job_id[:6]}.mp3"
@@ -147,9 +115,7 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
                 "result": {
                     "filename": filename,
                     "audioUrl": f"/static/generated/{filename}",
-                    "wordCount": len(full_humanized_text.split()),
-                    "videoTitle": video_title,
-                    "thumbnailPrompt": thumbnail_prompt
+                    "wordCount": len(full_humanized_text.split())
                 }
             }
         else: # mode == "srt"
@@ -168,9 +134,7 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
                 "result": {
                     "srtFilename": srt_filename,
                     "srtUrl": f"/static/generated/{srt_filename}",
-                    "wordCount": len(full_humanized_text.split()),
-                    "videoTitle": video_title,
-                    "thumbnailPrompt": thumbnail_prompt
+                    "wordCount": len(full_humanized_text.split())
                 }
             }
 
