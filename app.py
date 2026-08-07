@@ -100,11 +100,9 @@ async def call_groq_ai_prompt_engineer(session, scene_text, scene_number):
         "[If prices/numbers appear in script like '$3M', '$75k/acre', or '$1.5M', describe huge bright-red text callouts: Large bright-red text: \"$3,000,000\"].\n\n"
         "STRICT RULES:\n"
         "1. Always start with: '2D hand-drawn educational architectural vector illustration, graphic novel technical diagram style, crisp clean black outlines, soft flat color palette, polished YouTube explainer aesthetics.'\n"
-        "2. Set host_present to 'Yes' ONLY if the line is a direct host question or reaction (e.g. 'So the question sitting in your mind is...', 'How do you get that money back?'). Otherwise 'No'.\n"
-        "3. If host_present is 'Yes', include host description: 'Foreground host.\\n\\nA simple flat 2D stick/blob-style cartoon man with a large plain circle head, solid white fill, thin clean black outline, completely bald, two simple black-outlined circular eyes with solid black pupil dots, two short thick straight black eyebrows, simple curved mouth line, no nose, no ears. Thin stick limbs, white mitten hands, dark rounded feet.'\n"
-        "4. NEVER include social media handles or channel tags!\n\n"
+        "2. NEVER include social media handles or channel tags!\n\n"
         "Respond strictly in JSON format:\n"
-        '{\n  "host_present": "Yes" or "No",\n  "prompt": "2D hand-drawn educational architectural vector illustration, graphic novel technical diagram style..."\n}'
+        '{\n  "prompt": "2D hand-drawn educational architectural vector illustration, graphic novel technical diagram style..."\n}'
     )
 
     user_prompt = f"Script Line (Beat {scene_number}): \"{scene_text}\""
@@ -130,19 +128,15 @@ async def call_groq_ai_prompt_engineer(session, scene_text, scene_number):
                     content = data["choices"][0]["message"]["content"]
                     parsed = json.loads(content)
                     prompt_val = parsed.get("prompt")
-                    host_val = parsed.get("host_present", "No")
                     if prompt_val and len(prompt_val) > 30:
                         clean_prompt = re.sub(r'@[a-zA-Z0-9_]+', '', prompt_val)
-                        return {"host_present": host_val, "prompt": clean_prompt}
+                        return clean_prompt
         except Exception as e:
             print(f"Groq exception on scene {scene_number}: {e}")
 
     return None
 
 def build_vector_art_scene_prompt_fallback(text):
-    is_host = bool(re.search(r'\b(you|your|how|why|what|should|think|mind|question)\b', text, re.IGNORECASE))
-    host_present = "Yes" if is_host else "No"
-    
     words = re.findall(r'\b[a-zA-Z]{3,}\b', text)
     stopwords = {
         "that", "have", "with", "this", "from", "they", "will", "would", "there", "their",
@@ -158,27 +152,16 @@ def build_vector_art_scene_prompt_fallback(text):
     if money_match and len(money_match.group(0)) > 1:
         money_label = f"\n\nHuge bright-red text callout:\n\"{money_match.group(0).upper()}\""
 
-    if host_present == "Yes":
-        prompt_str = (
-            "2D hand-drawn educational architectural vector illustration, graphic novel technical diagram style, crisp clean black outlines, soft flat color palette, polished YouTube explainer aesthetics.\n\n"
-            f"LARGE BOLD TOP TITLE BANNER:\n\"{topic_title}\"\n\n"
-            "Foreground host.\n\n"
-            "A simple flat 2D stick/blob-style cartoon man with a large plain circle head, solid white fill, thin clean black outline, completely bald, two simple black-outlined circular eyes with solid black pupil dots, two short thick straight black eyebrows, simple curved mouth line, no nose, no ears. Thin stick limbs, white mitten hands, dark rounded feet.\n\n"
-            f"Standing beside an isometric technical architectural diagram explaining {topic_title}.\n"
-            "Annotated blueprint arrows and callouts visible."
-            f"{money_label}"
-        )
-    else:
-        prompt_str = (
-            "2D hand-drawn educational architectural vector illustration, graphic novel technical diagram style, crisp clean black outlines, soft flat color palette, polished YouTube explainer aesthetics.\n\n"
-            f"LARGE BOLD TOP TITLE BANNER:\n\"{topic_title}\"\n\n"
-            f"Detailed 16:9 panoramic technical diagram view of {topic_title}.\n\n"
-            "Cross-sectional cutaway layers, annotated callout arrows, machinery icons, and glowing cyan boundary outlines.\n"
-            "Clean paper background, generous negative space, high contrast composition."
-            f"{money_label}"
-        )
+    prompt_str = (
+        "2D hand-drawn educational architectural vector illustration, graphic novel technical diagram style, crisp clean black outlines, soft flat color palette, polished YouTube explainer aesthetics.\n\n"
+        f"LARGE BOLD TOP TITLE BANNER:\n\"{topic_title}\"\n\n"
+        f"Detailed 16:9 panoramic technical diagram view of {topic_title}.\n\n"
+        "Cross-sectional cutaway layers, annotated callout arrows, machinery icons, and glowing cyan boundary outlines.\n"
+        "Clean paper background, generous negative space, high contrast composition."
+        f"{money_label}"
+    )
 
-    return {"host_present": host_present, "prompt": prompt_str}
+    return prompt_str
 
 async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode):
     try:
@@ -294,8 +277,7 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
                     "scene": idx,
                     "timestamp": time_str,
                     "text": scene_text,
-                    "host_present": prompt_res.get("host_present", "No"),
-                    "prompt": prompt_res.get("prompt", "")
+                    "prompt": prompt_res if isinstance(prompt_res, str) else prompt_res.get("prompt", "")
                 })
 
             for chunk_file in temp_chunks:

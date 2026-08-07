@@ -727,8 +727,7 @@
                 return;
             }
             const formattedBlocks = lastBreakdownData.map(item => {
-                const hostVal = item.host_present || 'No';
-                return `# Beat ${item.scene}\n\n### Script line:\n"${item.text}"\n\n### Host Present:\n${hostVal}\n\n### Image Prompt:\n${item.prompt}`;
+                return `# Beat ${item.scene}\n\n### Script line:\n"${item.text}"\n\n### Image Prompt:\n${item.prompt}`;
             }).join('\n\n---\n\n');
 
             navigator.clipboard.writeText(formattedBlocks).then(() => {
@@ -766,7 +765,6 @@
                     .beat-title { font-size: 14pt; font-weight: bold; color: #0071e3; margin-bottom: 8px; }
                     .section-label { font-size: 10pt; font-weight: bold; color: #6e6e73; text-transform: uppercase; margin-top: 10px; margin-bottom: 4px; }
                     .script-line { font-size: 11pt; font-weight: bold; color: #1d1d1f; background: #eef2ff; padding: 10px 14px; border-left: 4px solid #0071e3; margin-bottom: 10px; }
-                    .host-tag { font-size: 11pt; font-weight: bold; color: #d97706; margin-bottom: 10px; }
                     .prompt-content { font-family: 'Courier New', monospace; font-size: 10pt; color: #1c1c1e; background: #f2f2f7; padding: 12px 14px; border: 1px solid #c7c7cc; white-space: pre-wrap; word-break: break-word; }
                 </style>
             </head>
@@ -775,16 +773,12 @@
             `;
 
             lastBreakdownData.forEach(item => {
-                const hostVal = item.host_present || 'No';
                 htmlContent += `
                 <div class="beat-card">
                     <div class="beat-title"># Beat ${item.scene} (${item.timestamp})</div>
                     
                     <div class="section-label">### Script line:</div>
                     <div class="script-line">"${escapeHtml(item.text)}"</div>
-                    
-                    <div class="section-label">### Host Present:</div>
-                    <div class="host-tag">${hostVal}</div>
                     
                     <div class="section-label">### Image Prompt:</div>
                     <div class="prompt-content">${escapeHtml(item.prompt)}</div>
@@ -873,14 +867,10 @@
                             data.result.scenes.forEach(item => {
                                 const card = document.createElement('div');
                                 card.className = 'breakdown-card';
-                                const hostVal = item.host_present || 'No';
-                                const hostColor = hostVal === 'Yes' ? '#FF9500' : 'var(--text-secondary)';
                                 card.innerHTML = `
                                     <div style="font-size:1rem; font-weight:800; color:var(--accent-apple); margin-bottom:8px;"># Beat ${item.scene} <span style="font-size:0.75rem; font-weight:400; color:var(--text-secondary);">• ${item.timestamp}</span></div>
                                     <div style="font-weight:700; font-size:0.78rem; color:var(--text-secondary); margin-top:6px;">### Script line:</div>
                                     <div class="breakdown-script">"${item.text}"</div>
-                                    <div style="font-weight:700; font-size:0.78rem; color:var(--text-secondary); margin-top:8px;">### Host Present:</div>
-                                    <div style="font-size:0.85rem; font-weight:600; color:${hostColor}; margin-bottom:8px;">${hostVal}</div>
                                     <div style="font-weight:700; font-size:0.78rem; color:var(--text-secondary); margin-top:6px;">### Image Prompt:</div>
                                     <div class="breakdown-prompt" style="white-space:pre-wrap; font-family:monospace;">${item.prompt}</div>
                                 `;
