@@ -1168,6 +1168,19 @@
                         rate: rateVal
                     })
                 });
+
+                if (!res.ok) {
+                    let errMsg = 'Failed to generate beat audio';
+                    try {
+                        const errData = await res.json();
+                        errMsg = errData.error || errMsg;
+                    } catch (e) {
+                        errMsg = await res.text();
+                    }
+                    alert('Server Error (' + res.status + '): ' + errMsg);
+                    return;
+                }
+
                 const data = await res.json();
                 if (data.status === 'success') {
                     const audioBox = document.getElementById(`beatAudioBox_${beatNum}`);
@@ -1218,6 +1231,18 @@
                     method: 'POST',
                     body: formData
                 });
+
+                if (!res.ok) {
+                    let errMsg = 'Failed to render mini-clip';
+                    try {
+                        const errData = await res.json();
+                        errMsg = errData.error || errMsg;
+                    } catch (e) {
+                        errMsg = await res.text();
+                    }
+                    alert('Server Error (' + res.status + '): ' + errMsg);
+                    return;
+                }
 
                 const data = await res.json();
                 if (data.status === 'success') {

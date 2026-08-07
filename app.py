@@ -866,6 +866,9 @@ async def handle_generate_beat_clip(request):
                 _, image_ext = os.path.splitext(filename)
                 image_bytes = await field.read()
 
+        if not job_id:
+            job_id = str(uuid.uuid4())
+
         temp_dir = os.path.join(STUDIO_DIR, f"temp_beat_{uuid.uuid4().hex[:6]}")
         os.makedirs(temp_dir, exist_ok=True)
 
