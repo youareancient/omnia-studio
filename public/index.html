@@ -714,10 +714,28 @@
         });
 
         function copyAllPromptsOnly() {
-            if (!lastBreakdownData.length) return;
-            const promptsOnlyStr = lastBreakdownData.map(item => item.prompt).join('\n\n');
-            navigator.clipboard.writeText(promptsOnlyStr);
-            alert(`Copied ${lastBreakdownData.length} 16:9 Visual Prompts to clipboard! 📋`);
+            if (!lastBreakdownData || !lastBreakdownData.length) {
+                alert('No prompts available to copy.');
+                return;
+            }
+            // GUARANTEED BULK PROMPTS ONLY (Separated by double line breaks \n\n)
+            const promptsOnlyStr = lastBreakdownData
+                .map(item => (item.prompt || '').trim())
+                .filter(p => p.length > 0)
+                .join('\n\n');
+
+            navigator.clipboard.writeText(promptsOnlyStr).then(() => {
+                alert(`Copied ${lastBreakdownData.length} 16:9 AI Visual Prompts to clipboard! 📋`);
+            }).catch(err => {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = promptsOnlyStr;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                alert(`Copied ${lastBreakdownData.length} 16:9 AI Visual Prompts to clipboard! 📋`);
+            });
         }
 
         async function startPollingJob(jobId) {

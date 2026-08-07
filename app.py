@@ -86,14 +86,15 @@ async def call_groq_ai_prompt_engineer(session, scene_text, scene_number):
         return None
 
     system_prompt = (
-        "You are an Elite 16:9 Visual Prompt Engineer for top educational YouTube channels like @misterfinanceyt and @TheWealthCortexx.\n"
+        "You are an Elite 16:9 Visual Prompt Engineer for top educational YouTube channels.\n"
         "Your task: Read a 3-5 second script line and create a stunning, long, highly-detailed 16:9 standalone image prompt packed with vibrant visual props, character poses, and visual humor.\n\n"
         "STRICT MASTER PROMPT PATTERN:\n"
-        "Image Prompt - Hand-drawn professional educational 2D vector cartoon illustration in 16:9 widescreen aspect ratio, clean studio-quality digital vector artwork with thick, smooth black outlines, crisp linework, vibrant soft flat colors, and polished modern explainer-animation aesthetics inspired by @misterfinanceyt and @TheWealthCortexx. [Describe character pose, facial expression, and action on the left/center]. FEATURED VISUAL PROPS: [List 3-5 rich, specific, vibrant physical props, tech equipment, financial charts, glowing cables, coins, or meters relevant to the concept]. Above his head, a large white thought bubble with bold black outlines contains [describe a minimal 2D vector icon or silhouette]. Pure white background, generous negative space, balanced 16:9 composition, zero clutter, ultra-crisp 2D vector style --ar 16:9\n\n"
-        "RULES:\n"
-        "1. Do NOT repeat the script line verbatim. Describe a unique visual scene with characters & props.\n"
-        "2. Always include FEATURED VISUAL PROPS with 3 to 5 vivid physical objects.\n"
-        "3. Always end with '--ar 16:9'.\n\n"
+        "Image Prompt - Hand-drawn professional educational 2D vector cartoon illustration in 16:9 widescreen aspect ratio, clean studio-quality digital vector artwork with thick, smooth black outlines, crisp linework, vibrant soft flat colors, and polished modern explainer-animation aesthetics. [Describe character pose, facial expression, and action on the left/center]. FEATURED VISUAL PROPS: [List 3-5 rich, specific, vibrant physical props, tech equipment, financial charts, glowing cables, coins, or meters relevant to the concept]. Above his head, a large white thought bubble with bold black outlines contains [describe a minimal 2D vector icon or silhouette]. Pure white background, generous negative space, balanced 16:9 composition, zero clutter, ultra-crisp 2D vector style --ar 16:9\n\n"
+        "STRICT RULES:\n"
+        "1. Do NOT repeat the script line verbatim.\n"
+        "2. NEVER include handle names, channel names, or social media tags (like @misterfinanceyt or @TheWealthCortexx) in the prompt output!\n"
+        "3. Always include FEATURED VISUAL PROPS with 3 to 5 vivid physical objects.\n"
+        "4. Always end with '--ar 16:9'.\n\n"
         "Respond strictly in json format: {\"prompt\": \"Image Prompt - Hand-drawn professional educational 2D vector... --ar 16:9\"}"
     )
 
@@ -121,7 +122,9 @@ async def call_groq_ai_prompt_engineer(session, scene_text, scene_number):
                     parsed = json.loads(content)
                     prompt_val = parsed.get("prompt")
                     if prompt_val and len(prompt_val) > 50:
-                        return prompt_val
+                        # Strip any accidental handles if present
+                        clean_prompt = re.sub(r'@[a-zA-Z0-9_]+', '', prompt_val)
+                        return clean_prompt
         except Exception as e:
             print(f"Groq exception on scene {scene_number}: {e}")
 
@@ -136,7 +139,7 @@ def build_vector_art_scene_prompt_fallback(text):
     return (
         f"Image Prompt - Hand-drawn professional educational 2D vector cartoon illustration in 16:9 widescreen aspect ratio, "
         f"clean studio-quality digital vector artwork with thick, smooth black outlines, crisp linework, vibrant soft flat colors, "
-        f"and polished modern explainer-animation aesthetics inspired by @misterfinanceyt and @TheWealthCortexx. "
+        f"and polished modern explainer-animation aesthetics. "
         f"A relaxed young boy with brown hair sitting in a simple white chair, cheek leaning against his hand with a soft daydreaming smile. "
         f"FEATURED VISUAL PROPS: glowing 3D golden coins, a sleek black tech server rack chassis with cyan LEDs, neon yellow cables, and a 3D percentage bar chart. "
         f"Above his head, a large white thought bubble with bold black outlines contains a minimal 2D vector icon of {topic_str}. "
@@ -240,7 +243,6 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
             BACKGROUND_JOBS[job_id]["progress"] = 65
             BACKGROUND_JOBS[job_id]["status_text"] = f"STEP 2: Groq AI generating parallel 16:9 vector prompts for {len(scenes_raw)} scenes..."
 
-            # PARALLEL Groq API execution for ultra-fast response (< 2 seconds total!)
             async with ClientSession() as http_session:
                 tasks = [
                     call_groq_ai_prompt_engineer(http_session, stext, idx)
