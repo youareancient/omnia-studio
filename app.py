@@ -575,6 +575,13 @@ async def process_video_assembly_async(video_job_id, original_job_id, zip_bytes,
             for _ in range(total_images):
                 image_durations.append(round(per_img_dur, 3))
 
+        # Precision Audio Sync Adjustment: Pad last image so total video duration matches total audio duration 100%
+        if len(image_durations) > 1:
+            sum_prev = sum(image_durations[:-1])
+            image_durations[-1] = max(0.5, round(total_audio_duration - sum_prev, 3))
+        elif len(image_durations) == 1:
+            image_durations[0] = round(total_audio_duration, 3)
+
         concat_filepath = os.path.join(temp_img_dir, "input_concat.txt")
         
         with open(concat_filepath, "w", encoding="utf-8") as f:
