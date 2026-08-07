@@ -9,6 +9,7 @@ from aiohttp import web, ClientSession, FormData
 HOST = "0.0.0.0"
 PORT = int(os.environ.get("PORT", 7860))
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "").strip()
 
 STUDIO_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(STUDIO_DIR, "public")
@@ -60,59 +61,59 @@ def generate_stock_keywords(text):
     keywords = list(dict.fromkeys(filtered))[:4]
     return ", ".join(keywords) if keywords else "business, economics, technology"
 
-def extract_props_and_visuals(text):
-    text_lower = text.lower()
-    props = []
-    
-    if any(k in text_lower for k in ["money", "cost", "costs", "revenue", "dollar", "dollars", "price", "premium", "profit", "margin", "margins", "pay", "rate", "rates", "$"]):
-        props.append("glowing golden coins, stacks of neat green banknotes, and a 3D percentage bar chart")
-    if any(k in text_lower for k in ["cool", "cooling", "liquid", "water", "air", "density", "pipe", "pipes", "heat", "temperature"]):
-        props.append("transparent cyan liquid cooling pipes flowing with neon blue fluid and metallic valves")
-    if any(k in text_lower for k in ["data", "server", "servers", "ai", "workload", "workloads", "chip", "tech", "facility", "facilities"]):
-        props.append("a sleek black server rack chassis with glowing LED indicator lights and cyan fiber optic lines")
-    if any(k in text_lower for k in ["building", "construction", "ranch", "hotel", "house", "firm", "market", "markets"]):
-        props.append("a crisp 2D vector architectural blueprint scroll and a yellow industrial safety hardhat")
-        
-    if not props:
-        words = re.findall(r'\b[a-zA-Z]{4,}\b', text)
-        stopwords = {"that", "have", "with", "this", "from", "they", "will", "would", "there", "their", "were", "been", "some", "into", "than", "more", "like", "over"}
-        main_words = [w for w in words if w.lower() not in stopwords][:3]
-        prop_subject = " and ".join(main_words) if main_words else "central concept object"
-        props.append(f"a distinct 2D vector icon prop representing '{prop_subject}'")
-        
-    return "; ".join(props)
+async def call_groq_ai_prompt_engineer(scene_text):
+    api_key = GROQ_API_KEY or os.environ.get("GROQ_API_KEY", "").strip()
+    if not api_key:
+        return None, None
 
-def build_vector_art_scene_prompt(text):
+    system_prompt = (
+        "You are a Professional Prompt Engineer with 5+ years of experience for top educational YouTube channels like @misterfinanceyt and @TheWealthCortexx.\n"
+        "Your job is to read a 3-5 second script line and generate TWO things:\n"
+        "1. PROMPT: A standalone, detailed, clutter-free 2D vector art prompt. Use hand-drawn professional educational cartoon illustration style, clean studio-quality vector artwork, thick smooth black outlines, soft flat colors, modern explainer animation aesthetics. Feature concrete visual props, characters, diagrams, or visual humor matching the line concept on a pure white background with generous negative space.\n"
+        "2. STOCK_KEYWORDS: 3 to 4 precise search keywords for Pexels/Pixabay stock videos.\n\n"
+        "Respond ONLY in valid JSON format: {\"prompt\": \"Image Prompt - ...\", \"stockKeywords\": \"keyword1, keyword2, keyword3\"}"
+    )
+
+    user_prompt = f"Script Line: \"{scene_text}\""
+
+    try:
+        async with ClientSession() as session:
+            payload = {
+                "model": "llama-3.3-70b-versatile",
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                "temperature": 0.6,
+                "response_format": {"type": "json_object"}
+            }
+            headers = {
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json"
+            }
+            async with session.post("https://api.groq.com/openai/v1/chat/completions", json=payload, headers=headers, timeout=12) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    content = data["choices"][0]["message"]["content"]
+                    parsed = json.loads(content)
+                    return parsed.get("prompt"), parsed.get("stockKeywords")
+                else:
+                    err_txt = await resp.text()
+                    print("Groq API error response:", resp.status, err_txt)
+    except Exception as e:
+        print("Groq API call exception:", e)
+
+    return None, None
+
+def build_vector_art_scene_prompt_fallback(text):
     clean_text = text.strip()
-    featured_props = extract_props_and_visuals(clean_text)
-    
     prompt = (
-        f"Hand-drawn professional educational cartoon illustration, clean studio-quality digital vector artwork "
+        f"Image Prompt - Hand-drawn professional educational cartoon illustration, clean studio-quality digital vector artwork "
         f"with thick smooth black outlines, crisp linework, soft flat colors, and polished modern explainer-animation aesthetics "
         f"inspired by @misterfinanceyt and @TheWealthCortexx. Visualizing scene: '{clean_text}'. "
-        f"FEATURED VISUAL PROPS: {featured_props}. "
         f"Centered composition on a pure white background with generous negative space, zero clutter, simple, modern, high-contrast 2D vector style."
     )
     return prompt
-
-def split_long_text_into_snappy_chunks(text, max_words=8):
-    sub_clauses = re.split(r'(?<=[,;:—])\s+', text.strip())
-    chunks = []
-    
-    for clause in sub_clauses:
-        clause_words = clause.strip().split()
-        if not clause_words:
-            continue
-            
-        if len(clause_words) <= max_words:
-            chunks.append(" ".join(clause_words))
-        else:
-            for k in range(0, len(clause_words), max_words):
-                slice_words = clause_words[k:k+max_words]
-                if slice_words:
-                    chunks.append(" ".join(slice_words))
-                    
-    return chunks if chunks else [text]
 
 async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode):
     try:
@@ -162,22 +163,21 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
 
             temp_chunks.append(chunk_path)
 
-            progress_pct = int((i / total_paras) * 90) + 5
+            progress_pct = int((i / total_paras) * 80) + 5
             BACKGROUND_JOBS[job_id]["progress"] = progress_pct
-            BACKGROUND_JOBS[job_id]["status_text"] = f"Synthesizing visual props & prompts ({progress_pct}%)..."
+            BACKGROUND_JOBS[job_id]["status_text"] = f"Synthesizing audio ({progress_pct}%)..."
 
         if mode == "breakdown":
-            BACKGROUND_JOBS[job_id]["progress"] = 96
-            BACKGROUND_JOBS[job_id]["status_text"] = "Creating prop-enhanced 2D vector prompts & stock keywords..."
+            BACKGROUND_JOBS[job_id]["progress"] = 85
+            BACKGROUND_JOBS[job_id]["status_text"] = "Groq Llama-3.3 AI generating story-driven vector prompts..."
 
             cues = submaker.cues
-            scenes = []
+            scenes_raw = []
             
             if cues:
                 curr_words = []
                 start_ms = cues[0].start
                 end_ms = cues[0].end
-                scene_num = 1
                 
                 for cue in cues:
                     word = cue.text.strip()
@@ -190,52 +190,37 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
                     if (len(curr_words) >= 8 or duration_sec >= 3.8 or (is_punct and len(curr_words) >= 5)):
                         scene_text = " ".join(curr_words)
                         time_str = f"{format_timestamp(start_ms)} -> {format_timestamp(end_ms)}"
-                        prompt_str = build_vector_art_scene_prompt(scene_text)
-                        stock_kw = generate_stock_keywords(scene_text)
-                        
-                        scenes.append({
-                            "scene": scene_num,
-                            "timestamp": time_str,
-                            "text": scene_text,
-                            "prompt": prompt_str,
-                            "stockKeywords": stock_kw
-                        })
-                        scene_num += 1
+                        scenes_raw.append((scene_text, time_str))
                         curr_words = []
                         start_ms = end_ms
                         
                 if curr_words:
                     scene_text = " ".join(curr_words)
                     time_str = f"{format_timestamp(start_ms)} -> {format_timestamp(end_ms)}"
-                    prompt_str = build_vector_art_scene_prompt(scene_text)
-                    stock_kw = generate_stock_keywords(scene_text)
-                    scenes.append({
-                        "scene": scene_num,
-                        "timestamp": time_str,
-                        "text": scene_text,
-                        "prompt": prompt_str,
-                        "stockKeywords": stock_kw
-                    })
-            else:
-                scene_num = 1
-                est_time_sec = 0.0
-                for idx, para in enumerate(paragraphs, start=1):
-                    snappy_chunks = split_long_text_into_snappy_chunks(para, max_words=8)
-                    for chunk in snappy_chunks:
-                        chunk_words = len(chunk.split())
-                        dur = (chunk_words / 150.0) * 60.0
-                        start_str = format_timestamp(int(est_time_sec * 1000))
-                        est_time_sec += dur
-                        end_str = format_timestamp(int(est_time_sec * 1000))
-                        
-                        scenes.append({
-                            "scene": scene_num,
-                            "timestamp": f"{start_str} -> {end_str}",
-                            "text": chunk,
-                            "prompt": build_vector_art_scene_prompt(chunk),
-                            "stockKeywords": generate_stock_keywords(chunk)
-                        })
-                        scene_num += 1
+                    scenes_raw.append((scene_text, time_str))
+
+            scenes = []
+            total_scenes = len(scenes_raw)
+
+            for idx, (scene_text, time_str) in enumerate(scenes_raw, start=1):
+                pct = 85 + int((idx / total_scenes) * 12)
+                BACKGROUND_JOBS[job_id]["progress"] = pct
+                BACKGROUND_JOBS[job_id]["status_text"] = f"Groq AI crafting prompt {idx} of {total_scenes}..."
+
+                ai_prompt, ai_stock_kw = await call_groq_ai_prompt_engineer(scene_text)
+                
+                if not ai_prompt:
+                    ai_prompt = build_vector_art_scene_prompt_fallback(scene_text)
+                if not ai_stock_kw:
+                    ai_stock_kw = generate_stock_keywords(scene_text)
+
+                scenes.append({
+                    "scene": idx,
+                    "timestamp": time_str,
+                    "text": scene_text,
+                    "prompt": ai_prompt,
+                    "stockKeywords": ai_stock_kw
+                })
 
             for chunk_file in temp_chunks:
                 try:
@@ -246,7 +231,7 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
             BACKGROUND_JOBS[job_id] = {
                 "status": "completed",
                 "progress": 100,
-                "status_text": f"Generated {len(scenes)} prop-enhanced scene prompts & stock keywords!",
+                "status_text": f"Groq AI generated {len(scenes)} vector prompts & stock keywords!",
                 "mode": "breakdown",
                 "result": {
                     "scenes": scenes
