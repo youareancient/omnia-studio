@@ -90,19 +90,22 @@ async def call_groq_ai_prompt_engineer(session, scene_text, scene_number):
         return None
 
     system_prompt = (
-        "You are an Elite 16:9 Visual Prompt Engineer for YouTube explainer videos.\n"
-        "Your task: Read a 3-5 second script scene and create a standalone 16:9 image prompt packed with vibrant visual props, character poses, and visual humor.\n\n"
+        "You are an Elite 2D Vector Visual Prompt Engineer for YouTube doodle explainer videos.\n"
+        "Your task: Read a 3-5 second script line and create a structured Beat Scene Prompt for a 2D flat vector doodle explainer illustration.\n\n"
         "STRICT MASTER PROMPT PATTERN:\n"
-        "Image Prompt - Hand-drawn professional educational 2D vector cartoon illustration in 16:9 widescreen aspect ratio, clean studio-quality digital vector artwork with thick, smooth black outlines, crisp linework, vibrant soft flat colors, and polished modern explainer-animation aesthetics. [Describe character pose, facial expression, and action on the left/center]. FEATURED VISUAL PROPS: [List 3-5 rich, specific, vibrant physical props, tech equipment, financial charts, glowing cables, coins, or meters relevant to the concept]. Above his head, a large white thought bubble with bold black outlines contains [describe a minimal 2D vector icon or silhouette]. Pure white background, generous negative space, balanced 16:9 composition, zero clutter, ultra-crisp 2D vector style --ar 16:9\n\n"
+        "2D flat vector illustration, hand-drawn doodle explainer-video style, thick clean black outlines, flat solid color fills, no gradients, no shading.\n\n"
+        "[Describe background, main central subjects, visual props, financial charts, documents, or equipment].\n\n"
+        "[If text or numbers like '$3 million' or '$1.5M' appear in the script, describe huge bright-red or bold text labels, e.g. Large bright-red text: \"$3,000,000\"].\n\n"
         "STRICT RULES:\n"
-        "1. Do NOT repeat the script line verbatim.\n"
-        "2. NEVER include handle names, channel names, or social media tags (like @misterfinanceyt or @TheWealthCortexx) in the prompt output!\n"
-        "3. Always include FEATURED VISUAL PROPS with 3 to 5 vivid physical objects.\n"
-        "4. Always end with '--ar 16:9'.\n\n"
-        "Respond strictly in json format: {\"prompt\": \"Image Prompt - Hand-drawn professional educational 2D vector... --ar 16:9\"}"
+        "1. Always start with: '2D flat vector illustration, hand-drawn doodle explainer-video style, thick clean black outlines, flat solid color fills, no gradients, no shading.'\n"
+        "2. Set host_present to 'Yes' ONLY if the line is a direct host question or reaction (e.g. 'So the question sitting in your mind is...', 'How do you get that money back?'). Otherwise 'No'.\n"
+        "3. If host_present is 'Yes', include host description: 'Foreground host.\\n\\nA simple flat 2D stick/blob-style cartoon man with a large plain circle head, solid white fill, thin clean black outline, completely bald, two simple black-outlined circular eyes with solid black pupil dots, two short thick straight black eyebrows, simple curved mouth line, no nose, no ears. Thin stick limbs, white mitten hands, dark rounded feet.'\n"
+        "4. NEVER include handle names, channel names, or social media tags (like @misterfinanceyt or @TheWealthCortexx)!\n\n"
+        "Respond strictly in JSON format:\n"
+        '{\n  "host_present": "Yes" or "No",\n  "prompt": "2D flat vector illustration, hand-drawn doodle explainer-video style..."\n}'
     )
 
-    user_prompt = f"Script Line (Scene {scene_number}): \"{scene_text}\""
+    user_prompt = f"Script Line (Beat {scene_number}): \"{scene_text}\""
 
     for model in ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"]:
         try:
@@ -112,7 +115,7 @@ async def call_groq_ai_prompt_engineer(session, scene_text, scene_number):
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
                 ],
-                "temperature": 0.75,
+                "temperature": 0.7,
                 "response_format": {"type": "json_object"}
             }
             headers = {
@@ -125,15 +128,19 @@ async def call_groq_ai_prompt_engineer(session, scene_text, scene_number):
                     content = data["choices"][0]["message"]["content"]
                     parsed = json.loads(content)
                     prompt_val = parsed.get("prompt")
-                    if prompt_val and len(prompt_val) > 50:
+                    host_val = parsed.get("host_present", "No")
+                    if prompt_val and len(prompt_val) > 30:
                         clean_prompt = re.sub(r'@[a-zA-Z0-9_]+', '', prompt_val)
-                        return clean_prompt
+                        return {"host_present": host_val, "prompt": clean_prompt}
         except Exception as e:
             print(f"Groq exception on scene {scene_number}: {e}")
 
     return None
 
 def build_vector_art_scene_prompt_fallback(text):
+    is_host = bool(re.search(r'\b(you|your|how|why|what|should|think|mind|question)\b', text, re.IGNORECASE))
+    host_present = "Yes" if is_host else "No"
+    
     words = re.findall(r'\b[a-zA-Z]{3,}\b', text)
     stopwords = {
         "that", "have", "with", "this", "from", "they", "will", "would", "there", "their",
@@ -141,18 +148,33 @@ def build_vector_art_scene_prompt_fallback(text):
         "your", "want", "need", "just", "what", "when", "make", "first", "then", "also",
         "about", "how", "does", "done", "could", "should", "here", "know", "take", "look"
     }
-    filtered = [w for w in words if w.lower() not in stopwords][:4]
-    topic_str = " ".join(filtered) if filtered else "technology and business concept"
+    filtered = [w.capitalize() for w in words if w.lower() not in stopwords][:3]
+    topic_str = " ".join(filtered) if filtered else "Business Capital"
 
-    return (
-        f"Image Prompt - Hand-drawn professional educational 2D vector cartoon illustration in 16:9 widescreen aspect ratio, "
-        f"clean studio-quality digital vector artwork with thick, smooth black outlines, crisp linework, vibrant soft flat colors, "
-        f"and polished modern explainer-animation aesthetics. "
-        f"A relaxed young boy with brown hair sitting in a simple white chair, cheek leaning against his hand with a soft daydreaming smile. "
-        f"FEATURED VISUAL PROPS: glowing 3D golden coins, a sleek black tech server rack chassis with cyan LEDs, neon yellow cables, and a 3D percentage bar chart. "
-        f"Above his head, a large white thought bubble with bold black outlines contains a minimal 2D vector icon of {topic_str}. "
-        f"Pure white background, generous negative space, zero clutter, 2D vector style --ar 16:9"
-    )
+    money_match = re.search(r'(\$?\d+[\d,.]*\s*(million|billion|thousand|k|m)?)', text, re.IGNORECASE)
+    money_label = ""
+    if money_match and len(money_match.group(0)) > 1:
+        money_label = f"\n\nHuge bright-red text:\n\"{money_match.group(0).upper()}\""
+
+    if host_present == "Yes":
+        prompt_str = (
+            "2D flat vector illustration, hand-drawn doodle explainer-video style, thick clean black outlines, flat solid color fills, no gradients, no shading.\n\n"
+            "Foreground host.\n\n"
+            "A simple flat 2D stick/blob-style cartoon man with a large plain circle head, solid white fill, thin clean black outline, completely bald, two simple black-outlined circular eyes with solid black pupil dots, two short thick straight black eyebrows, simple curved mouth line, no nose, no ears. Thin stick limbs, white mitten hands, dark rounded feet.\n\n"
+            f"Standing beside a clean 2D infographic board illustrating {topic_str}.\n"
+            "Scratching his head while looking at the figures."
+            f"{money_label}"
+        )
+    else:
+        prompt_str = (
+            "2D flat vector illustration, hand-drawn doodle explainer-video style, thick clean black outlines, flat solid color fills, no gradients, no shading.\n\n"
+            f"Flat light-gray finance background.\n\n"
+            f"Key visual assets and infrastructure icons for {topic_str}.\n\n"
+            "Simple icons, clean layout, high contrast."
+            f"{money_label}"
+        )
+
+    return {"host_present": host_present, "prompt": prompt_str}
 
 async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode):
     try:
@@ -250,7 +272,7 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
                     scenes_raw.append((line, f"{t_start} -> {t_end}"))
 
             BACKGROUND_JOBS[job_id]["progress"] = 65
-            BACKGROUND_JOBS[job_id]["status_text"] = f"STEP 2: Groq AI generating parallel 16:9 vector prompts for {len(scenes_raw)} scenes..."
+            BACKGROUND_JOBS[job_id]["status_text"] = f"STEP 2: Groq AI generating parallel 2D doodle prompts for {len(scenes_raw)} beats..."
 
             async with ClientSession() as http_session:
                 tasks = [
@@ -268,7 +290,8 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
                     "scene": idx,
                     "timestamp": time_str,
                     "text": scene_text,
-                    "prompt": prompt_res
+                    "host_present": prompt_res.get("host_present", "No"),
+                    "prompt": prompt_res.get("prompt", "")
                 })
 
             for chunk_file in temp_chunks:
