@@ -280,6 +280,12 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
                     "prompt": prompt_res if isinstance(prompt_res, str) else prompt_res.get("prompt", "")
                 })
 
+            # Save merged voiceover MP3 automatically for video rendering
+            with open(out_filepath, "wb") as outfile:
+                for chunk_file in temp_chunks:
+                    with open(chunk_file, "rb") as infile:
+                        outfile.write(infile.read())
+
             for chunk_file in temp_chunks:
                 try:
                     os.remove(chunk_file)
@@ -289,9 +295,11 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
             BACKGROUND_JOBS[job_id] = {
                 "status": "completed",
                 "progress": 100,
-                "status_text": f"Generated {len(scenes)} natural 3-5 second 16:9 vector prompts!",
+                "status_text": f"Generated Voiceover MP3 & {len(scenes)} natural 2D doodle prompts!",
                 "mode": "breakdown",
                 "result": {
+                    "filename": filename,
+                    "audioUrl": f"/static/generated/{filename}",
                     "scenes": scenes
                 }
             }
