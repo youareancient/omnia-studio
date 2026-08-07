@@ -806,6 +806,24 @@ def humanize_script(text):
     clean = re.sub(r'[\r\n]+', ' ', text).strip()
     return clean
 
+async def trim_trailing_audio_silence(audio_path):
+    if not os.path.exists(audio_path):
+        return
+    temp_trim_path = audio_path + ".trimmed.mp3"
+    trim_cmd = [
+        "ffmpeg", "-y", "-i", audio_path,
+        "-af", "silenceremove=stop_periods=-1:stop_duration=0.1:stop_threshold=-40dB",
+        "-c:a", "libmp3lame", "-b:a", "192k",
+        temp_trim_path
+    ]
+    try:
+        proc = await asyncio.create_subprocess_exec(*trim_cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+        await proc.communicate()
+        if os.path.exists(temp_trim_path) and os.path.getsize(temp_trim_path) > 100:
+            os.replace(temp_trim_path, audio_path)
+    except Exception as e:
+        print("Error trimming trailing silence:", e)
+
 async def handle_generate_beat_audio(request):
     try:
         data = await request.json()
@@ -835,6 +853,7 @@ async def handle_generate_beat_audio(request):
 
         communicate = edge_tts.Communicate(cleaned_text, voice_id, rate=rate)
         await communicate.save(out_filepath)
+        await trim_trailing_audio_silence(out_filepath)
 
         return web.json_response({
             "status": "success",
@@ -893,6 +912,9 @@ async def handle_generate_beat_clip(request):
             cleaned = humanize_script(scene_text)
             comm = edge_tts.Communicate(cleaned, "en-US-AndrewNeural", rate="+1%")
             await comm.save(beat_audio_path)
+            await trim_trailing_audio_silence(beat_audio_path)
+        else:
+            await trim_trailing_audio_silence(beat_audio_path)
 
         dur_sec = await get_media_duration_sec(beat_audio_path)
         if dur_sec <= 0.2:
