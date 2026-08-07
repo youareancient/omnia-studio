@@ -485,19 +485,8 @@ def natural_sort_key(s):
     return [int(text) if text.isdigit() else text.lower() for text in re.split(r'(\d+)', os.path.basename(s))]
 
 def get_ken_burns_vf(scene_idx):
-    preset = int(scene_idx) % 3
-    if preset == 0:
-        # Preset 0: Smooth Alpha Fade-In + Left-to-Right Float Slide & Subtle Zoom (1.00 -> 1.035)
-        kp = "zoompan=z='min(pzoom+0.0006,1.035)':x='(iw-iw/zoom)*(0.5+0.35*sin(on/40))':y='ih/2-(ih/zoom/2)':d=1:s=1920x1080:fps=30"
-    elif preset == 1:
-        # Preset 1: Smooth Alpha Fade-In + Center Ease Zoom-In (1.00 -> 1.035)
-        kp = "zoompan=z='min(pzoom+0.0007,1.035)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=1920x1080:fps=30"
-    else:
-        # Preset 2: Smooth Alpha Fade-In + Soft Reveal Zoom-Out (1.035 -> 1.00)
-        kp = "zoompan=z='if(eq(on,0),1.035,max(pzoom-0.0007,1.00))':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=1920x1080:fps=30"
-    
-    # Append 0.5s smooth alpha fade-in filter: fade=t=in:st=0:d=0.5
-    return f"scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2:black,{kp},fade=t=in:st=0:d=0.5,format=yuv420p"
+    # Clean static 1080p 16:9 layout without any motion/zoompan/fade effects
+    return "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2:black,format=yuv420p"
 
 async def process_video_assembly_async(video_job_id, original_job_id, zip_bytes, image_files_data):
     try:
