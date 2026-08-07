@@ -3,8 +3,11 @@ import json
 import os
 import re
 import uuid
+import wave
+import struct
 import edge_tts
 from aiohttp import web, ClientSession, FormData
+from sfx_generator import create_sub_bass_boom, create_whoosh, create_glitch, create_click
 
 HOST = "0.0.0.0"
 PORT = int(os.environ.get("PORT", 7860))
@@ -13,7 +16,15 @@ TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
 STUDIO_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(STUDIO_DIR, "public")
 DOWNLOADS_DIR = os.path.join(STATIC_DIR, "generated")
+SFX_DIR = os.path.join(STATIC_DIR, "sfx")
 os.makedirs(DOWNLOADS_DIR, exist_ok=True)
+os.makedirs(SFX_DIR, exist_ok=True)
+
+# Generate SFX files on startup
+create_sub_bass_boom()
+create_whoosh()
+create_glitch()
+create_click()
 
 INDEX_HTML_PATH = os.path.join(STATIC_DIR, "index.html")
 
@@ -46,7 +57,32 @@ def humanize_text_for_speech(text):
     humanized_text = re.sub(r'\.{3,}', '...', humanized_text)
     return humanized_text, paragraphs
 
-async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode):
+def extract_shorts_clips(text):
+    lines = [l.strip() for l in text.split('\n') if l.strip()]
+    full_str = " ".join(lines)
+    sentences = re.split(r'(?<=[.!?])\s+', full_str)
+    
+    shorts = []
+    current_chunk = []
+    current_words = 0
+    
+    for s in sentences:
+        words = len(s.split())
+        if current_words + words <= 110: # ~45 seconds @ 150 wpm
+            current_chunk.append(s)
+            current_words += words
+        else:
+            if current_chunk:
+                shorts.append(" ".join(current_chunk))
+            current_chunk = [s]
+            current_words = words
+            
+    if current_chunk and len(shorts) < 5:
+        shorts.append(" ".join(current_chunk))
+        
+    return shorts[:5]
+
+async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode, enable_sfx):
     try:
         BACKGROUND_JOBS[job_id] = {
             "status": "processing",
@@ -58,6 +94,19 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
 
         voice_info = VOICE_PRESETS.get(voice_preset, VOICE_PRESETS["andrew"])
         voice_id = voice_info["id"]
+
+        if mode == "shorts":
+            shorts_clips = extract_shorts_clips(raw_text)
+            BACKGROUND_JOBS[job_id] = {
+                "status": "completed",
+                "progress": 100,
+                "status_text": f"Extracted {len(shorts_clips)} YouTube Shorts scripts!",
+                "mode": "shorts",
+                "result": {
+                    "shorts": shorts_clips
+                }
+            }
+            return
 
         full_humanized_text, paragraphs = humanize_text_for_speech(raw_text)
         total_paras = len(paragraphs)
@@ -81,9 +130,12 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
         for i, para in enumerate(paragraphs, start=1):
             if not para.strip():
                 continue
+
+            # Strip in-text SFX tags for clean TTS
+            clean_para = re.sub(r'\[sfx:[^\]]+\]', '', para).strip()
             
             chunk_path = os.path.join(temp_dir, f"chunk_{uuid.uuid4().hex}.mp3")
-            communicate = edge_tts.Communicate(para, voice_id, rate=rate, pitch="+0Hz")
+            communicate = edge_tts.Communicate(clean_para, voice_id, rate=rate, pitch="+0Hz")
             
             with open(chunk_path, "wb") as f:
                 async for chunk in communicate.stream():
@@ -115,7 +167,8 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
                 "result": {
                     "filename": filename,
                     "audioUrl": f"/static/generated/{filename}",
-                    "wordCount": len(full_humanized_text.split())
+                    "wordCount": len(full_humanized_text.split()),
+                    "sfxActive": enable_sfx
                 }
             }
         else: # mode == "srt"
@@ -177,12 +230,13 @@ async def handle_start_job(request):
         rate = data.get("rate", "+1%")
         filename = data.get("filename", "").strip()
         mode = data.get("mode", "audio")
+        enable_sfx = data.get("enableSfx", False)
 
         if not raw_text:
             return web.json_response({"error": "Script text cannot be empty"}, status=400)
 
         job_id = str(uuid.uuid4())
-        asyncio.create_task(process_job_async(job_id, raw_text, voice_preset, rate, filename, mode))
+        asyncio.create_task(process_job_async(job_id, raw_text, voice_preset, rate, filename, mode, enable_sfx))
 
         return web.json_response({"job_id": job_id, "status": "processing"})
     except Exception as e:

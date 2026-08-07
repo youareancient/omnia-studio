@@ -332,10 +332,56 @@
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         }
 
+        /* SFX Switch Pill */
+        .sfx-pill {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-card-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 14px;
+            padding: 0.75rem 0.95rem;
+            margin-bottom: 1.1rem;
+            font-size: 0.82rem;
+            font-weight: 600;
+        }
+
+        .switch-input {
+            width: 40px;
+            height: 22px;
+            background: var(--toggle-bg);
+            border-radius: 20px;
+            position: relative;
+            cursor: pointer;
+            appearance: none;
+            outline: none;
+            transition: background 0.25s;
+        }
+
+        .switch-input:checked {
+            background: var(--accent-apple);
+        }
+
+        .switch-input::after {
+            content: '';
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: white;
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            transition: transform 0.25s;
+        }
+
+        .switch-input:checked::after {
+            transform: translateX(18px);
+        }
+
         .action-btn-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
         }
 
         .btn-apple {
@@ -344,17 +390,18 @@
             color: #ffffff;
             border: none;
             border-radius: 980px;
-            padding: 0.95rem 0.5rem;
-            font-size: 0.88rem;
+            padding: 0.85rem 0.4rem;
+            font-size: 0.82rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.25s ease;
             box-shadow: 0 4px 16px rgba(0, 113, 227, 0.25);
-            min-height: 48px;
+            min-height: 46px;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 6px;
+            gap: 4px;
+            white-space: nowrap;
         }
 
         .btn-apple-secondary {
@@ -393,10 +440,10 @@
                 backdrop-filter: saturate(180%) blur(20px);
                 -webkit-backdrop-filter: saturate(180%) blur(20px);
                 border-top: 1px solid var(--border-subtle);
-                padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom));
+                padding: 0.75rem 0.75rem calc(0.75rem + env(safe-area-inset-bottom));
                 z-index: 99;
                 box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.25);
-                gap: 10px;
+                gap: 6px;
             }
         }
 
@@ -480,6 +527,16 @@
         .btn-download-single:active {
             transform: scale(0.97);
         }
+
+        .shorts-item {
+            background: var(--bg-input);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 10px;
+            margin-bottom: 8px;
+            font-size: 0.82rem;
+            line-height: 1.4;
+        }
     </style>
 </head>
 <body>
@@ -524,7 +581,7 @@
         <!-- Voice & Settings -->
         <section class="apple-card">
             <div class="card-header">
-                <span class="card-title">Voice & Pacing</span>
+                <span class="card-title">Voice & Audio Effects</span>
             </div>
 
             <div class="voice-list">
@@ -549,6 +606,15 @@
                 </div>
             </div>
 
+            <!-- HD SFX Toggle Switch -->
+            <div class="sfx-pill">
+                <div>
+                    <span>🔊 HD Cinematic Sound Effects</span>
+                    <div style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 400;">Sub-Bass Booms & Transition Whooshes</div>
+                </div>
+                <input type="checkbox" id="sfxToggle" class="switch-input" checked>
+            </div>
+
             <div class="slider-box">
                 <div class="slider-header">
                     <span>Speech Pacing</span>
@@ -562,13 +628,16 @@
                 <input type="text" id="filenameInput" placeholder="e.g. data_center_narration.mp3" style="width: 100%; background: var(--bg-input); border: 1px solid var(--border-subtle); padding: 10px 12px; border-radius: 12px; color: var(--text-primary); outline: none; font-size: 0.88rem;">
             </div>
 
-            <!-- Desktop 2-Button Action Grid -->
+            <!-- Desktop Action Grid -->
             <div class="action-btn-grid" id="desktopActionGrid">
                 <button class="btn-apple" onclick="generateStream('audio')">
-                    🎵 Generate Voiceover
+                    🎵 Voiceover
                 </button>
                 <button class="btn-apple btn-apple-secondary" onclick="generateStream('srt')">
-                    📝 Generate .SRT
+                    📝 .SRT
+                </button>
+                <button class="btn-apple btn-apple-secondary" onclick="generateStream('shorts')">
+                    ✂️ Shorts
                 </button>
             </div>
 
@@ -581,7 +650,7 @@
                 <div class="progress-bar">
                     <div class="progress-fill" id="progressBarFill"></div>
                 </div>
-                <div class="progress-sub" id="progressStatus">Cloud background job active...</div>
+                <div class="progress-sub" id="progressStatus">Processing audio in background...</div>
             </div>
 
             <!-- Audio Output Card -->
@@ -597,16 +666,25 @@
                 <p style="font-size: 0.78rem; color: var(--text-secondary); margin: 6px 0 10px 0;">Word-level subtitle file generated for CapCut & Premiere Pro.</p>
                 <a href="#" id="downloadSrtLink" class="btn-download-single btn-apple-secondary" download>Download Subtitles (.SRT)</a>
             </div>
+
+            <!-- Shorts Auto-Cutter Output Card -->
+            <div class="output-card" id="shortsCard">
+                <div style="font-size: 0.88rem; font-weight: 600; color: var(--text-primary);">✂️ YouTube Shorts Scripts Extracted</div>
+                <div id="shortsContainer" style="margin-top: 10px;"></div>
+            </div>
         </section>
     </main>
 
-    <!-- Mobile Sticky Floating Bar: 2 Action Buttons -->
+    <!-- Mobile Sticky Floating Bar -->
     <div class="mobile-bottom-bar">
         <button class="btn-apple" onclick="generateStream('audio')">
             🎵 Voiceover
         </button>
         <button class="btn-apple btn-apple-secondary" onclick="generateStream('srt')">
             📝 .SRT
+        </button>
+        <button class="btn-apple btn-apple-secondary" onclick="generateStream('shorts')">
+            ✂️ Shorts
         </button>
     </div>
 
@@ -658,6 +736,14 @@
             estTimeEl.textContent = `~${minutes} min audio`;
         });
 
+        function copyShortText(idx) {
+            const el = document.getElementById(`shortItem_${idx}`);
+            if (el) {
+                navigator.clipboard.writeText(el.textContent);
+                alert(`Copied Short #${idx+1} script to clipboard! 📋`);
+            }
+        }
+
         async function startPollingJob(jobId) {
             if (pollInterval) clearInterval(pollInterval);
             
@@ -668,6 +754,7 @@
             
             const audioCard = document.getElementById('audioCard');
             const srtCard = document.getElementById('srtCard');
+            const shortsCard = document.getElementById('shortsCard');
 
             progressBox.classList.add('active');
 
@@ -714,6 +801,22 @@
                             downloadSrtLink.download = data.result.srtFilename;
 
                             srtCard.classList.add('active');
+                        } else if (data.mode === 'shorts' && data.result) {
+                            const container = document.getElementById('shortsContainer');
+                            container.innerHTML = '';
+                            
+                            data.result.shorts.forEach((sText, idx) => {
+                                const div = document.createElement('div');
+                                div.className = 'shorts-item';
+                                div.innerHTML = `
+                                    <div style="font-weight:700; color:var(--accent-apple); margin-bottom:4px;">Short #${idx+1} (~45s)</div>
+                                    <div id="shortItem_${idx}">${sText}</div>
+                                    <button class="btn-download-single btn-apple-secondary" style="margin-top:6px; min-height:36px; padding:6px 12px; font-size:0.78rem;" onclick="copyShortText(${idx})">📋 Copy Short #${idx+1} Script</button>
+                                `;
+                                container.appendChild(div);
+                            });
+
+                            shortsCard.classList.add('active');
                         }
                     } else if (data.status === 'failed') {
                         clearInterval(pollInterval);
@@ -735,9 +838,11 @@
             }
 
             const customFilename = document.getElementById('filenameInput').value.trim();
+            const enableSfx = document.getElementById('sfxToggle').checked;
 
             document.getElementById('audioCard').classList.remove('active');
             document.getElementById('srtCard').classList.remove('active');
+            document.getElementById('shortsCard').classList.remove('active');
 
             try {
                 const response = await fetch('/api/start-job', {
@@ -748,7 +853,8 @@
                         voice: selectedVoice,
                         rate: currentRateStr,
                         filename: customFilename || `youtube_voiceover_${Date.now()}.mp3`,
-                        mode: mode
+                        mode: mode,
+                        enableSfx: enableSfx
                     })
                 });
 
