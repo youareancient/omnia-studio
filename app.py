@@ -44,11 +44,16 @@ def humanize_text_for_speech(text):
     return humanized_text, paragraphs
 
 async def handle_index(request):
+    headers = {
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0"
+    }
     if os.path.exists(INDEX_HTML_PATH):
         with open(INDEX_HTML_PATH, "r", encoding="utf-8") as f:
             content = f.read()
-        return web.Response(text=content, content_type="text/html", charset="utf-8")
-    return web.Response(text="<h1>YouTube Voiceover Studio</h1><p>Index file initializing...</p>", content_type="text/html")
+        return web.Response(text=content, content_type="text/html", charset="utf-8", headers=headers)
+    return web.Response(text="<h1>YouTube Voiceover Studio</h1><p>Initializing...</p>", content_type="text/html", headers=headers)
 
 async def handle_voices(request):
     return web.json_response(VOICE_PRESETS)
