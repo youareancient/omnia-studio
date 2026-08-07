@@ -1170,13 +1170,12 @@
                 });
 
                 if (!res.ok) {
-                    let errMsg = 'Failed to generate beat audio';
+                    const rawText = await res.text();
+                    let errMsg = rawText;
                     try {
-                        const errData = await res.json();
-                        errMsg = errData.error || errMsg;
-                    } catch (e) {
-                        errMsg = await res.text();
-                    }
+                        const parsed = JSON.parse(rawText);
+                        if (parsed.error) errMsg = parsed.error;
+                    } catch (e) {}
                     alert('Server Error (' + res.status + '): ' + errMsg);
                     return;
                 }
@@ -1233,13 +1232,12 @@
                 });
 
                 if (!res.ok) {
-                    let errMsg = 'Failed to render mini-clip';
+                    const rawText = await res.text();
+                    let errMsg = rawText;
                     try {
-                        const errData = await res.json();
-                        errMsg = errData.error || errMsg;
-                    } catch (e) {
-                        errMsg = await res.text();
-                    }
+                        const parsed = JSON.parse(rawText);
+                        if (parsed.error) errMsg = parsed.error;
+                    } catch (e) {}
                     alert('Server Error (' + res.status + '): ' + errMsg);
                     return;
                 }
