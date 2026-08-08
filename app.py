@@ -1108,11 +1108,32 @@ async def process_stock_video_assembly_async(stock_job_id, original_job_id, sele
             downloaded_clips = await asyncio.gather(*tasks)
 
         BACKGROUND_JOBS[stock_job_id]["progress"] = 65
-        BACKGROUND_JOBS[stock_job_id]["status_text"] = f"🎬 Merging {len(downloaded_clips)} 1080p stock clips into master video..."
+        BACKGROUND_JOBS[stock_job_id]["status_text"] = f"🎬 Trimming & normalizing {len(downloaded_clips)} 1080p stock clips to beat timings..."
+
+        normalized_clips = []
+        for idx, (raw_clip, sfx) in enumerate(downloaded_clips, start=1):
+            dur = parse_timestamp_seconds(selections[idx - 1].get("timestamp", ""))
+            norm_path = os.path.join(temp_dir, f"norm_clip_{idx:02d}.mp4")
+
+            norm_cmd = [
+                "ffmpeg", "-y", "-threads", "1",
+                "-i", raw_clip,
+                "-t", f"{dur:.3f}",
+                "-vf", "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2:black,fps=30,format=yuv420p",
+                "-an",
+                "-c:v", "libx264", "-preset", "ultrafast", "-crf", "26",
+                norm_path
+            ]
+            proc_n = await asyncio.create_subprocess_exec(*norm_cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+            await proc_n.communicate()
+            normalized_clips.append(norm_path)
+
+        BACKGROUND_JOBS[stock_job_id]["progress"] = 85
+        BACKGROUND_JOBS[stock_job_id]["status_text"] = f"🎬 Merging 1080p master video..."
 
         concat_file = os.path.join(temp_dir, "stock_concat.txt")
         with open(concat_file, "w", encoding="utf-8") as f:
-            for c_path, _ in downloaded_clips:
+            for c_path in normalized_clips:
                 escaped = c_path.replace("\\", "/")
                 f.write(f"file '{escaped}'\n")
 
@@ -1123,10 +1144,8 @@ async def process_stock_video_assembly_async(stock_job_id, original_job_id, sele
             "ffmpeg", "-y", "-threads", "1",
             "-f", "concat", "-safe", "0", "-i", concat_file,
             "-i", audio_filepath,
-            "-vf", "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2:black,format=yuv420p",
-            "-c:v", "libx264", "-preset", "ultrafast", "-crf", "26",
+            "-c:v", "copy",
             "-c:a", "aac", "-b:a", "192k",
-            "-max_muxing_queue_size", "1024",
             "-shortest",
             out_stock_filepath
         ]
