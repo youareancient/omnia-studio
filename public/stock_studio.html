@@ -411,6 +411,15 @@
                     🚀 Render 1080p Master Stock Video (.MP4)
                 </button>
 
+                <!-- Dedicated Sidebar Render Progress Box -->
+                <div id="sidebarProgressBox" style="display:none; margin-top:14px; padding:12px; background:var(--bg-card-secondary); border-radius:12px; border:1px solid var(--accent-apple);">
+                    <div style="display:flex; justify-content:space-between; font-size:0.8rem; font-weight:700; color:var(--accent-apple); margin-bottom:6px;">
+                        <span id="sidebarProgressStatus">Stitching 1080p stock clips...</span>
+                        <span id="sidebarProgressPercent">0%</span>
+                    </div>
+                    <div class="progress-bar" style="margin-top:4px;"><div id="sidebarProgressBarFill" class="progress-fill" style="width:0%;"></div></div>
+                </div>
+
                 <div id="videoContainer" style="display:none; margin-top:16px;">
                     <div id="qaReportBadge" style="font-size:0.8rem; font-weight:700; color:var(--accent-green); background:rgba(52,199,89,0.12); padding:10px; border-radius:10px; margin-bottom:10px; border:1px solid rgba(52,199,89,0.3);"></div>
                     <video id="videoElement" controls style="width:100%; aspect-ratio:16/9; border-radius:12px; background:#000; outline:none; margin-bottom:12px;"></video>
@@ -607,13 +616,25 @@
             const progressBarFill = document.getElementById('progressBarFill');
             const progressPercent = document.getElementById('progressPercent');
 
+            const sidebarBox = document.getElementById('sidebarProgressBox');
+            const sidebarStatus = document.getElementById('sidebarProgressStatus');
+            const sidebarFill = document.getElementById('sidebarProgressBarFill');
+            const sidebarPercent = document.getElementById('sidebarProgressPercent');
+
             btn.disabled = true;
             btn.textContent = '⏳ Assembling 1080p Stock Video...';
 
             progressBox.style.display = 'block';
+            sidebarBox.style.display = 'block';
+
             progressBarFill.style.width = '10%';
+            sidebarFill.style.width = '10%';
+
             progressPercent.textContent = '10%';
+            sidebarPercent.textContent = '10%';
+
             progressStatus.textContent = 'Starting background 1080p video assembly task...';
+            sidebarStatus.textContent = 'Starting background video assembly...';
 
             const videoSelections = [];
             lastScenesData.forEach(s => {
@@ -651,8 +672,13 @@
 
                     if (pollData.progress) {
                         progressBarFill.style.width = `${pollData.progress}%`;
+                        sidebarFill.style.width = `${pollData.progress}%`;
+
                         progressPercent.textContent = `${pollData.progress}%`;
+                        sidebarPercent.textContent = `${pollData.progress}%`;
+
                         progressStatus.textContent = pollData.status_text || 'Stitching stock clips into master video...';
+                        sidebarStatus.textContent = pollData.status_text || 'Stitching stock clips into master video...';
                     }
 
                     if (pollData.status === 'completed' && pollData.result) {
