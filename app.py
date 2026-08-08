@@ -1059,7 +1059,16 @@ async def process_stock_video_assembly_async(stock_job_id, original_job_id, sele
 
         audio_filepath = os.path.join(DOWNLOADS_DIR, audio_filename) if audio_filename else None
         if not audio_filepath or not os.path.exists(audio_filepath):
-            raise Exception("Voiceover audio file not found. Generate voiceover first.")
+            full_text = " ".join([s.get("text", "") for s in selections])
+            if not full_text.strip():
+                raise Exception("Voiceover audio file not found and script text is empty.")
+            
+            BACKGROUND_JOBS[stock_job_id]["status_text"] = "🎙️ Synthesizing HD Voiceover MP3 for stock video..."
+            audio_filename = f"voiceover_stock_{stock_job_id[:6]}.mp3"
+            audio_filepath = os.path.join(DOWNLOADS_DIR, audio_filename)
+            humanized_t, _ = humanize_text_for_speech(full_text)
+            comm = edge_tts.Communicate(humanized_t, "en-US-AndrewNeural", rate="+1%")
+            await comm.save(audio_filepath)
 
         total_audio_dur = await get_media_duration_sec(audio_filepath)
         if total_audio_dur <= 0.5:
