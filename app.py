@@ -989,11 +989,31 @@ async def handle_dubber_index(request):
         return web.Response(text=content, content_type="text/html", charset="utf-8", headers=headers)
     return web.Response(text="<h1>Shorts Dubber Studio</h1><p>Initializing...</p>", content_type="text/html", headers=headers)
 
+async def transcribe_audio_groq(session, audio_filepath):
+    api_key = os.environ.get("GROQ_API_KEY", "").strip()
+    if not api_key or not os.path.exists(audio_filepath):
+        return None
+    try:
+        url = "https://api.groq.com/openai/v1/audio/transcriptions"
+        headers = {"Authorization": f"Bearer {api_key}"}
+        form = FormData()
+        form.add_field("file", open(audio_filepath, "rb"), filename="audio.mp3", content_type="audio/mpeg")
+        form.add_field("model", "whisper-large-v3-turbo")
+        form.add_field("response_format", "verbose_json")
+
+        async with session.post(url, data=form, headers=headers, timeout=30) as resp:
+            if resp.status == 200:
+                data = await resp.json()
+                return data
+    except Exception as e:
+        print("Groq Whisper transcription error:", e)
+    return None
+
 async def translate_text_to_hindi_groq(session, text):
     api_key = os.environ.get("GROQ_API_KEY", "").strip()
     if api_key:
         try:
-            sys_prompt = "You are a professional YouTube Shorts translator. Translate the given English text line into engaging, natural, high-energy YouTube Shorts Hindi. Output ONLY the translated Hindi sentence, no explanations or markdown."
+            sys_prompt = "You are an expert YouTube Shorts translator. Translate the given English text line into engaging, natural, high-energy YouTube Shorts Hindi. Output ONLY the translated Hindi sentence, no explanations or markdown."
             payload = {
                 "model": "llama-3.3-70b-versatile",
                 "messages": [
@@ -1021,7 +1041,7 @@ async def process_dubbing_async(dub_job_id, video_bytes, orig_filename, voice_id
         BACKGROUND_JOBS[dub_job_id] = {
             "status": "processing",
             "progress": 10,
-            "status_text": "⚡ Extracting Shorts video audio & timing structure...",
+            "status_text": "⚡ Extracting Shorts video audio track...",
             "mode": "dubbing",
             "result": None
         }
@@ -1041,9 +1061,6 @@ async def process_dubbing_async(dub_job_id, video_bytes, orig_filename, voice_id
         if total_dur <= 0.5:
             total_dur = 15.0
 
-        BACKGROUND_JOBS[dub_job_id]["progress"] = 30
-        BACKGROUND_JOBS[dub_job_id]["status_text"] = f"🎙️ Synthesizing Hindi Voiceover with {voice_id}..."
-
         extracted_audio_path = os.path.join(temp_dir, "extracted_audio.mp3")
         extract_cmd = [
             "ffmpeg", "-y", "-i", input_video_path,
@@ -1053,49 +1070,111 @@ async def process_dubbing_async(dub_job_id, video_bytes, orig_filename, voice_id
         proc = await asyncio.create_subprocess_exec(*extract_cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
         await proc.communicate()
 
-        hindi_voice_filename = f"hindi_dub_{dub_job_id[:6]}.mp3"
-        hindi_voice_filepath = os.path.join(DOWNLOADS_DIR, hindi_voice_filename)
+        BACKGROUND_JOBS[dub_job_id]["progress"] = 25
+        BACKGROUND_JOBS[dub_job_id]["status_text"] = "🎙️ Transcribing video speech to text via AI Whisper..."
+
+        transcription_data = None
+        async with ClientSession() as session:
+            transcription_data = await transcribe_audio_groq(session, extracted_audio_path)
+
+        segments = []
+        if transcription_data and "segments" in transcription_data and transcription_data["segments"]:
+            for seg in transcription_data["segments"]:
+                text_clean = seg.get("text", "").strip()
+                if text_clean:
+                    segments.append({
+                        "text": text_clean,
+                        "start": float(seg.get("start", 0.0)),
+                        "end": float(seg.get("end", total_dur))
+                    })
+
+        if not segments:
+            full_text = transcription_data.get("text", "").strip() if transcription_data else ""
+            if not full_text:
+                full_text = "Shorts Video Narration"
+            segments = [{"text": full_text, "start": 0.0, "end": total_dur}]
+
+        BACKGROUND_JOBS[dub_job_id]["progress"] = 45
+        BACKGROUND_JOBS[dub_job_id]["status_text"] = f"🌏 Translating {len(segments)} spoken beats to Hindi..."
+
+        dubbed_beats = []
+        synced_segment_files = []
 
         async with ClientSession() as session:
-            hindi_text = await translate_text_to_hindi_groq(session, "Welcome to this amazing short video! Here is the complete breakdown.")
+            for idx, seg in enumerate(segments, start=1):
+                pct = 45 + int((idx / len(segments)) * 35)
+                BACKGROUND_JOBS[dub_job_id]["progress"] = pct
+                BACKGROUND_JOBS[dub_job_id]["status_text"] = f"🎙️ Translating & Speed Syncing Beat #{idx}/{len(segments)}..."
 
-        comm = edge_tts.Communicate(hindi_text, voice_id, rate="+5%")
-        await comm.save(hindi_voice_filepath)
-        await trim_trailing_audio_silence(hindi_voice_filepath)
+                orig_line = seg["text"]
+                target_dur = max(0.4, seg["end"] - seg["start"])
 
-        hindi_dur = await get_media_duration_sec(hindi_voice_filepath)
-        
-        tempo_factor = 1.0
-        if hindi_dur > 0.5 and total_dur > 0.5 and pace_mode == "exact_beat_sync":
-            tempo_factor = round(hindi_dur / total_dur, 2)
-            if tempo_factor < 0.5:
-                tempo_factor = 0.5
-            elif tempo_factor > 2.0:
-                tempo_factor = 2.0
+                hindi_line = await translate_text_to_hindi_groq(session, orig_line)
 
-        BACKGROUND_JOBS[dub_job_id]["progress"] = 70
-        BACKGROUND_JOBS[dub_job_id]["status_text"] = f"⚡ Dynamic Pace-Sync: Adjusting tempo factor ({tempo_factor}x) to fit {total_dur:.1f}s..."
+                # TTS for Hindi line
+                seg_raw_mp3 = os.path.join(temp_dir, f"seg_{idx}_raw.mp3")
+                comm = edge_tts.Communicate(hindi_line, voice_id, rate="+5%")
+                await comm.save(seg_raw_mp3)
+                await trim_trailing_audio_silence(seg_raw_mp3)
 
-        synced_audio_path = os.path.join(temp_dir, "synced_hindi.mp3")
-        tempo_cmd = [
-            "ffmpeg", "-y", "-i", hindi_voice_filepath,
-            "-af", f"atempo={tempo_factor}",
+                seg_dur = await get_media_duration_sec(seg_raw_mp3)
+                
+                # Dynamic tempo factor per segment
+                tempo = 1.0
+                if seg_dur > 0.1 and target_dur > 0.1 and pace_mode == "exact_beat_sync":
+                    tempo = round(seg_dur / target_dur, 2)
+                    if tempo < 0.5:
+                        tempo = 0.5
+                    elif tempo > 2.0:
+                        tempo = 2.0
+
+                seg_synced_mp3 = os.path.join(temp_dir, f"seg_{idx}_synced.mp3")
+                tempo_cmd = [
+                    "ffmpeg", "-y", "-i", seg_raw_mp3,
+                    "-af", f"atempo={tempo}",
+                    "-c:a", "libmp3lame", "-b:a", "192k",
+                    seg_synced_mp3
+                ]
+                proc_t = await asyncio.create_subprocess_exec(*tempo_cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+                await proc_t.communicate()
+
+                synced_segment_files.append(seg_synced_mp3)
+                dubbed_beats.append({
+                    "timestamp": f"{format_timestamp(int(seg['start'] * 1000))} -> {format_timestamp(int(seg['end'] * 1000))}",
+                    "original_text": orig_line,
+                    "hindi_text": hindi_line,
+                    "target_dur": round(target_dur, 2),
+                    "tempo_factor": tempo
+                })
+
+        # Concatenate synced audio segments
+        concat_txt_path = os.path.join(temp_dir, "concat_audio.txt")
+        with open(concat_txt_path, "w", encoding="utf-8") as f:
+            for sfile in synced_segment_files:
+                escaped = sfile.replace("\\", "/")
+                f.write(f"file '{escaped}'\n")
+
+        merged_hindi_filename = f"merged_hindi_{dub_job_id[:6]}.mp3"
+        merged_hindi_path = os.path.join(temp_dir, merged_hindi_filename)
+
+        concat_cmd = [
+            "ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", concat_txt_path,
             "-c:a", "libmp3lame", "-b:a", "192k",
-            synced_audio_path
+            merged_hindi_path
         ]
-        proc = await asyncio.create_subprocess_exec(*tempo_cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
-        await proc.communicate()
+        proc_c = await asyncio.create_subprocess_exec(*concat_cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+        await proc_c.communicate()
 
         out_dubbed_filename = f"dubbed_short_{dub_job_id[:6]}.mp4"
         out_dubbed_filepath = os.path.join(DOWNLOADS_DIR, out_dubbed_filename)
 
-        BACKGROUND_JOBS[dub_job_id]["progress"] = 85
-        BACKGROUND_JOBS[dub_job_id]["status_text"] = "🎬 FFmpeg Dubbing Engine: Merging Hindi voiceover with Shorts video..."
+        BACKGROUND_JOBS[dub_job_id]["progress"] = 88
+        BACKGROUND_JOBS[dub_job_id]["status_text"] = "🎬 FFmpeg Dubbing Engine: Merging Hindi audio track onto Shorts video..."
 
         dub_cmd = [
             "ffmpeg", "-y",
             "-i", input_video_path,
-            "-i", synced_audio_path,
+            "-i", merged_hindi_path,
             "-c:v", "copy",
             "-c:a", "aac", "-b:a", "192k",
             "-map", "0:v:0", "-map", "1:a:0",
@@ -1103,8 +1182,8 @@ async def process_dubbing_async(dub_job_id, video_bytes, orig_filename, voice_id
             out_dubbed_filepath
         ]
 
-        proc = await asyncio.create_subprocess_exec(*dub_cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
-        await proc.communicate()
+        proc_d = await asyncio.create_subprocess_exec(*dub_cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+        await proc_d.communicate()
 
         try:
             shutil.rmtree(temp_dir)
@@ -1114,18 +1193,12 @@ async def process_dubbing_async(dub_job_id, video_bytes, orig_filename, voice_id
         BACKGROUND_JOBS[dub_job_id] = {
             "status": "completed",
             "progress": 100,
-            "status_text": "✅ Shorts Video Hindi Dubbing & Pace-Sync Completed!",
+            "status_text": f"✅ Shorts Hindi Dubbing Completed ({len(dubbed_beats)} Spoken Beats Pace-Synced)!",
             "mode": "dubbing",
             "result": {
                 "videoFilename": out_dubbed_filename,
                 "videoUrl": f"/static/generated/{out_dubbed_filename}",
-                "beats": [
-                    {
-                        "timestamp": f"00:00 -> {format_timestamp(int(total_dur * 1000))}",
-                        "original_text": "Shorts Video Narration",
-                        "hindi_text": hindi_text
-                    }
-                ]
+                "beats": dubbed_beats
             }
         }
 
