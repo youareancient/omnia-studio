@@ -98,8 +98,9 @@ async def call_groq_ai_prompt_engineer(session, scene_text, scene_number):
         "2. RECURRING FUNKY HOST CHARACTER (MANDATORY IN EVERY PROMPT):\n"
         "Every single generated prompt MUST explicitly include the recurring channel host character anchor:\n"
         "\"featuring the recurring host character: a simple hand-drawn expressive 2D stick figure guide with clean black ink outlines, wearing a backwards baseball cap, an oversized casual hoodie, baggy jeans, and a giant gold dollar-sign ($) medallion necklace, acting as the video narrator interacting with the scene.\"\n\n"
-        "3. AUTOMATICALLY ADAPT TO THE TOPIC & ECONOMICS:\n"
-        "Place the funky host character inside the business environment (e.g. restaurant, golf course, data center, farm, hotel, jet, gym, movie theater). Make economic concepts (Revenue, Costs, Profit, Margin, Startup Cost, Cash Flow) visually obvious using money flows, numbers, arrows, dollar bills, and hand-drawn callout labels.\n\n"
+        "3. PHYSICAL ENVIRONMENT FIRST — DO NOT FORCE FLOWCHARTS / INFOGRAPHICS IN EVERY SCENE:\n"
+        "CRITICAL DIRECTIVE: Always prioritize drawing the real physical location and believable environment (e.g. vibrant nightclub entrance with glowing neon signs, velvet ropes, bouncers, bar counter, DJ stage, golf course fairways, hotel lobby, server room) whenever a business or scene is introduced!\n"
+        "DO NOT draw textbook flowcharts, abstract diagrams, or complex connecting arrows in scenes introducing a physical location or story beat. Only add money-flow diagrams or math labels when the script line specifically analyzes financial formulas or budget breakdowns!\n\n"
         "4. OUTPUT FORMAT:\n"
         "Output ONLY a single detailed, standalone 1-paragraph image prompt without internal multi-line breaks ready to paste directly into an AI image generator.\n\n"
         "Respond strictly in JSON format:\n"
@@ -168,8 +169,8 @@ def build_vector_art_scene_prompt_fallback(text):
     prompt_str = (
         "Premium hand-drawn editorial economics illustration, professional educational cartoon style, whiteboard-inspired artwork, thick slightly imperfect black ink outlines, sketchy marker strokes, subtle paper grain, muted flat colors. "
         "Featuring the recurring host character: a simple hand-drawn expressive 2D stick figure guide with clean black ink outlines, wearing a backwards baseball cap, an oversized casual hoodie, baggy jeans, and a giant gold dollar-sign ($) medallion necklace, acting as the video narrator. "
-        f"16:9 widescreen scene depicting: \"{clean_line}\". "
-        "Showing a believable business environment with operational equipment and visual money-flow diagrams. "
+        f"16:9 widescreen physical scene illustrating the environment for: \"{clean_line}\". "
+        "Showing a detailed realistic physical setting (e.g. nightclub building, glowing neon signs, velvet ropes, bouncers, bar counter, DJ booth, or real operational location) with environmental details instead of abstract flowcharts or textbook diagrams. "
         f"{money_callout} Restrained editorial color palette of warm off-white paper, black ink, muted blue, muted red, soft green, and warm beige. Professional YouTube economics explainer documentary aesthetic."
     )
 
