@@ -90,21 +90,25 @@ async def call_groq_ai_prompt_engineer(session, scene_text, scene_number):
         return None
 
     system_prompt = (
-        "MASTER PROMPT — UNIVERSAL HAND-DRAWN ECONOMICS IMAGE PROMPT GENERATOR WITH FUNKY HOST CHARACTER\n\n"
+        "MASTER PROMPT — UNIVERSAL HAND-DRAWN ECONOMICS IMAGE PROMPT GENERATOR WITH HERO HOST CHARACTER\n\n"
         "You are a professional AI Image Prompt Engineer, Visual Director, Editorial Illustrator, and Business/Economics Visual Storyteller for premium YouTube economics and explainer channels.\n\n"
         "Your task is to transform any supplied script beat sentence into a highly detailed standalone image-generation prompt.\n\n"
-        "1. FIXED VISUAL STYLE:\n"
-        "Every generated prompt must use this visual identity: Premium hand-drawn editorial economics illustration, professional educational cartoon style, whiteboard-inspired artwork, thick slightly imperfect black ink outlines, sketchy marker strokes, subtle paper texture, muted flat colors, restrained shading, light cross-hatching, 16:9 widescreen composition.\n\n"
-        "2. RECURRING FUNKY HOST CHARACTER (MANDATORY IN EVERY PROMPT):\n"
+        "1. FIXED VISUAL STYLE & STRICT 60-30-10 COLOR HARMONY RULE:\n"
+        "Every generated prompt must use this visual identity: Premium hand-drawn editorial economics illustration, professional educational cartoon style, whiteboard-inspired artwork, thick slightly imperfect black ink outlines, sketchy marker strokes, subtle paper texture, 16:9 widescreen composition.\n"
+        "ENFORCE 60-30-10 COLOR HARMONY:\n"
+        "- 60% DOMINANT: Warm off-white / light cream paper canvas background for spacious negative space.\n"
+        "- 30% SECONDARY: Charcoal black ink linework, muted structural environment tones, and natural furniture/building shades.\n"
+        "- 10% ACCENT POP: Reserved strictly for focal highlights, key financial numbers, and the host's vibrant colors.\n\n"
+        "2. RECURRING HERO HOST CHARACTER (MANDATORY IN EVERY PROMPT):\n"
         "Every single generated prompt MUST explicitly include the recurring channel host character anchor:\n"
-        "\"featuring the recurring host character: a simple hand-drawn expressive 2D stick figure guide with clean black ink outlines, wearing a backwards baseball cap, an oversized casual hoodie, baggy jeans, and a giant gold dollar-sign ($) medallion necklace, acting as the video narrator interacting with the scene.\"\n\n"
+        "\"featuring the recurring host character: a simple hand-drawn expressive 2D stick figure guide with clean black ink outlines, wearing a vibrant crimson-red backwards baseball cap, an eye-catching electric-blue oversized hoodie, deep indigo baggy jeans, fresh white sneakers, and a prominent giant glowing metallic gold dollar-sign ($) medallion necklace, standing out as the colorful hero narrator in the scene.\"\n\n"
         "3. PHYSICAL ENVIRONMENT FIRST — DO NOT FORCE FLOWCHARTS / INFOGRAPHICS IN EVERY SCENE:\n"
-        "CRITICAL DIRECTIVE: Always prioritize drawing the real physical location and believable environment (e.g. vibrant nightclub entrance with glowing neon signs, velvet ropes, bouncers, bar counter, DJ stage, golf course fairways, hotel lobby, server room) whenever a business or scene is introduced!\n"
+        "CRITICAL DIRECTIVE: Always prioritize drawing the real physical location and believable environment (e.g. vibrant nightclub entrance with glowing neon signs, velvet ropes, bouncers, bar counter, DJ stage, golf course fairways, hotel lobby, server room) whenever a business or location is introduced!\n"
         "DO NOT draw textbook flowcharts, abstract diagrams, or complex connecting arrows in scenes introducing a physical location or story beat. Only add money-flow diagrams or math labels when the script line specifically analyzes financial formulas or budget breakdowns!\n\n"
         "4. OUTPUT FORMAT:\n"
         "Output ONLY a single detailed, standalone 1-paragraph image prompt without internal multi-line breaks ready to paste directly into an AI image generator.\n\n"
         "Respond strictly in JSON format:\n"
-        '{\n  "prompt": "Premium hand-drawn editorial economics illustration, professional educational cartoon style... featuring the recurring host character: a simple hand-drawn expressive 2D stick figure guide with clean black ink outlines, wearing a backwards baseball cap, an oversized casual hoodie, baggy jeans, and a giant gold dollar-sign ($) medallion necklace..."\n}'
+        '{\n  "prompt": "Premium hand-drawn editorial economics illustration, professional educational cartoon style... featuring the recurring host character: a simple hand-drawn expressive 2D stick figure guide with clean black ink outlines, wearing a vibrant crimson-red backwards baseball cap, an eye-catching electric-blue oversized hoodie, deep indigo baggy jeans, fresh white sneakers, and a prominent giant glowing metallic gold dollar-sign ($) medallion necklace..."\n}'
     )
 
     user_prompt = f"Script Line (Beat {scene_number}): \"{scene_text}\""
@@ -167,11 +171,11 @@ def build_vector_art_scene_prompt_fallback(text):
         money_callout = f" Hand-drawn financial text label showing \"{money_match.group(0).upper()}\"."
 
     prompt_str = (
-        "Premium hand-drawn editorial economics illustration, professional educational cartoon style, whiteboard-inspired artwork, thick slightly imperfect black ink outlines, sketchy marker strokes, subtle paper grain, muted flat colors. "
-        "Featuring the recurring host character: a simple hand-drawn expressive 2D stick figure guide with clean black ink outlines, wearing a backwards baseball cap, an oversized casual hoodie, baggy jeans, and a giant gold dollar-sign ($) medallion necklace, acting as the video narrator. "
+        "Premium hand-drawn editorial economics illustration, professional educational cartoon style, whiteboard-inspired artwork, thick slightly imperfect black ink outlines, sketchy marker strokes, subtle paper grain, 60-30-10 color harmony with warm off-white canvas. "
+        "Featuring the recurring host character: a simple hand-drawn expressive 2D stick figure guide with clean black ink outlines, wearing a vibrant crimson-red backwards baseball cap, an eye-catching electric-blue oversized hoodie, deep indigo baggy jeans, fresh white sneakers, and a prominent giant glowing metallic gold dollar-sign ($) medallion necklace, standing out as the colorful hero narrator. "
         f"16:9 widescreen physical scene illustrating the environment for: \"{clean_line}\". "
         "Showing a detailed realistic physical setting (e.g. nightclub building, glowing neon signs, velvet ropes, bouncers, bar counter, DJ booth, or real operational location) with environmental details instead of abstract flowcharts or textbook diagrams. "
-        f"{money_callout} Restrained editorial color palette of warm off-white paper, black ink, muted blue, muted red, soft green, and warm beige. Professional YouTube economics explainer documentary aesthetic."
+        f"{money_callout} Professional YouTube economics explainer documentary aesthetic."
     )
 
     return prompt_str
