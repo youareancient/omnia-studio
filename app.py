@@ -90,23 +90,20 @@ async def call_groq_ai_prompt_engineer(session, scene_text, scene_number):
         return None
 
     system_prompt = (
-        "MASTER PROMPT — UNIVERSAL HAND-DRAWN ECONOMICS IMAGE PROMPT GENERATOR\n\n"
-        "You are a professional AI Image Prompt Engineer, Visual Director, Editorial Illustrator, and Business/Economics Visual Storyteller with extensive experience creating visuals for premium YouTube economics, finance, business, and documentary-explainer channels.\n\n"
-        "Your task is to transform any supplied topic, sentence, concept, or visual idea into a highly detailed standalone image-generation prompt.\n\n"
+        "MASTER PROMPT — UNIVERSAL HAND-DRAWN ECONOMICS IMAGE PROMPT GENERATOR WITH FUNKY HOST CHARACTER\n\n"
+        "You are a professional AI Image Prompt Engineer, Visual Director, Editorial Illustrator, and Business/Economics Visual Storyteller for premium YouTube economics and explainer channels.\n\n"
+        "Your task is to transform any supplied script beat sentence into a highly detailed standalone image-generation prompt.\n\n"
         "1. FIXED VISUAL STYLE:\n"
-        "Every generated prompt must use this visual identity: Premium hand-drawn editorial economics illustration. The artwork should look like a professionally illustrated frame from a sophisticated YouTube economics or business documentary.\n"
-        "Use: hand-drawn editorial illustration, professional educational cartoon, whiteboard-inspired artwork, thick slightly imperfect black ink outlines, organic hand-drawn contours, sketchy marker strokes, subtle pencil texture, subtle paper grain, imperfect handmade linework, muted flat colors, restrained shading, light cross-hatching, hand-drawn details, modern editorial composition, sophisticated 2D illustration, premium educational explainer aesthetic.\n"
-        "Do NOT create a sterile corporate vector illustration, generic AI cartoon, children's cartoon, glossy 3D CGI, or photorealism.\n\n"
-        "2. AUTOMATICALLY ADAPT TO THE TOPIC:\n"
-        "Identify the primary subject, environment, people/characters, equipment, products/services, revenue sources, costs, operations, problems, economic concept, and visual metaphors relevant to the supplied text. Discover topic-specific objects naturally.\n\n"
-        "3. VISUALIZE THE EXACT CONCEPT & ECONOMICS:\n"
-        "Make economic ideas (Revenue, Costs, Profit, Margin, Startup Cost, Break-Even, ROI, Cash Flow, Market Size) visually obvious using money flows, numbers, arrows, coins, dollar bills, diagrams, labels, and receipts when relevant.\n\n"
-        "4. COMPOSITION, CHARACTER DESIGN & COLOR:\n"
-        "Default to 16:9 widescreen composition. Restrained editorial palette: black ink, warm off-white paper, muted blue, muted red, muted yellow, soft green, beige, warm brown, subtle orange. Include expressive hand-drawn characters and environmental storytelling.\n\n"
-        "5. OUTPUT FORMAT:\n"
+        "Every generated prompt must use this visual identity: Premium hand-drawn editorial economics illustration, professional educational cartoon style, whiteboard-inspired artwork, thick slightly imperfect black ink outlines, sketchy marker strokes, subtle paper texture, muted flat colors, restrained shading, light cross-hatching, 16:9 widescreen composition.\n\n"
+        "2. RECURRING FUNKY HOST CHARACTER (MANDATORY IN EVERY PROMPT):\n"
+        "Every single generated prompt MUST explicitly include the recurring channel host character anchor:\n"
+        "\"featuring the recurring host character: a simple hand-drawn expressive 2D stick figure guide with clean black ink outlines, wearing a backwards baseball cap, an oversized casual hoodie, baggy jeans, and a giant gold dollar-sign ($) medallion necklace, acting as the video narrator interacting with the scene.\"\n\n"
+        "3. AUTOMATICALLY ADAPT TO THE TOPIC & ECONOMICS:\n"
+        "Place the funky host character inside the business environment (e.g. restaurant, golf course, data center, farm, hotel, jet, gym, movie theater). Make economic concepts (Revenue, Costs, Profit, Margin, Startup Cost, Cash Flow) visually obvious using money flows, numbers, arrows, dollar bills, and hand-drawn callout labels.\n\n"
+        "4. OUTPUT FORMAT:\n"
         "Output ONLY a single detailed, standalone 1-paragraph image prompt without internal multi-line breaks ready to paste directly into an AI image generator.\n\n"
         "Respond strictly in JSON format:\n"
-        '{\n  "prompt": "Premium hand-drawn editorial economics illustration, professional educational cartoon style..."\n}'
+        '{\n  "prompt": "Premium hand-drawn editorial economics illustration, professional educational cartoon style... featuring the recurring host character: a simple hand-drawn expressive 2D stick figure guide with clean black ink outlines, wearing a backwards baseball cap, an oversized casual hoodie, baggy jeans, and a giant gold dollar-sign ($) medallion necklace..."\n}'
     )
 
     user_prompt = f"Script Line (Beat {scene_number}): \"{scene_text}\""
@@ -169,9 +166,10 @@ def build_vector_art_scene_prompt_fallback(text):
         money_callout = f" Hand-drawn financial text label showing \"{money_match.group(0).upper()}\"."
 
     prompt_str = (
-        "Premium hand-drawn editorial economics illustration, professional educational cartoon style, whiteboard-inspired artwork, thick slightly imperfect black ink outlines, sketchy marker strokes, subtle pencil texture, subtle paper grain, muted flat colors, light cross-hatching. "
-        f"16:9 widescreen editorial illustration depicting: \"{clean_line}\". "
-        "Showing a believable business environment with expressive hand-drawn characters, relevant operational equipment, and visual money-flow diagrams."
+        "Premium hand-drawn editorial economics illustration, professional educational cartoon style, whiteboard-inspired artwork, thick slightly imperfect black ink outlines, sketchy marker strokes, subtle paper grain, muted flat colors. "
+        "Featuring the recurring host character: a simple hand-drawn expressive 2D stick figure guide with clean black ink outlines, wearing a backwards baseball cap, an oversized casual hoodie, baggy jeans, and a giant gold dollar-sign ($) medallion necklace, acting as the video narrator. "
+        f"16:9 widescreen scene depicting: \"{clean_line}\". "
+        "Showing a believable business environment with operational equipment and visual money-flow diagrams. "
         f"{money_callout} Restrained editorial color palette of warm off-white paper, black ink, muted blue, muted red, soft green, and warm beige. Professional YouTube economics explainer documentary aesthetic."
     )
 
