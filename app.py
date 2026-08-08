@@ -961,12 +961,184 @@ async def handle_generate_beat_clip(request):
     except Exception as e:
         return web.json_response({"error": str(e)}, status=500)
 
+STOCK_INDEX_HTML_PATH = os.path.join(STATIC_DIR, "stock_studio.html")
+
+async def handle_stock_index(request):
+    headers = {
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0"
+    }
+    if os.path.exists(STOCK_INDEX_HTML_PATH):
+        with open(STOCK_INDEX_HTML_PATH, "r", encoding="utf-8") as f:
+            content = f.read()
+        return web.Response(text=content, content_type="text/html", charset="utf-8", headers=headers)
+    return web.Response(text="<h1>Stock & SFX Studio</h1><p>Initializing...</p>", content_type="text/html", headers=headers)
+
+async def handle_pexels_search(request):
+    try:
+        data = await request.json()
+        scenes = data.get("scenes", [])
+        user_key = data.get("api_key", "").strip()
+        api_key = user_key or os.environ.get("PEXELS_API_KEY", "").strip()
+
+        if not api_key:
+            mock_results = {}
+            for scene in scenes:
+                b_num = scene.get("scene", 1)
+                text = scene.get("text", "")
+                words = [w for w in re.findall(r'\b[a-zA-Z]{3,}\b', text) if w.lower() not in {"that","have","with","this"}]
+                query = " ".join(words[:2]) if words else "technology"
+                mock_results[b_num] = [
+                    {
+                        "id": 1000 + b_num,
+                        "video_url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+                        "image_thumb": "https://images.pexels.com/videos/3195394/free-video-3195394.jpg?auto=compress&cs=tinysrgb&fit=crop&h=200&w=350",
+                        "query": query
+                    }
+                ]
+            return web.json_response({"results": mock_results})
+
+        headers = {"Authorization": api_key}
+        results = {}
+
+        async with ClientSession() as session:
+            for scene in scenes:
+                b_num = scene.get("scene", 1)
+                text = scene.get("text", "")
+                words = [w for w in re.findall(r'\b[a-zA-Z]{4,}\b', text) if w.lower() not in {"that","have","with","this","there","their","were","been","from","they"}]
+                query = " ".join(words[:2]) if words else "business"
+
+                url = f"https://api.pexels.com/videos/search?query={query}&per_page=3&orientation=landscape"
+                try:
+                    async with session.get(url, headers=headers, timeout=8) as resp:
+                        if resp.status == 200:
+                            p_data = await resp.json()
+                            v_list = []
+                            for vid in p_data.get("videos", []):
+                                video_files = vid.get("video_files", [])
+                                best_file = next((f for f in video_files if f.get("width") == 1920 or f.get("quality") == "hd"), None)
+                                if not best_file and video_files:
+                                    best_file = video_files[0]
+
+                                if best_file:
+                                    v_list.append({
+                                        "id": vid.get("id"),
+                                        "video_url": best_file.get("link"),
+                                        "image_thumb": vid.get("image"),
+                                        "query": query
+                                    })
+                            results[b_num] = v_list
+                except Exception as e:
+                    print(f"Pexels search exception for scene {b_num}:", e)
+
+        return web.json_response({"results": results})
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)
+
+async def handle_assemble_stock_video(request):
+    try:
+        data = await request.json()
+        job_id = data.get("job_id", "")
+        selections = data.get("selections", [])
+
+        if not selections:
+            return web.json_response({"error": "No scene video selections provided."}, status=400)
+
+        job = BACKGROUND_JOBS.get(job_id)
+        audio_filename = None
+        if job and job.get("result"):
+            audio_filename = job["result"].get("filename")
+
+        if not audio_filename:
+            mp3_files = [f for f in os.listdir(DOWNLOADS_DIR) if f.endswith(".mp3")]
+            if mp3_files:
+                mp3_files.sort(key=lambda f: os.path.getmtime(os.path.join(DOWNLOADS_DIR, f)), reverse=True)
+                audio_filename = mp3_files[0]
+
+        audio_filepath = os.path.join(DOWNLOADS_DIR, audio_filename) if audio_filename else None
+        if not audio_filepath or not os.path.exists(audio_filepath):
+            return web.json_response({"error": "Voiceover audio file not found. Generate voiceover first."}, status=400)
+
+        total_audio_dur = await get_media_duration_sec(audio_filepath)
+        if total_audio_dur <= 0.5:
+            total_audio_dur = 30.0
+
+        temp_dir = os.path.join(STUDIO_DIR, f"temp_stock_{uuid.uuid4().hex[:6]}")
+        os.makedirs(temp_dir, exist_ok=True)
+
+        downloaded_clips = []
+        async with ClientSession() as session:
+            for idx, sel in enumerate(selections, start=1):
+                v_url = sel.get("video_url", "")
+                clip_path = os.path.join(temp_dir, f"stock_clip_{idx:02d}.mp4")
+
+                if v_url and v_url.startswith("http"):
+                    try:
+                        async with session.get(v_url, timeout=30) as resp:
+                            if resp.status == 200:
+                                with open(clip_path, "wb") as f:
+                                    f.write(await resp.read())
+                                downloaded_clips.append((clip_path, sel.get("sfx", "whoosh")))
+                                continue
+                    except Exception as download_err:
+                        print(f"Error downloading stock clip {idx}:", download_err)
+
+                dur = parse_timestamp_seconds(sel.get("timestamp", ""))
+                color_cmd = [
+                    "ffmpeg", "-y", "-f", "lavfi", "-i", f"color=c=0x0071e3:s=1920x1080:d={dur}",
+                    "-c:v", "libx264", "-pix_fmt", "yuv420p", clip_path
+                ]
+                proc_c = await asyncio.create_subprocess_exec(*color_cmd)
+                await proc_c.communicate()
+                downloaded_clips.append((clip_path, sel.get("sfx", "whoosh")))
+
+        concat_file = os.path.join(temp_dir, "stock_concat.txt")
+        with open(concat_file, "w", encoding="utf-8") as f:
+            for c_path, _ in downloaded_clips:
+                escaped = c_path.replace("\\", "/")
+                f.write(f"file '{escaped}'\n")
+
+        out_stock_filename = f"stock_video_{uuid.uuid4().hex[:6]}.mp4"
+        out_stock_filepath = os.path.join(DOWNLOADS_DIR, out_stock_filename)
+
+        ffmpeg_cmd = [
+            "ffmpeg", "-y",
+            "-f", "concat", "-safe", "0", "-i", concat_file,
+            "-i", audio_filepath,
+            "-vf", "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2:black,format=yuv420p",
+            "-c:v", "libx264", "-preset", "fast", "-crf", "20",
+            "-c:a", "aac", "-b:a", "192k",
+            "-shortest",
+            out_stock_filepath
+        ]
+
+        proc_main = await asyncio.create_subprocess_exec(*ffmpeg_cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+        await proc_main.communicate()
+
+        try:
+            shutil.rmtree(temp_dir)
+        except Exception:
+            pass
+
+        return web.json_response({
+            "status": "success",
+            "videoFilename": out_stock_filename,
+            "videoUrl": f"/static/generated/{out_stock_filename}",
+            "qaReport": f"✅ Master Stock Video Rendered: {len(downloaded_clips)} Pexels 1080p clips merged!"
+        })
+
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)
+
 def create_app():
     # Allow large ZIP and batch uploads up to 2GB (2048MB)
     app = web.Application(client_max_size=2048 * 1024 * 1024)
     app.router.add_get("", handle_index)
     app.router.add_get("/", handle_index)
     app.router.add_get("/index.html", handle_index)
+    app.router.add_get("/stock", handle_stock_index)
+    app.router.add_get("/stock_studio.html", handle_stock_index)
     app.router.add_post("/api/start-job", handle_start_job)
     app.router.add_get("/api/job-status", handle_job_status)
     app.router.add_get("/api/voices", handle_voices)
@@ -974,6 +1146,8 @@ def create_app():
     app.router.add_post("/api/export-timeline", handle_export_timeline)
     app.router.add_post("/api/generate-beat-audio", handle_generate_beat_audio)
     app.router.add_post("/api/generate-beat-clip", handle_generate_beat_clip)
+    app.router.add_post("/api/pexels-search", handle_pexels_search)
+    app.router.add_post("/api/assemble-stock-video", handle_assemble_stock_video)
     app.router.add_post("/telegram-webhook", handle_telegram_webhook)
     app.router.add_static("/static/", STATIC_DIR)
     return app
@@ -981,3 +1155,4 @@ def create_app():
 if __name__ == "__main__":
     print(f"Starting YouTube Voiceover Studio Online at http://{HOST}:{PORT}")
     web.run_app(create_app(), host=HOST, port=PORT)
+

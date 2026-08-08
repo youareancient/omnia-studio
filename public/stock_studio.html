@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Stock & SFX Studio Pro - Page 2</title>
+    
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="icon" type="image/png" href="/static/icon.png">
+    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+    
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#000000">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        [data-theme="dark"] {
+            --bg-body: #000000;
+            --bg-header: rgba(18, 18, 20, 0.9);
+            --bg-card: #1c1c1e;
+            --bg-card-secondary: #2c2c2e;
+            --bg-input: #141416;
+            --text-primary: #f5f5f7;
+            --text-secondary: #86868b;
+            --accent-apple: #2997ff;
+            --accent-green: #34c759;
+            --border-subtle: rgba(255, 255, 255, 0.12);
+            --border-focus: #2997ff;
+            --shadow-card: 0 12px 40px rgba(0, 0, 0, 0.5);
+            --toggle-bg: #2c2c2e;
+        }
+
+        [data-theme="light"] {
+            --bg-body: #f5f5f7;
+            --bg-header: rgba(255, 255, 255, 0.9);
+            --bg-card: #ffffff;
+            --bg-card-secondary: #f2f2f7;
+            --bg-input: #fbfbfd;
+            --text-primary: #1d1d1f;
+            --text-secondary: #6e6e73;
+            --accent-apple: #0071e3;
+            --accent-green: #28cd41;
+            --border-subtle: rgba(0, 0, 0, 0.08);
+            --border-focus: #0071e3;
+            --shadow-card: 0 12px 40px rgba(0, 0, 0, 0.04);
+            --toggle-bg: #e5e5ea;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        header {
+            background: var(--bg-header);
+            backdrop-filter: saturate(180%) blur(20px);
+            -webkit-backdrop-filter: saturate(180%) blur(20px);
+            border-bottom: 1px solid var(--border-subtle);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            padding: 0.75rem 1rem;
+        }
+
+        .header-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .app-logo-img {
+            width: 34px;
+            height: 34px;
+            border-radius: 9px;
+            object-fit: cover;
+        }
+
+        .brand-title {
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+
+        .brand-badge {
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: #fff;
+            background: linear-gradient(135deg, #0071e3, #34c759);
+            padding: 3px 8px;
+            border-radius: 10px;
+        }
+
+        .nav-tabs {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-link {
+            padding: 6px 14px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            border-radius: 20px;
+            text-decoration: none;
+            color: var(--text-secondary);
+            background: var(--bg-card-secondary);
+            border: 1px solid var(--border-subtle);
+            transition: all 0.2s ease;
+        }
+
+        .nav-link.active {
+            color: #fff;
+            background: var(--accent-apple);
+            border-color: var(--accent-apple);
+        }
+
+        main {
+            max-width: 1400px;
+            margin: 1.25rem auto;
+            padding: 0 1rem;
+            flex: 1;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 960px) {
+            main {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--bg-card);
+            border-radius: 18px;
+            border: 1px solid var(--border-subtle);
+            padding: 20px;
+            box-shadow: var(--shadow-card);
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+
+        textarea {
+            width: 100%;
+            height: 180px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 14px;
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            outline: none;
+            resize: vertical;
+            transition: border-color 0.2s;
+            margin-bottom: 12px;
+        }
+
+        textarea:focus {
+            border-color: var(--border-focus);
+        }
+
+        .btn-apple {
+            background: var(--accent-apple);
+            color: #ffffff;
+            border: none;
+            border-radius: 12px;
+            padding: 10px 18px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: transform 0.15s ease, opacity 0.15s ease;
+        }
+
+        .btn-apple:hover {
+            opacity: 0.92;
+        }
+
+        .btn-apple:active {
+            transform: scale(0.97);
+        }
+
+        .btn-secondary {
+            background: var(--bg-card-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-subtle);
+        }
+
+        .btn-green {
+            background: linear-gradient(135deg, #34c759, #0071e3);
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 14px;
+        }
+
+        .input-label {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+        }
+
+        input[type="text"], input[type="password"], select {
+            background: var(--bg-input);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-size: 0.88rem;
+            color: var(--text-primary);
+            outline: none;
+        }
+
+        .beat-card {
+            background: var(--bg-card-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 14px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .stock-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .stock-thumb {
+            position: relative;
+            aspect-ratio: 16/9;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 2px solid transparent;
+            cursor: pointer;
+            background: #000;
+        }
+
+        .stock-thumb img, .stock-thumb video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .stock-thumb.selected {
+            border-color: var(--accent-green);
+        }
+
+        .stock-thumb .badge-check {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: var(--accent-green);
+            color: #fff;
+            font-size: 0.65rem;
+            font-weight: 800;
+            padding: 2px 6px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .stock-thumb.selected .badge-check {
+            display: block;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: var(--bg-input);
+            border-radius: 6px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-apple), var(--accent-green));
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-container">
+            <div class="brand">
+                <img src="/static/icon.png" alt="Logo" class="app-logo-img" onerror="this.style.display='none'">
+                <span class="brand-title">Voiceover Studio</span>
+                <span class="brand-badge">Page 2: Stock & SFX</span>
+            </div>
+            
+            <div class="nav-tabs">
+                <a href="/" class="nav-link">🎙️ Main Studio (Page 1)</a>
+                <a href="/stock" class="nav-link active">🎬 Stock & SFX Studio (Page 2)</a>
+                <button class="nav-link" style="cursor:pointer;" onclick="toggleTheme()">☀️ Theme</button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <section>
+            <!-- Pexels Credentials & Settings Card -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">🔑 Pexels API & Voice Settings</span>
+                    <span style="font-size:0.75rem; color:var(--accent-green); font-weight:700;">✓ Isolated Page 2 Environment</span>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+                    <div class="input-group">
+                        <label class="input-label">Pexels API Key</label>
+                        <input type="password" id="pexelsKeyInput" placeholder="Paste Pexels API Key (Optional)..." onchange="savePexelsKey()" />
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Narrator Voice</label>
+                        <select id="voiceSelect">
+                            <option value="andrew">Andrew (YouTube Documentary)</option>
+                            <option value="christopher">Christopher (Deep Storyteller)</option>
+                            <option value="ava">Ava (Modern Expressive)</option>
+                            <option value="guy">Guy (News & Commentary)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Script Input Card -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">📝 Script to 1080p Stock Video</span>
+                    <span style="font-size:0.75rem; color:var(--text-secondary);">Automated Pexels Video & SFX Matcher</span>
+                </div>
+
+                <textarea id="scriptText" placeholder="Paste your script here... (e.g. Okay, so you want to own a data center. You find some land, build a giant warehouse, fill it with computers...)"></textarea>
+
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <button class="btn-apple btn-green" style="flex:1; min-height:46px;" onclick="fetchStockBreakdown()">
+                        ⚡ 1-Click Auto-Fetch Pexels Stock Videos & SFX
+                    </button>
+                </div>
+
+                <!-- Progress Box -->
+                <div id="progressBox" style="display:none; margin-top:14px;">
+                    <div style="display:flex; justify-content:space-between; font-size:0.8rem; font-weight:700; color:var(--accent-apple);">
+                        <span id="progressStatus">Analyzing script & searching Pexels 1080p stock clips...</span>
+                        <span id="progressPercent">0%</span>
+                    </div>
+                    <div class="progress-bar"><div id="progressBarFill" class="progress-fill"></div></div>
+                </div>
+            </div>
+
+            <!-- Stock Beat Cards Container -->
+            <div id="stockBeatContainer"></div>
+        </section>
+
+        <!-- Sidebar Output Column -->
+        <section>
+            <!-- Stock Master Video Render Card -->
+            <div class="card" style="position:sticky; top:80px;">
+                <div class="card-header">
+                    <span class="card-title">🎬 Stock Master Video Output</span>
+                </div>
+
+                <p style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:14px;">
+                    Stitches Pexels 1080p stock video clips, Edge-TTS voiceover, .SRT subtitles, and transition SFX into a master video.
+                </p>
+
+                <button id="btnAssembleStockVideo" class="btn-apple btn-green" style="width:100%; min-height:48px; font-size:1rem;" onclick="assembleStockVideo()">
+                    🚀 Render 1080p Master Stock Video (.MP4)
+                </button>
+
+                <div id="videoContainer" style="display:none; margin-top:16px;">
+                    <div id="qaReportBadge" style="font-size:0.8rem; font-weight:700; color:var(--accent-green); background:rgba(52,199,89,0.12); padding:10px; border-radius:10px; margin-bottom:10px; border:1px solid rgba(52,199,89,0.3);"></div>
+                    <video id="videoElement" controls style="width:100%; aspect-ratio:16/9; border-radius:12px; background:#000; outline:none; margin-bottom:12px;"></video>
+                    <a id="downloadVideoLink" class="btn-apple" style="width:100%; text-decoration:none;" download>⏬ Download 1080p Stock Video (.MP4)</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        let pexelsDataPerBeat = {};
+        let currentJobId = null;
+        let lastScenesData = [];
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedKey = localStorage.getItem('pexels_api_key');
+            if (savedKey) {
+                document.getElementById('pexelsKeyInput').value = savedKey;
+            }
+        });
+
+        function savePexelsKey() {
+            const key = document.getElementById('pexelsKeyInput').value.trim();
+            if (key) {
+                localStorage.setItem('pexels_api_key', key);
+            } else {
+                localStorage.removeItem('pexels_api_key');
+            }
+        }
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            const current = html.getAttribute('data-theme');
+            html.setAttribute('data-theme', current === 'dark' ? 'light' : 'dark');
+        }
+
+        async function fetchStockBreakdown() {
+            const text = document.getElementById('scriptText').value.trim();
+            const voice = document.getElementById('voiceSelect').value;
+            const pexelsKey = document.getElementById('pexelsKeyInput').value.trim();
+
+            if (!text) {
+                alert('Please paste a script first.');
+                return;
+            }
+
+            const progressBox = document.getElementById('progressBox');
+            const progressStatus = document.getElementById('progressStatus');
+            const progressBarFill = document.getElementById('progressBarFill');
+            const progressPercent = document.getElementById('progressPercent');
+
+            progressBox.style.display = 'block';
+            progressBarFill.style.width = '10%';
+            progressPercent.textContent = '10%';
+            progressStatus.textContent = 'Generating 3-5s scene breakdown & keyword topics...';
+
+            try {
+                // Step 1: Start Breakdown Job
+                const startRes = await fetch('/api/start-job', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({text: text, voice: voice, mode: 'breakdown'})
+                });
+                const startData = await startRes.json();
+                if (!startData.job_id) throw new Error(startData.error || 'Failed to start breakdown');
+
+                currentJobId = startData.job_id;
+
+                // Step 2: Poll Breakdown
+                let scenes = [];
+                while (true) {
+                    await new Promise(r => setTimeout(r, 1000));
+                    const pollRes = await fetch(`/api/job-status?id=${currentJobId}`);
+                    const pollData = await pollRes.json();
+                    
+                    if (pollData.progress) {
+                        progressBarFill.style.width = `${Math.min(60, pollData.progress)}%`;
+                        progressPercent.textContent = `${Math.min(60, pollData.progress)}%`;
+                        progressStatus.textContent = pollData.status_text || 'Processing scene breakdown...';
+                    }
+
+                    if (pollData.status === 'completed') {
+                        scenes = pollData.result.scenes;
+                        break;
+                    } else if (pollData.status === 'failed') {
+                        throw new Error(pollData.status_text || 'Job failed');
+                    }
+                }
+
+                lastScenesData = scenes;
+
+                // Step 3: Fetch Pexels Videos per Scene
+                progressStatus.textContent = `Searching Pexels 1080p Stock Videos for ${scenes.length} scenes...`;
+                progressBarFill.style.width = '75%';
+                progressPercent.textContent = '75%';
+
+                const pexelsRes = await fetch('/api/pexels-search', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        scenes: scenes,
+                        api_key: pexelsKey
+                    })
+                });
+
+                const pexelsJson = await pexelsRes.json();
+                pexelsDataPerBeat = pexelsJson.results || {};
+
+                renderStockBeatCards(scenes, pexelsDataPerBeat);
+
+                progressBarFill.style.width = '100%';
+                progressPercent.textContent = '100%';
+                progressStatus.textContent = `Successfully matched 1080p Pexels Stock Videos for all ${scenes.length} beats! 🎉`;
+
+            } catch (err) {
+                alert('Error: ' + err.message);
+                progressBox.style.display = 'none';
+            }
+        }
+
+        function renderStockBeatCards(scenes, pexelsResults) {
+            const container = document.getElementById('stockBeatContainer');
+            container.innerHTML = '';
+
+            scenes.forEach(scene => {
+                const beatNum = scene.scene;
+                const beatPexels = pexelsResults[beatNum] || [];
+
+                const card = document.createElement('div');
+                card.className = 'beat-card';
+
+                let videosHtml = '';
+                beatPexels.forEach((vid, idx) => {
+                    const isSel = idx === 0 ? 'selected' : '';
+                    videosHtml += `
+                        <div class="stock-thumb ${isSel}" id="stockThumb_${beatNum}_${idx}" onclick="selectStockVideo(${beatNum}, ${idx}, '${vid.video_url}')">
+                            <img src="${vid.image_thumb}" alt="Pexels ${vid.id}">
+                            <span class="badge-check">✓ Selected</span>
+                        </div>
+                    `;
+                });
+
+                card.innerHTML = `
+                    <div style="font-size:1rem; font-weight:800; color:var(--accent-apple); margin-bottom:6px;">
+                        # Beat ${scene.scene} <span style="font-size:0.75rem; color:var(--text-secondary);">• ${scene.timestamp}</span>
+                    </div>
+                    <div style="font-size:0.85rem; font-weight:700; color:var(--text-primary); margin-bottom:8px;">
+                        "${scene.text}"
+                    </div>
+
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
+                        <span style="font-size:0.75rem; font-weight:700; color:var(--text-secondary);">🎬 Select Pexels 1080p Stock Clip:</span>
+                        <select id="sfxSelect_${beatNum}" style="font-size:0.75rem; padding:4px 8px;">
+                            <option value="whoosh">💨 Transition SFX: Whoosh</option>
+                            <option value="boom">💥 Transition SFX: Sub-Bass Boom</option>
+                            <option value="glitch">⚡ Transition SFX: Digital Glitch</option>
+                            <option value="click">🖱️ Transition SFX: Click</option>
+                            <option value="none">🚫 No Transition SFX</option>
+                        </select>
+                    </div>
+
+                    <div class="stock-grid" id="stockGrid_${beatNum}">
+                        ${videosHtml || '<p style="font-size:0.75rem; color:var(--text-secondary);">No Pexels videos found for this topic.</p>'}
+                    </div>
+
+                    <input type="hidden" id="selectedVideoUrl_${beatNum}" value="${beatPexels[0] ? beatPexels[0].video_url : ''}">
+                `;
+
+                container.appendChild(card);
+            });
+        }
+
+        function selectStockVideo(beatNum, idx, videoUrl) {
+            const grid = document.getElementById(`stockGrid_${beatNum}`);
+            if (!grid) return;
+
+            grid.querySelectorAll('.stock-thumb').forEach(el => el.classList.remove('selected'));
+
+            const selectedThumb = document.getElementById(`stockThumb_${beatNum}_${idx}`);
+            if (selectedThumb) selectedThumb.classList.add('selected');
+
+            document.getElementById(`selectedVideoUrl_${beatNum}`).value = videoUrl;
+        }
+
+        async function assembleStockVideo() {
+            if (!lastScenesData || !lastScenesData.length) {
+                alert('Please run Auto-Fetch Pexels Stock Videos first.');
+                return;
+            }
+
+            const btn = document.getElementById('btnAssembleStockVideo');
+            btn.disabled = true;
+            btn.textContent = '⏳ Assembling 1080p Stock Video...';
+
+            const videoSelections = [];
+            lastScenesData.forEach(s => {
+                const bNum = s.scene;
+                const vUrl = document.getElementById(`selectedVideoUrl_${bNum}`).value;
+                const sfx = document.getElementById(`sfxSelect_${bNum}`).value;
+                videoSelections.push({
+                    scene: bNum,
+                    timestamp: s.timestamp,
+                    text: s.text,
+                    video_url: vUrl,
+                    sfx: sfx
+                });
+            });
+
+            try {
+                const res = await fetch('/api/assemble-stock-video', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        job_id: currentJobId,
+                        selections: videoSelections
+                    })
+                });
+
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+
+                document.getElementById('videoContainer').style.display = 'block';
+                document.getElementById('qaReportBadge').textContent = data.qaReport || '✅ 1080p Stock Video Rendered Successfully!';
+
+                const player = document.getElementById('videoElement');
+                const downloadLink = document.getElementById('downloadVideoLink');
+
+                player.src = data.videoUrl;
+                downloadLink.href = data.videoUrl;
+
+                player.play();
+
+            } catch (err) {
+                alert('Error assembling stock video: ' + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🚀 Render 1080p Master Stock Video (.MP4)';
+            }
+        }
+    </script>
+</body>
+</html>
