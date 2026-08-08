@@ -604,8 +604,20 @@
             beats.forEach((b, i) => {
                 const el = document.createElement('div');
                 el.className = 'beat-card';
+                const spkLabel = b.speaker || 'Speaker 1';
+                const genderLabel = (b.gender || 'male').toUpperCase();
+                const genderBadgeColor = (b.gender === 'female') ? '#f43f5e' : '#7c3aed';
+                const voiceAssigned = b.voice_assigned || 'hi-IN-MadhurNeural';
+
                 el.innerHTML = `
-                    <div class="beat-timestamp">Beat #${i + 1} (${b.timestamp})</div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+                        <div class="beat-timestamp">Beat #${i + 1} (${b.timestamp})</div>
+                        <div style="display:flex; gap:6px; align-items:center;">
+                            <span style="font-size:0.7rem; font-weight:800; background:rgba(255,255,255,0.08); color:var(--text-primary); padding:2px 8px; border-radius:10px;">🎙️ ${spkLabel}</span>
+                            <span style="font-size:0.7rem; font-weight:800; background:${genderBadgeColor}22; color:${genderBadgeColor}; border:1px solid ${genderBadgeColor}44; padding:2px 8px; border-radius:10px;">${genderLabel}</span>
+                            <span style="font-size:0.7rem; font-weight:700; background:rgba(16,185,129,0.15); color:var(--accent-emerald); padding:2px 8px; border-radius:10px;">${voiceAssigned}</span>
+                        </div>
+                    </div>
                     <div class="beat-text-grid">
                         <div class="beat-box">
                             <div style="font-size:0.7rem; font-weight:700; color:var(--text-secondary); margin-bottom:4px;">ORIGINAL SCRIPT:</div>

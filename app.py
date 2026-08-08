@@ -989,6 +989,43 @@ async def handle_dubber_index(request):
         return web.Response(text=content, content_type="text/html", charset="utf-8", headers=headers)
     return web.Response(text="<h1>Shorts Dubber Studio</h1><p>Initializing...</p>", content_type="text/html", headers=headers)
 
+async def detect_multi_speakers_and_genders_groq(session, segments):
+    api_key = os.environ.get("GROQ_API_KEY", "").strip()
+    if not api_key or not segments:
+        return [("Speaker 1", "male") for _ in segments]
+    try:
+        transcript_dump = json.dumps([{"id": i, "text": s["text"]} for i, s in enumerate(segments, 1)])
+        sys_prompt = (
+            "You are an Elite Multi-Speaker Diarization & Gender Detection Agent for video translation.\n"
+            "Analyze the conversational dialogue turn by turn to determine:\n"
+            "1. Speaker identity (e.g. Speaker 1, Speaker 2, Speaker 3...)\n"
+            "2. Speaker gender (male or female)\n\n"
+            "Respond STRICTLY in JSON format:\n"
+            '{\n  "analysis": [\n    {"id": 1, "speaker": "Speaker 1", "gender": "male"},\n    {"id": 2, "speaker": "Speaker 2", "gender": "female"}\n  ]\n}'
+        )
+        payload = {
+            "model": "llama-3.3-70b-versatile",
+            "messages": [
+                {"role": "system", "content": sys_prompt},
+                {"role": "user", "content": f"Transcript Beats: {transcript_dump}"}
+            ],
+            "temperature": 0.2,
+            "response_format": {"type": "json_object"}
+        }
+        headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+        async with session.post("https://api.groq.com/openai/v1/chat/completions", json=payload, headers=headers, timeout=12) as resp:
+            if resp.status == 200:
+                data = await resp.json()
+                content = data["choices"][0]["message"]["content"]
+                parsed = json.loads(content)
+                analysis_list = parsed.get("analysis") or parsed.get("speakers") or []
+                if isinstance(analysis_list, list) and len(analysis_list) == len(segments):
+                    return [(r.get("speaker", "Speaker 1"), r.get("gender", "male").lower()) for r in analysis_list]
+    except Exception as e:
+        print("Speaker detection error:", e)
+    
+    return [("Speaker 1", "male") for _ in segments]
+
 async def transcribe_audio_groq(session, audio_filepath):
     api_key = os.environ.get("GROQ_API_KEY", "").strip()
     if not api_key or not os.path.exists(audio_filepath):
@@ -1094,26 +1131,44 @@ async def process_dubbing_async(dub_job_id, video_bytes, orig_filename, voice_id
                 full_text = "Shorts Video Narration"
             segments = [{"text": full_text, "start": 0.0, "end": total_dur}]
 
-        BACKGROUND_JOBS[dub_job_id]["progress"] = 45
-        BACKGROUND_JOBS[dub_job_id]["status_text"] = f"🌏 Translating {len(segments)} spoken beats to Hindi..."
+        BACKGROUND_JOBS[dub_job_id]["progress"] = 40
+        BACKGROUND_JOBS[dub_job_id]["status_text"] = f"🕵️ Detect Multi-Speakers & Male/Female Gender Assignment for {len(segments)} beats..."
+
+        speaker_gender_map = []
+        async with ClientSession() as session:
+            speaker_gender_map = await detect_multi_speakers_and_genders_groq(session, segments)
+
+        BACKGROUND_JOBS[dub_job_id]["progress"] = 55
+        BACKGROUND_JOBS[dub_job_id]["status_text"] = f"🌏 Translating {len(segments)} spoken beats & assigning multi-speaker voices..."
 
         dubbed_beats = []
         synced_segment_files = []
 
         async with ClientSession() as session:
             for idx, seg in enumerate(segments, start=1):
-                pct = 45 + int((idx / len(segments)) * 35)
+                pct = 55 + int((idx / len(segments)) * 30)
                 BACKGROUND_JOBS[dub_job_id]["progress"] = pct
-                BACKGROUND_JOBS[dub_job_id]["status_text"] = f"🎙️ Translating & Speed Syncing Beat #{idx}/{len(segments)}..."
 
                 orig_line = seg["text"]
                 target_dur = max(0.4, seg["end"] - seg["start"])
 
+                spk_name, spk_gender = speaker_gender_map[idx - 1] if idx <= len(speaker_gender_map) else ("Speaker 1", "male")
+
+                # Dynamic Multi-Speaker Gender Voice Selection
+                if spk_gender == "female":
+                    assigned_voice = "hi-IN-SwaraNeural"
+                elif spk_name == "Speaker 2":
+                    assigned_voice = "hi-IN-KavyanjaliNeural" if spk_gender == "female" else "en-IN-PrabhatNeural"
+                else:
+                    assigned_voice = voice_id if voice_id else "hi-IN-MadhurNeural"
+
+                BACKGROUND_JOBS[dub_job_id]["status_text"] = f"🎙️ Dubbing Beat #{idx}/{len(segments)} [{spk_name} ({spk_gender.capitalize()}) -> {assigned_voice}]..."
+
                 hindi_line = await translate_text_to_hindi_groq(session, orig_line)
 
-                # TTS for Hindi line
+                # TTS for Hindi line with assigned voice
                 seg_raw_mp3 = os.path.join(temp_dir, f"seg_{idx}_raw.mp3")
-                comm = edge_tts.Communicate(hindi_line, voice_id, rate="+5%")
+                comm = edge_tts.Communicate(hindi_line, assigned_voice, rate="+5%")
                 await comm.save(seg_raw_mp3)
                 await trim_trailing_audio_silence(seg_raw_mp3)
 
@@ -1143,6 +1198,9 @@ async def process_dubbing_async(dub_job_id, video_bytes, orig_filename, voice_id
                     "timestamp": f"{format_timestamp(int(seg['start'] * 1000))} -> {format_timestamp(int(seg['end'] * 1000))}",
                     "original_text": orig_line,
                     "hindi_text": hindi_line,
+                    "speaker": spk_name,
+                    "gender": spk_gender,
+                    "voice_assigned": assigned_voice,
                     "target_dur": round(target_dur, 2),
                     "tempo_factor": tempo
                 })
@@ -1169,7 +1227,7 @@ async def process_dubbing_async(dub_job_id, video_bytes, orig_filename, voice_id
         out_dubbed_filepath = os.path.join(DOWNLOADS_DIR, out_dubbed_filename)
 
         BACKGROUND_JOBS[dub_job_id]["progress"] = 88
-        BACKGROUND_JOBS[dub_job_id]["status_text"] = "🎬 FFmpeg Dubbing Engine: Merging Hindi audio track onto Shorts video..."
+        BACKGROUND_JOBS[dub_job_id]["status_text"] = "🎬 FFmpeg Dubbing Engine: Merging Multi-Speaker Hindi audio track onto Shorts video..."
 
         dub_cmd = [
             "ffmpeg", "-y",
@@ -1193,7 +1251,7 @@ async def process_dubbing_async(dub_job_id, video_bytes, orig_filename, voice_id
         BACKGROUND_JOBS[dub_job_id] = {
             "status": "completed",
             "progress": 100,
-            "status_text": f"✅ Shorts Hindi Dubbing Completed ({len(dubbed_beats)} Spoken Beats Pace-Synced)!",
+            "status_text": f"✅ Shorts Hindi Dubbing Completed ({len(dubbed_beats)} Spoken Beats, Multi-Speaker Voices Synced)!",
             "mode": "dubbing",
             "result": {
                 "videoFilename": out_dubbed_filename,
