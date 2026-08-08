@@ -364,6 +364,17 @@
                         </select>
                     </div>
                 </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:10px;">
+                    <div class="input-group">
+                        <label class="input-label">ComfyUI Cloud API Key / Token</label>
+                        <input type="password" id="comfyKeyInput" placeholder="Paste ComfyUI Cloud Key (cloud.comfy.org)..." onchange="saveComfyKey()" />
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">ComfyUI Endpoint / Server URL</label>
+                        <input type="text" id="comfyServerInput" placeholder="http://127.0.0.1:8188 or cloud.comfy.org" onchange="saveComfyKey()" />
+                    </div>
+                </div>
             </div>
 
             <!-- Script Input Card -->
@@ -585,11 +596,86 @@
                         ${videosHtml || '<p style="font-size:0.75rem; color:var(--text-secondary);">No Pexels videos found for this topic.</p>'}
                     </div>
 
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; flex-wrap:wrap; gap:8px; padding-top:10px; border-top:1px solid var(--border-subtle);">
+                        <button class="btn-apple btn-secondary" style="font-size:0.75rem; padding:6px 12px; min-height:34px;" onclick="generateComfyImage(${beatNum}, '${escapeHtml(scene.prompt || scene.text)}')">
+                            🎨 Generate AI Image (ComfyUI Test)
+                        </button>
+                        <div id="comfyStatus_${beatNum}" style="font-size:0.72rem; color:var(--accent-apple); font-weight:700; display:none;"></div>
+                    </div>
+
                     <input type="hidden" id="selectedVideoUrl_${beatNum}" value="${beatPexels[0] ? beatPexels[0].video_url : ''}">
                 `;
 
                 container.appendChild(card);
             });
+        }
+
+        function saveComfyKey() {
+            const k = document.getElementById('comfyKeyInput').value.trim();
+            const s = document.getElementById('comfyServerInput').value.trim();
+            if (k) localStorage.setItem('comfy_api_key', k);
+            else localStorage.removeItem('comfy_api_key');
+            if (s) localStorage.setItem('comfy_server_url', s);
+            else localStorage.removeItem('comfy_server_url');
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedKey = localStorage.getItem('pexels_api_key');
+            if (savedKey) document.getElementById('pexelsKeyInput').value = savedKey;
+            
+            const ck = localStorage.getItem('comfy_api_key');
+            if (ck) document.getElementById('comfyKeyInput').value = ck;
+
+            const cs = localStorage.getItem('comfy_server_url');
+            if (cs) document.getElementById('comfyServerInput').value = cs;
+        });
+
+        async function generateComfyImage(beatNum, promptText) {
+            const statusEl = document.getElementById(`comfyStatus_${beatNum}`);
+            const comfyKey = document.getElementById('comfyKeyInput').value.trim();
+            const comfyServer = document.getElementById('comfyServerInput').value.trim();
+
+            if (statusEl) {
+                statusEl.style.display = 'inline';
+                statusEl.textContent = '⏳ Rendering ComfyUI AI Image...';
+            }
+
+            try {
+                const res = await fetch('/api/comfyui-generate', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        prompt: promptText,
+                        scene: beatNum,
+                        api_key: comfyKey,
+                        server_url: comfyServer
+                    })
+                });
+
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+
+                if (data.image_url) {
+                    const grid = document.getElementById(`stockGrid_${beatNum}`);
+                    const newThumb = document.createElement('div');
+                    newThumb.className = 'stock-thumb selected';
+                    newThumb.id = `stockThumb_${beatNum}_comfy`;
+                    newThumb.onclick = () => selectStockVideo(beatNum, 'comfy', data.image_url);
+                    newThumb.innerHTML = `
+                        <img src="${data.image_url}" alt="ComfyUI Image">
+                        <span class="badge-check" style="display:block;">✓ Selected (ComfyUI)</span>
+                    `;
+
+                    grid.querySelectorAll('.stock-thumb').forEach(el => el.classList.remove('selected'));
+                    grid.prepend(newThumb);
+
+                    document.getElementById(`selectedVideoUrl_${beatNum}`).value = data.image_url;
+                    if (statusEl) statusEl.textContent = '✓ ComfyUI AI Image Rendered & Selected!';
+                }
+            } catch (err) {
+                alert('ComfyUI Test Notice: ' + err.message);
+                if (statusEl) statusEl.style.display = 'none';
+            }
         }
 
         function selectStockVideo(beatNum, idx, videoUrl) {

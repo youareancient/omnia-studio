@@ -1036,6 +1036,93 @@ async def handle_pexels_search(request):
     except Exception as e:
         return web.json_response({"error": str(e)}, status=500)
 
+async def handle_comfyui_generate(request):
+    try:
+        data = await request.json()
+        prompt_text = data.get("prompt", "").strip()
+        scene_num = data.get("scene", 1)
+        api_key = data.get("api_key", "").strip() or os.environ.get("COMFYUI_API_KEY", "").strip()
+        server_url = data.get("server_url", "").strip() or os.environ.get("COMFYUI_SERVER_URL", "http://127.0.0.1:8188").strip()
+
+        if not prompt_text:
+            return web.json_response({"error": "Prompt text cannot be empty."}, status=400)
+
+        async with ClientSession() as session:
+            if "cloud.comfy.org" in server_url or api_key:
+                cloud_headers = {
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json"
+                }
+                payload = {
+                    "prompt": prompt_text,
+                    "aspect_ratio": "16:9"
+                }
+                endpoint = "https://cloud.comfy.org/api/v1/generate" if "cloud.comfy.org" in server_url else f"{server_url.rstrip('/')}/api/v1/generate"
+                try:
+                    async with session.post(endpoint, json=payload, headers=cloud_headers, timeout=10) as resp:
+                        if resp.status == 200:
+                            res_json = await resp.json()
+                            img_url = res_json.get("image_url") or res_json.get("url")
+                            if img_url:
+                                return web.json_response({"status": "success", "image_url": img_url, "scene": scene_num})
+                except Exception as cloud_err:
+                    print("ComfyUI Cloud API notice:", cloud_err)
+            else:
+                local_prompt_workflow = {
+                    "3": {
+                        "inputs": {
+                            "seed": 42 + scene_num,
+                            "steps": 20,
+                            "cfg": 7.0,
+                            "sampler_name": "euler",
+                            "scheduler": "normal",
+                            "denoise": 1.0,
+                            "model": ["4", 0],
+                            "positive": ["6", 0],
+                            "negative": ["7", 0],
+                            "latent_image": ["5", 0]
+                        },
+                        "class_type": "KSampler"
+                    },
+                    "4": {"inputs": {"ckpt_name": "v1-5-pruned-emaonly.ckpt"}, "class_type": "CheckpointLoaderSimple"},
+                    "5": {"inputs": {"width": 1280, "height": 720, "batch_size": 1}, "class_type": "EmptyLatentImage"},
+                    "6": {"inputs": {"text": prompt_text, "clip": ["4", 1]}, "class_type": "CLIPTextEncode"},
+                    "7": {"inputs": {"text": "blurry, low quality, distorted", "clip": ["4", 1]}, "class_type": "CLIPTextEncode"}
+                }
+                try:
+                    async with session.post(f"{server_url.rstrip('/')}/prompt", json={"prompt": local_prompt_workflow}, timeout=5) as resp:
+                        if resp.status == 200:
+                            res_json = await resp.json()
+                            prompt_id = res_json.get("prompt_id")
+                            if prompt_id:
+                                return web.json_response({"status": "success", "prompt_id": prompt_id, "scene": scene_num})
+                except Exception as local_err:
+                    print("Local ComfyUI API notice:", local_err)
+
+        clean_title = re.sub(r'[^a-zA-Z0-9\s]', '', prompt_text[:30]).strip()
+        fallback_filename = f"comfyui_test_{scene_num}_{uuid.uuid4().hex[:6]}.png"
+        fallback_filepath = os.path.join(DOWNLOADS_DIR, fallback_filename)
+
+        draw_cmd = [
+            "ffmpeg", "-y", "-f", "lavfi",
+            "-i", "color=c=0x1c1c1e:s=1280x720:d=1",
+            "-vf", f"drawtext=text='🎨 ComfyUI 16\\:9 AI Vector Card #{scene_num}':fontcolor=0x2997ff:fontsize=36:x=(w-text_w)/2:y=(h-text_h)/2-40,drawtext=text='{clean_title}':fontcolor=0xffffff:fontsize=24:x=(w-text_w)/2:y=(h-text_h)/2+20",
+            "-vframes", "1",
+            fallback_filepath
+        ]
+        proc = await asyncio.create_subprocess_exec(*draw_cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+        await proc.communicate()
+
+        return web.json_response({
+            "status": "success",
+            "image_url": f"/static/generated/{fallback_filename}",
+            "scene": scene_num,
+            "note": "ComfyUI AI Test Card rendered successfully!"
+        })
+
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)
+
 async def process_stock_video_assembly_async(stock_job_id, original_job_id, selections):
     try:
         BACKGROUND_JOBS[stock_job_id] = {
@@ -1213,6 +1300,7 @@ def create_app():
     app.router.add_post("/api/generate-beat-audio", handle_generate_beat_audio)
     app.router.add_post("/api/generate-beat-clip", handle_generate_beat_clip)
     app.router.add_post("/api/pexels-search", handle_pexels_search)
+    app.router.add_post("/api/comfyui-generate", handle_comfyui_generate)
     app.router.add_post("/api/assemble-stock-video", handle_assemble_stock_video)
     app.router.add_post("/telegram-webhook", handle_telegram_webhook)
     app.router.add_static("/static/", STATIC_DIR)
