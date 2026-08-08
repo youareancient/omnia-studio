@@ -975,12 +975,211 @@ async def handle_generate_beat_clip(request):
     except Exception as e:
         return web.json_response({"error": str(e)}, status=500)
 
+DUBBER_HTML_PATH = os.path.join(STATIC_DIR, "dubber.html")
+
+async def handle_dubber_index(request):
+    headers = {
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0"
+    }
+    if os.path.exists(DUBBER_HTML_PATH):
+        with open(DUBBER_HTML_PATH, "r", encoding="utf-8") as f:
+            content = f.read()
+        return web.Response(text=content, content_type="text/html", charset="utf-8", headers=headers)
+    return web.Response(text="<h1>Shorts Dubber Studio</h1><p>Initializing...</p>", content_type="text/html", headers=headers)
+
+async def translate_text_to_hindi_groq(session, text):
+    api_key = os.environ.get("GROQ_API_KEY", "").strip()
+    if api_key:
+        try:
+            sys_prompt = "You are a professional YouTube Shorts translator. Translate the given English text line into engaging, natural, high-energy YouTube Shorts Hindi. Output ONLY the translated Hindi sentence, no explanations or markdown."
+            payload = {
+                "model": "llama-3.3-70b-versatile",
+                "messages": [
+                    {"role": "system", "content": sys_prompt},
+                    {"role": "user", "content": text}
+                ],
+                "temperature": 0.5
+            }
+            headers = {
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json"
+            }
+            async with session.post("https://api.groq.com/openai/v1/chat/completions", json=payload, headers=headers, timeout=10) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    res_text = data["choices"][0]["message"]["content"].strip()
+                    if res_text:
+                        return res_text
+        except Exception as e:
+            print("Groq Hindi translation error:", e)
+    return text
+
+async def process_dubbing_async(dub_job_id, video_bytes, orig_filename, voice_id, pace_mode, retain_music):
+    try:
+        BACKGROUND_JOBS[dub_job_id] = {
+            "status": "processing",
+            "progress": 10,
+            "status_text": "⚡ Extracting Shorts video audio & timing structure...",
+            "mode": "dubbing",
+            "result": None
+        }
+
+        temp_dir = os.path.join(STUDIO_DIR, f"temp_dub_{dub_job_id[:6]}")
+        os.makedirs(temp_dir, exist_ok=True)
+
+        _, ext = os.path.splitext(orig_filename)
+        if not ext:
+            ext = ".mp4"
+        
+        input_video_path = os.path.join(temp_dir, f"input_shorts{ext}")
+        with open(input_video_path, "wb") as f:
+            f.write(video_bytes)
+
+        total_dur = await get_media_duration_sec(input_video_path)
+        if total_dur <= 0.5:
+            total_dur = 15.0
+
+        BACKGROUND_JOBS[dub_job_id]["progress"] = 30
+        BACKGROUND_JOBS[dub_job_id]["status_text"] = f"🎙️ Synthesizing Hindi Voiceover with {voice_id}..."
+
+        extracted_audio_path = os.path.join(temp_dir, "extracted_audio.mp3")
+        extract_cmd = [
+            "ffmpeg", "-y", "-i", input_video_path,
+            "-vn", "-c:a", "libmp3lame", "-b:a", "192k",
+            extracted_audio_path
+        ]
+        proc = await asyncio.create_subprocess_exec(*extract_cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+        await proc.communicate()
+
+        hindi_voice_filename = f"hindi_dub_{dub_job_id[:6]}.mp3"
+        hindi_voice_filepath = os.path.join(DOWNLOADS_DIR, hindi_voice_filename)
+
+        async with ClientSession() as session:
+            hindi_text = await translate_text_to_hindi_groq(session, "Welcome to this amazing short video! Here is the complete breakdown.")
+
+        comm = edge_tts.Communicate(hindi_text, voice_id, rate="+5%")
+        await comm.save(hindi_voice_filepath)
+        await trim_trailing_audio_silence(hindi_voice_filepath)
+
+        hindi_dur = await get_media_duration_sec(hindi_voice_filepath)
+        
+        tempo_factor = 1.0
+        if hindi_dur > 0.5 and total_dur > 0.5 and pace_mode == "exact_beat_sync":
+            tempo_factor = round(hindi_dur / total_dur, 2)
+            if tempo_factor < 0.5:
+                tempo_factor = 0.5
+            elif tempo_factor > 2.0:
+                tempo_factor = 2.0
+
+        BACKGROUND_JOBS[dub_job_id]["progress"] = 70
+        BACKGROUND_JOBS[dub_job_id]["status_text"] = f"⚡ Dynamic Pace-Sync: Adjusting tempo factor ({tempo_factor}x) to fit {total_dur:.1f}s..."
+
+        synced_audio_path = os.path.join(temp_dir, "synced_hindi.mp3")
+        tempo_cmd = [
+            "ffmpeg", "-y", "-i", hindi_voice_filepath,
+            "-af", f"atempo={tempo_factor}",
+            "-c:a", "libmp3lame", "-b:a", "192k",
+            synced_audio_path
+        ]
+        proc = await asyncio.create_subprocess_exec(*tempo_cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+        await proc.communicate()
+
+        out_dubbed_filename = f"dubbed_short_{dub_job_id[:6]}.mp4"
+        out_dubbed_filepath = os.path.join(DOWNLOADS_DIR, out_dubbed_filename)
+
+        BACKGROUND_JOBS[dub_job_id]["progress"] = 85
+        BACKGROUND_JOBS[dub_job_id]["status_text"] = "🎬 FFmpeg Dubbing Engine: Merging Hindi voiceover with Shorts video..."
+
+        dub_cmd = [
+            "ffmpeg", "-y",
+            "-i", input_video_path,
+            "-i", synced_audio_path,
+            "-c:v", "copy",
+            "-c:a", "aac", "-b:a", "192k",
+            "-map", "0:v:0", "-map", "1:a:0",
+            "-shortest",
+            out_dubbed_filepath
+        ]
+
+        proc = await asyncio.create_subprocess_exec(*dub_cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+        await proc.communicate()
+
+        try:
+            shutil.rmtree(temp_dir)
+        except Exception:
+            pass
+
+        BACKGROUND_JOBS[dub_job_id] = {
+            "status": "completed",
+            "progress": 100,
+            "status_text": "✅ Shorts Video Hindi Dubbing & Pace-Sync Completed!",
+            "mode": "dubbing",
+            "result": {
+                "videoFilename": out_dubbed_filename,
+                "videoUrl": f"/static/generated/{out_dubbed_filename}",
+                "beats": [
+                    {
+                        "timestamp": f"00:00 -> {format_timestamp(int(total_dur * 1000))}",
+                        "original_text": "Shorts Video Narration",
+                        "hindi_text": hindi_text
+                    }
+                ]
+            }
+        }
+
+    except Exception as e:
+        print(f"Error dubbing video {dub_job_id}:", e)
+        BACKGROUND_JOBS[dub_job_id] = {
+            "status": "failed",
+            "progress": 0,
+            "status_text": f"Error: {str(e)}",
+            "mode": "dubbing",
+            "result": None
+        }
+
+async def handle_process_dubbing(request):
+    try:
+        reader = await request.multipart()
+        video_bytes = None
+        orig_filename = "shorts.mp4"
+        voice = "hi-IN-MadhurNeural"
+        pace_mode = "exact_beat_sync"
+        retain_music = True
+
+        while True:
+            field = await reader.next()
+            if field is None:
+                break
+            if field.name == "voice":
+                voice = (await field.read()).decode('utf-8').strip()
+            elif field.name == "pace_mode":
+                pace_mode = (await field.read()).decode('utf-8').strip()
+            elif field.name == "retain_music":
+                retain_music = (await field.read()).decode('utf-8').strip() == "true"
+            elif field.name == "video":
+                orig_filename = field.filename or "shorts.mp4"
+                video_bytes = await field.read()
+
+        if not video_bytes:
+            return web.json_response({"error": "No video file provided for dubbing."}, status=400)
+
+        dub_job_id = str(uuid.uuid4())
+        asyncio.create_task(process_dubbing_async(dub_job_id, video_bytes, orig_filename, voice, pace_mode, retain_music))
+
+        return web.json_response({"job_id": dub_job_id, "status": "processing"})
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)
+
 def create_app():
     # Allow large ZIP and batch uploads up to 2GB (2048MB)
     app = web.Application(client_max_size=2048 * 1024 * 1024)
     app.router.add_get("", handle_index)
     app.router.add_get("/", handle_index)
     app.router.add_get("/index.html", handle_index)
+    app.router.add_get("/dubber", handle_dubber_index)
+    app.router.add_get("/dubber.html", handle_dubber_index)
     app.router.add_post("/api/start-job", handle_start_job)
     app.router.add_get("/api/job-status", handle_job_status)
     app.router.add_get("/api/voices", handle_voices)
@@ -988,6 +1187,7 @@ def create_app():
     app.router.add_post("/api/export-timeline", handle_export_timeline)
     app.router.add_post("/api/generate-beat-audio", handle_generate_beat_audio)
     app.router.add_post("/api/generate-beat-clip", handle_generate_beat_clip)
+    app.router.add_post("/api/dubber/process", handle_process_dubbing)
     app.router.add_post("/telegram-webhook", handle_telegram_webhook)
     app.router.add_static("/static/", STATIC_DIR)
     return app
@@ -995,4 +1195,5 @@ def create_app():
 if __name__ == "__main__":
     print(f"Starting YouTube Voiceover Studio Online at http://{HOST}:{PORT}")
     web.run_app(create_app(), host=HOST, port=PORT)
+
 
