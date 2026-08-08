@@ -1046,34 +1046,51 @@ async def transcribe_audio_groq(session, audio_filepath):
         print("Groq Whisper transcription error:", e)
     return None
 
-async def translate_text_to_hindi_groq(session, text):
+async def generate_funny_hindi_comedy_script_groq(session, text, dub_mode, comedy_style):
     api_key = os.environ.get("GROQ_API_KEY", "").strip()
-    if api_key:
-        try:
-            sys_prompt = "You are an expert YouTube Shorts translator. Translate the given English text line into engaging, natural, high-energy YouTube Shorts Hindi. Output ONLY the translated Hindi sentence, no explanations or markdown."
-            payload = {
-                "model": "llama-3.3-70b-versatile",
-                "messages": [
-                    {"role": "system", "content": sys_prompt},
-                    {"role": "user", "content": text}
-                ],
-                "temperature": 0.5
-            }
-            headers = {
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json"
-            }
-            async with session.post("https://api.groq.com/openai/v1/chat/completions", json=payload, headers=headers, timeout=10) as resp:
-                if resp.status == 200:
-                    data = await resp.json()
-                    res_text = data["choices"][0]["message"]["content"].strip()
-                    if res_text:
-                        return res_text
-        except Exception as e:
-            print("Groq Hindi translation error:", e)
-    return text
+    if not api_key or not text:
+        return text
 
-async def process_dubbing_async(dub_job_id, video_bytes, orig_filename, voice_id, pace_mode, retain_music):
+    if dub_mode == "direct_translation":
+        return await translate_text_to_hindi_groq(session, text)
+
+    try:
+        style_prompt_map = {
+            "standup_comedy": "high-energy standup comedy style, funny punchlines, hilarious Hindi slang, viral YouTube Shorts humor",
+            "sarcastic_roast": "witty, sarcastic roast commentary, funny sarcastic reactions, hilarious Hindi memes",
+            "dramatized_funny": "over-the-top dramatic comedy, exaggerated Bollywood-style funny commentary"
+        }
+        selected_style = style_prompt_map.get(comedy_style, style_prompt_map["standup_comedy"])
+
+        if dub_mode == "meme_roast":
+            sys_prompt = f"You are a viral YouTube Shorts meme roast comedian. Based on what is happening in the scene beat, generate a short, witty, extremely funny Hindi roast line ({selected_style}). Output ONLY the funny Hindi sentence, no explanations or markdown."
+        else: # funny_parody
+            sys_prompt = f"You are an elite YouTube Shorts comedy scriptwriter. Rewrite the given scene text into an extremely funny, hilarious Hindi comedy parody line ({selected_style}). Output ONLY the funny Hindi sentence, no explanations or markdown."
+
+        payload = {
+            "model": "llama-3.3-70b-versatile",
+            "messages": [
+                {"role": "system", "content": sys_prompt},
+                {"role": "user", "content": f"Scene Beat: \"{text}\""}
+            ],
+            "temperature": 0.8
+        }
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        }
+        async with session.post("https://api.groq.com/openai/v1/chat/completions", json=payload, headers=headers, timeout=10) as resp:
+            if resp.status == 200:
+                data = await resp.json()
+                res_text = data["choices"][0]["message"]["content"].strip()
+                if res_text:
+                    return res_text
+    except Exception as e:
+        print("Groq Hindi comedy script error:", e)
+
+    return await translate_text_to_hindi_groq(session, text)
+
+async def process_dubbing_async(dub_job_id, video_bytes, orig_filename, voice_id, pace_mode, retain_music, dub_mode="direct_translation", comedy_style="standup_comedy"):
     try:
         BACKGROUND_JOBS[dub_job_id] = {
             "status": "processing",
@@ -1138,8 +1155,9 @@ async def process_dubbing_async(dub_job_id, video_bytes, orig_filename, voice_id
         async with ClientSession() as session:
             speaker_gender_map = await detect_multi_speakers_and_genders_groq(session, segments)
 
+        mode_title = "Funny Hindi Comedy Script" if dub_mode != "direct_translation" else "Hindi Speech"
         BACKGROUND_JOBS[dub_job_id]["progress"] = 55
-        BACKGROUND_JOBS[dub_job_id]["status_text"] = f"🌏 Translating {len(segments)} spoken beats & assigning multi-speaker voices..."
+        BACKGROUND_JOBS[dub_job_id]["status_text"] = f"🎭 Generating {mode_title} & multi-speaker dynamic speed sync..."
 
         dubbed_beats = []
         synced_segment_files = []
@@ -1154,7 +1172,6 @@ async def process_dubbing_async(dub_job_id, video_bytes, orig_filename, voice_id
 
                 spk_name, spk_gender = speaker_gender_map[idx - 1] if idx <= len(speaker_gender_map) else ("Speaker 1", "male")
 
-                # Dynamic Multi-Speaker Gender Voice Selection
                 if spk_gender == "female":
                     assigned_voice = "hi-IN-SwaraNeural"
                 elif spk_name == "Speaker 2":
@@ -1162,11 +1179,11 @@ async def process_dubbing_async(dub_job_id, video_bytes, orig_filename, voice_id
                 else:
                     assigned_voice = voice_id if voice_id else "hi-IN-MadhurNeural"
 
-                BACKGROUND_JOBS[dub_job_id]["status_text"] = f"🎙️ Dubbing Beat #{idx}/{len(segments)} [{spk_name} ({spk_gender.capitalize()}) -> {assigned_voice}]..."
+                BACKGROUND_JOBS[dub_job_id]["status_text"] = f"🎙️ Writing & Dubbing Beat #{idx}/{len(segments)} [{spk_name} ({spk_gender.capitalize()}) -> {assigned_voice}]..."
 
-                hindi_line = await translate_text_to_hindi_groq(session, orig_line)
+                # Generate direct translation OR funny comedy script based on dub_mode
+                hindi_line = await generate_funny_hindi_comedy_script_groq(session, orig_line, dub_mode, comedy_style)
 
-                # TTS for Hindi line with assigned voice
                 seg_raw_mp3 = os.path.join(temp_dir, f"seg_{idx}_raw.mp3")
                 comm = edge_tts.Communicate(hindi_line, assigned_voice, rate="+5%")
                 await comm.save(seg_raw_mp3)
@@ -1174,7 +1191,6 @@ async def process_dubbing_async(dub_job_id, video_bytes, orig_filename, voice_id
 
                 seg_dur = await get_media_duration_sec(seg_raw_mp3)
                 
-                # Dynamic tempo factor per segment
                 tempo = 1.0
                 if seg_dur > 0.1 and target_dur > 0.1 and pace_mode == "exact_beat_sync":
                     tempo = round(seg_dur / target_dur, 2)
@@ -1205,7 +1221,6 @@ async def process_dubbing_async(dub_job_id, video_bytes, orig_filename, voice_id
                     "tempo_factor": tempo
                 })
 
-        # Concatenate synced audio segments
         concat_txt_path = os.path.join(temp_dir, "concat_audio.txt")
         with open(concat_txt_path, "w", encoding="utf-8") as f:
             for sfile in synced_segment_files:
@@ -1227,7 +1242,7 @@ async def process_dubbing_async(dub_job_id, video_bytes, orig_filename, voice_id
         out_dubbed_filepath = os.path.join(DOWNLOADS_DIR, out_dubbed_filename)
 
         BACKGROUND_JOBS[dub_job_id]["progress"] = 88
-        BACKGROUND_JOBS[dub_job_id]["status_text"] = "🎬 FFmpeg Dubbing Engine: Merging Multi-Speaker Hindi audio track onto Shorts video..."
+        BACKGROUND_JOBS[dub_job_id]["status_text"] = "🎬 FFmpeg Dubbing Engine: Merging Funny Hindi audio track onto Shorts video..."
 
         dub_cmd = [
             "ffmpeg", "-y",
@@ -1251,7 +1266,7 @@ async def process_dubbing_async(dub_job_id, video_bytes, orig_filename, voice_id
         BACKGROUND_JOBS[dub_job_id] = {
             "status": "completed",
             "progress": 100,
-            "status_text": f"✅ Shorts Hindi Dubbing Completed ({len(dubbed_beats)} Spoken Beats, Multi-Speaker Voices Synced)!",
+            "status_text": f"✅ Funny Shorts Dubbing Completed ({len(dubbed_beats)} Beats, Comedy Voiceover Synced)!",
             "mode": "dubbing",
             "result": {
                 "videoFilename": out_dubbed_filename,
@@ -1278,6 +1293,8 @@ async def handle_process_dubbing(request):
         voice = "hi-IN-MadhurNeural"
         pace_mode = "exact_beat_sync"
         retain_music = True
+        dub_mode = "direct_translation"
+        comedy_style = "standup_comedy"
 
         while True:
             field = await reader.next()
@@ -1287,6 +1304,10 @@ async def handle_process_dubbing(request):
                 voice = (await field.read()).decode('utf-8').strip()
             elif field.name == "pace_mode":
                 pace_mode = (await field.read()).decode('utf-8').strip()
+            elif field.name == "dub_mode":
+                dub_mode = (await field.read()).decode('utf-8').strip()
+            elif field.name == "comedy_style":
+                comedy_style = (await field.read()).decode('utf-8').strip()
             elif field.name == "retain_music":
                 retain_music = (await field.read()).decode('utf-8').strip() == "true"
             elif field.name == "video":
@@ -1297,7 +1318,7 @@ async def handle_process_dubbing(request):
             return web.json_response({"error": "No video file provided for dubbing."}, status=400)
 
         dub_job_id = str(uuid.uuid4())
-        asyncio.create_task(process_dubbing_async(dub_job_id, video_bytes, orig_filename, voice, pace_mode, retain_music))
+        asyncio.create_task(process_dubbing_async(dub_job_id, video_bytes, orig_filename, voice, pace_mode, retain_music, dub_mode, comedy_style))
 
         return web.json_response({"job_id": dub_job_id, "status": "processing"})
     except Exception as e:

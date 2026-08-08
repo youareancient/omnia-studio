@@ -395,6 +395,26 @@
 
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
                     <div class="control-group">
+                        <label class="control-label">🎭 Select Dubbing Mode</label>
+                        <select id="dubModeSelect" class="cyber-select">
+                            <option value="direct_translation">🌏 Direct Translation (Word-for-Word Hindi)</option>
+                            <option value="funny_parody" selected>🔥 Funny Comedy Parody (AI Stand-Up Comedy Scriptwriter)</option>
+                            <option value="meme_roast">🤖 Meme Roast & Witty Reaction Commentary</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">🤪 Comedy Humor Style</label>
+                        <select id="comedyStyleSelect" class="cyber-select">
+                            <option value="standup_comedy" selected>High-Energy Stand-Up Comedy Punchlines</option>
+                            <option value="sarcastic_roast">Witty & Sarcastic Meme Roast</option>
+                            <option value="dramatized_funny">Over-the-Top Dramatic Bollywood Comedy</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+                    <div class="control-group">
                         <label class="control-label">🎙️ Select Target Hindi Voice</label>
                         <select id="hindiVoiceSelect" class="cyber-select">
                             <option value="hi-IN-MadhurNeural" selected>Madhur (Energetic Hindi Male - Shorts Master)</option>
@@ -501,12 +521,16 @@
 
             const voice = document.getElementById('hindiVoiceSelect').value;
             const paceMode = document.getElementById('paceModeSelect').value;
+            const dubMode = document.getElementById('dubModeSelect').value;
+            const comedyStyle = document.getElementById('comedyStyleSelect').value;
             const retainMusic = document.getElementById('retainMusicCheck').checked;
 
             const formData = new FormData();
             formData.append('video', selectedVideoFile);
             formData.append('voice', voice);
             formData.append('pace_mode', paceMode);
+            formData.append('dub_mode', dubMode);
+            formData.append('comedy_style', comedyStyle);
             formData.append('retain_music', retainMusic ? 'true' : 'false');
 
             const xhr = new XMLHttpRequest();
