@@ -1036,16 +1036,17 @@ async def handle_pexels_search(request):
     except Exception as e:
         return web.json_response({"error": str(e)}, status=500)
 
-async def handle_assemble_stock_video(request):
+async def process_stock_video_assembly_async(stock_job_id, original_job_id, selections):
     try:
-        data = await request.json()
-        job_id = data.get("job_id", "")
-        selections = data.get("selections", [])
+        BACKGROUND_JOBS[stock_job_id] = {
+            "status": "processing",
+            "progress": 10,
+            "status_text": "🎬 Downloading Pexels 1080p stock video clips in parallel...",
+            "mode": "video",
+            "result": None
+        }
 
-        if not selections:
-            return web.json_response({"error": "No scene video selections provided."}, status=400)
-
-        job = BACKGROUND_JOBS.get(job_id)
+        job = BACKGROUND_JOBS.get(original_job_id)
         audio_filename = None
         if job and job.get("result"):
             audio_filename = job["result"].get("filename")
@@ -1058,40 +1059,47 @@ async def handle_assemble_stock_video(request):
 
         audio_filepath = os.path.join(DOWNLOADS_DIR, audio_filename) if audio_filename else None
         if not audio_filepath or not os.path.exists(audio_filepath):
-            return web.json_response({"error": "Voiceover audio file not found. Generate voiceover first."}, status=400)
+            raise Exception("Voiceover audio file not found. Generate voiceover first.")
 
         total_audio_dur = await get_media_duration_sec(audio_filepath)
         if total_audio_dur <= 0.5:
             total_audio_dur = 30.0
 
-        temp_dir = os.path.join(STUDIO_DIR, f"temp_stock_{uuid.uuid4().hex[:6]}")
+        temp_dir = os.path.join(STUDIO_DIR, f"temp_stock_{stock_job_id[:6]}")
         os.makedirs(temp_dir, exist_ok=True)
 
-        downloaded_clips = []
-        async with ClientSession() as session:
-            for idx, sel in enumerate(selections, start=1):
-                v_url = sel.get("video_url", "")
-                clip_path = os.path.join(temp_dir, f"stock_clip_{idx:02d}.mp4")
+        async def fetch_clip(idx, sel, session):
+            v_url = sel.get("video_url", "")
+            clip_path = os.path.join(temp_dir, f"stock_clip_{idx:02d}.mp4")
+            sfx = sel.get("sfx", "whoosh")
 
-                if v_url and v_url.startswith("http"):
-                    try:
-                        async with session.get(v_url, timeout=30) as resp:
-                            if resp.status == 200:
+            if v_url and v_url.startswith("http"):
+                try:
+                    async with session.get(v_url, timeout=12) as resp:
+                        if resp.status == 200:
+                            content = await resp.read()
+                            if len(content) > 1000:
                                 with open(clip_path, "wb") as f:
-                                    f.write(await resp.read())
-                                downloaded_clips.append((clip_path, sel.get("sfx", "whoosh")))
-                                continue
-                    except Exception as download_err:
-                        print(f"Error downloading stock clip {idx}:", download_err)
+                                    f.write(content)
+                                return (clip_path, sfx)
+                except Exception as e:
+                    print(f"Parallel download timeout/error for clip {idx}:", e)
 
-                dur = parse_timestamp_seconds(sel.get("timestamp", ""))
-                color_cmd = [
-                    "ffmpeg", "-y", "-f", "lavfi", "-i", f"color=c=0x0071e3:s=1920x1080:d={dur}",
-                    "-c:v", "libx264", "-pix_fmt", "yuv420p", clip_path
-                ]
-                proc_c = await asyncio.create_subprocess_exec(*color_cmd)
-                await proc_c.communicate()
-                downloaded_clips.append((clip_path, sel.get("sfx", "whoosh")))
+            dur = parse_timestamp_seconds(sel.get("timestamp", ""))
+            color_cmd = [
+                "ffmpeg", "-y", "-f", "lavfi", "-i", f"color=c=0x0071e3:s=1920x1080:d={dur}",
+                "-c:v", "libx264", "-pix_fmt", "yuv420p", clip_path
+            ]
+            proc_c = await asyncio.create_subprocess_exec(*color_cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+            await proc_c.communicate()
+            return (clip_path, sfx)
+
+        async with ClientSession() as session:
+            tasks = [fetch_clip(idx, sel, session) for idx, sel in enumerate(selections, start=1)]
+            downloaded_clips = await asyncio.gather(*tasks)
+
+        BACKGROUND_JOBS[stock_job_id]["progress"] = 65
+        BACKGROUND_JOBS[stock_job_id]["status_text"] = f"🎬 Merging {len(downloaded_clips)} 1080p stock clips into master video..."
 
         concat_file = os.path.join(temp_dir, "stock_concat.txt")
         with open(concat_file, "w", encoding="utf-8") as f:
@@ -1099,7 +1107,7 @@ async def handle_assemble_stock_video(request):
                 escaped = c_path.replace("\\", "/")
                 f.write(f"file '{escaped}'\n")
 
-        out_stock_filename = f"stock_video_{uuid.uuid4().hex[:6]}.mp4"
+        out_stock_filename = f"stock_video_{stock_job_id[:6]}.mp4"
         out_stock_filepath = os.path.join(DOWNLOADS_DIR, out_stock_filename)
 
         ffmpeg_cmd = [
@@ -1121,13 +1129,42 @@ async def handle_assemble_stock_video(request):
         except Exception:
             pass
 
-        return web.json_response({
-            "status": "success",
-            "videoFilename": out_stock_filename,
-            "videoUrl": f"/static/generated/{out_stock_filename}",
-            "qaReport": f"✅ Master Stock Video Rendered: {len(downloaded_clips)} Pexels 1080p clips merged!"
-        })
+        qa_report = f"✅ Master Stock Video Rendered: {len(downloaded_clips)} Pexels 1080p clips merged seamlessly!"
+        BACKGROUND_JOBS[stock_job_id] = {
+            "status": "completed",
+            "progress": 100,
+            "status_text": qa_report,
+            "mode": "video",
+            "result": {
+                "videoFilename": out_stock_filename,
+                "videoUrl": f"/static/generated/{out_stock_filename}",
+                "qaReport": qa_report
+            }
+        }
 
+    except Exception as e:
+        print(f"Error in process_stock_video_assembly_async {stock_job_id}:", e)
+        BACKGROUND_JOBS[stock_job_id] = {
+            "status": "failed",
+            "progress": 0,
+            "status_text": f"Error: {str(e)}",
+            "mode": "video",
+            "result": None
+        }
+
+async def handle_assemble_stock_video(request):
+    try:
+        data = await request.json()
+        job_id = data.get("job_id", "")
+        selections = data.get("selections", [])
+
+        if not selections:
+            return web.json_response({"error": "No scene video selections provided."}, status=400)
+
+        stock_job_id = str(uuid.uuid4())
+        asyncio.create_task(process_stock_video_assembly_async(stock_job_id, job_id, selections))
+
+        return web.json_response({"job_id": stock_job_id, "status": "processing"})
     except Exception as e:
         return web.json_response({"error": str(e)}, status=500)
 

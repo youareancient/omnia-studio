@@ -602,8 +602,18 @@
             }
 
             const btn = document.getElementById('btnAssembleStockVideo');
+            const progressBox = document.getElementById('progressBox');
+            const progressStatus = document.getElementById('progressStatus');
+            const progressBarFill = document.getElementById('progressBarFill');
+            const progressPercent = document.getElementById('progressPercent');
+
             btn.disabled = true;
             btn.textContent = '⏳ Assembling 1080p Stock Video...';
+
+            progressBox.style.display = 'block';
+            progressBarFill.style.width = '10%';
+            progressPercent.textContent = '10%';
+            progressStatus.textContent = 'Starting background 1080p video assembly task...';
 
             const videoSelections = [];
             lastScenesData.forEach(s => {
@@ -629,19 +639,38 @@
                     })
                 });
 
-                const data = await res.json();
-                if (data.error) throw new Error(data.error);
+                const startData = await res.json();
+                if (startData.error) throw new Error(startData.error);
 
-                document.getElementById('videoContainer').style.display = 'block';
-                document.getElementById('qaReportBadge').textContent = data.qaReport || '✅ 1080p Stock Video Rendered Successfully!';
+                const stockJobId = startData.job_id;
 
-                const player = document.getElementById('videoElement');
-                const downloadLink = document.getElementById('downloadVideoLink');
+                while (true) {
+                    await new Promise(r => setTimeout(r, 1000));
+                    const pollRes = await fetch(`/api/job-status?id=${stockJobId}`);
+                    const pollData = await pollRes.json();
 
-                player.src = data.videoUrl;
-                downloadLink.href = data.videoUrl;
+                    if (pollData.progress) {
+                        progressBarFill.style.width = `${pollData.progress}%`;
+                        progressPercent.textContent = `${pollData.progress}%`;
+                        progressStatus.textContent = pollData.status_text || 'Stitching stock clips into master video...';
+                    }
 
-                player.play();
+                    if (pollData.status === 'completed' && pollData.result) {
+                        document.getElementById('videoContainer').style.display = 'block';
+                        document.getElementById('qaReportBadge').textContent = pollData.result.qaReport || '✅ 1080p Stock Video Rendered Successfully!';
+
+                        const player = document.getElementById('videoElement');
+                        const downloadLink = document.getElementById('downloadVideoLink');
+
+                        player.src = pollData.result.videoUrl;
+                        downloadLink.href = pollData.result.videoUrl;
+
+                        player.play();
+                        break;
+                    } else if (pollData.status === 'failed') {
+                        throw new Error(pollData.status_text || 'Video assembly failed');
+                    }
+                }
 
             } catch (err) {
                 alert('Error assembling stock video: ' + err.message);
