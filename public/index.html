@@ -849,12 +849,15 @@
                 return;
             }
             const rawPromptsStr = lastBreakdownData
-                .map(item => (item.prompt || '').trim())
+                .map((item, idx) => {
+                    let cleanPrompt = (item.prompt || '').replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
+                    return cleanPrompt ? `${idx + 1}. ${cleanPrompt}` : '';
+                })
                 .filter(p => p.length > 0)
                 .join('\n\n');
 
             navigator.clipboard.writeText(rawPromptsStr).then(() => {
-                alert(`Copied ${lastBreakdownData.length} raw prompts to clipboard! 📋`);
+                alert(`Copied ${lastBreakdownData.length} formatted prompts to clipboard! 📋`);
             }).catch(err => {
                 const textArea = document.createElement('textarea');
                 textArea.value = rawPromptsStr;
@@ -862,7 +865,7 @@
                 textArea.select();
                 document.execCommand('copy');
                 document.body.removeChild(textArea);
-                alert(`Copied ${lastBreakdownData.length} raw prompts to clipboard! 📋`);
+                alert(`Copied ${lastBreakdownData.length} formatted prompts to clipboard! 📋`);
             });
         }
 

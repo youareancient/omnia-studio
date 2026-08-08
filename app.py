@@ -166,13 +166,13 @@ def build_vector_art_scene_prompt_fallback(text):
     money_match = re.search(r'(\$?\d+[\d,.]*\s*(million|billion|thousand|k|m)?)', text, re.IGNORECASE)
     money_label = ""
     if money_match and len(money_match.group(0)) > 1:
-        money_label = f"\n\nHuge bright-red text callout:\n\"{money_match.group(0).upper()}\""
+        money_label = f" Huge bright-red text callout: \"{money_match.group(0).upper()}\"."
 
     prompt_str = (
-        "2D hand-drawn educational architectural vector illustration, graphic novel technical diagram style, crisp clean black outlines, soft flat color palette, polished YouTube explainer aesthetics.\n\n"
-        f"LARGE BOLD TOP TITLE BANNER:\n\"{topic_title}\"\n\n"
-        f"Detailed 16:9 panoramic technical diagram view of {topic_title}.\n\n"
-        "Cross-sectional cutaway layers, annotated callout arrows, machinery icons, and glowing cyan boundary outlines.\n"
+        "2D hand-drawn educational architectural vector illustration, graphic novel technical diagram style, crisp clean black outlines, soft flat color palette, polished YouTube explainer aesthetics. "
+        f"LARGE BOLD TOP TITLE BANNER: \"{topic_title}\". "
+        f"Detailed 16:9 panoramic technical diagram view of {topic_title}. "
+        "Cross-sectional cutaway layers, annotated callout arrows, machinery icons, and glowing cyan boundary outlines. "
         "Clean paper background, generous negative space, high contrast composition."
         f"{money_label}"
     )
