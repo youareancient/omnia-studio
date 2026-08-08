@@ -161,22 +161,18 @@ STOPWORDS = {
 }
 
 def build_vector_art_scene_prompt_fallback(text):
-    words = re.findall(r'\b[a-zA-Z]{3,}\b', text)
-    filtered = [w.upper() for w in words if w.lower() not in STOPWORDS][:3]
-    topic_title = " ".join(filtered) if filtered else "OVERVIEW"
-
-    money_match = re.search(r'(\$?\d+[\d,.]*\s*(million|billion|thousand|k|m)?)', text, re.IGNORECASE)
-    money_label = ""
+    clean_line = re.sub(r'\s+', ' ', text).strip()
+    
+    money_match = re.search(r'(\$?\d+[\d,.]*\s*(million|billion|thousand|k|m)?)', clean_line, re.IGNORECASE)
+    money_callout = ""
     if money_match and len(money_match.group(0)) > 1:
-        money_label = f" Huge bright-red text callout: \"{money_match.group(0).upper()}\"."
+        money_callout = f" Hand-drawn financial text label showing \"{money_match.group(0).upper()}\"."
 
     prompt_str = (
-        "2D hand-drawn educational architectural vector illustration, graphic novel technical diagram style, crisp clean black outlines, soft flat color palette, polished YouTube explainer aesthetics. "
-        f"LARGE BOLD TOP TITLE BANNER: \"{topic_title}\". "
-        f"Detailed 16:9 panoramic technical diagram view of {topic_title}. "
-        "Cross-sectional cutaway layers, annotated callout arrows, machinery icons, and glowing cyan boundary outlines. "
-        "Clean paper background, generous negative space, high contrast composition."
-        f"{money_label}"
+        "Premium hand-drawn editorial economics illustration, professional educational cartoon style, whiteboard-inspired artwork, thick slightly imperfect black ink outlines, sketchy marker strokes, subtle pencil texture, subtle paper grain, muted flat colors, light cross-hatching. "
+        f"16:9 widescreen editorial illustration depicting: \"{clean_line}\". "
+        "Showing a believable business environment with expressive hand-drawn characters, relevant operational equipment, and visual money-flow diagrams."
+        f"{money_callout} Restrained editorial color palette of warm off-white paper, black ink, muted blue, muted red, soft green, and warm beige. Professional YouTube economics explainer documentary aesthetic."
     )
 
     return prompt_str
