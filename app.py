@@ -90,7 +90,7 @@ async def call_groq_ai_prompt_engineer(session, scene_text, scene_number):
         return None
 
     system_prompt = (
-        "MASTER PROMPT — UNIVERSAL HAND-DRAWN ECONOMICS IMAGE PROMPT GENERATOR WITH HERO CHARACTER ANCHOR\n\n"
+        "MASTER PROMPT — UNIVERSAL HAND-DRAWN ECONOMICS IMAGE PROMPT GENERATOR WITH DYNAMIC CHARACTER PLACEMENT\n\n"
         "You are a professional AI Image Prompt Engineer, Visual Director, Editorial Illustrator, and Business/Economics Visual Storyteller for premium YouTube economics explainer channels.\n\n"
         "Your task is to transform any supplied script beat sentence into a single, detailed, standalone image-generation prompt.\n\n"
         "1. 100% 2D HAND-DRAWN EDITORIAL CARTOON STYLE (STRICTLY NO PHOTOGRAPHY OR REAL PEOPLE):\n"
@@ -100,9 +100,11 @@ async def call_groq_ai_prompt_engineer(session, scene_text, scene_number):
         "- 60% DOMINANT: Warm off-white / light cream paper canvas background for spacious negative space.\n"
         "- 30% SECONDARY: Charcoal black ink linework, muted structural environment tones, and natural building/furniture shades.\n"
         "- 10% ACCENT POP: Reserved strictly for focal highlights, key financial numbers, and the main character's vibrant colors.\n\n"
-        "2. RECURRING HERO CHARACTER (MANDATORY IN EVERY PROMPT — NO 'HOST' LABELS WRITTEN):\n"
-        "Every single generated prompt MUST explicitly include the recurring channel hero character anchor described purely visually:\n"
-        "\"featuring the central recurring character: a simple hand-drawn expressive 2D stick figure guide with clean black ink outlines, wearing a vibrant crimson-red backwards baseball cap, an eye-catching electric-blue oversized hoodie, deep indigo baggy jeans, fresh white sneakers, and a prominent giant glowing metallic gold dollar-sign ($) medallion necklace, standing out as the colorful narrator in the scene.\"\n"
+        "2. SMART HERO CHARACTER PLACEMENT (DYNAMIC SCENE EVALUATION):\n"
+        "Evaluate the script beat sentence to intelligently decide if the recurring hero character is required:\n"
+        "- INCLUDE CHARACTER: If the beat is a narrator intro, direct viewer commentary, a choice scenario, or a guide moment, explicitly include:\n"
+        "  \"featuring the central recurring character: a simple hand-drawn expressive 2D stick figure guide with clean black ink outlines, wearing a vibrant crimson-red backwards baseball cap, an eye-catching electric-blue oversized hoodie, deep indigo baggy jeans, fresh white sneakers, and a prominent giant glowing metallic gold dollar-sign ($) medallion necklace, standing out as the colorful narrator in the scene.\"\n"
+        "- EXCLUDE CHARACTER (PURE ENVIRONMENTAL / B-ROLL SCENE): If the beat focuses purely on a physical object (e.g. stack of cash, contract document, glowing server racks, macro product shot, empty golf course fairway, or building facade), DO NOT INCLUDE THE CHARACTER so the physical item/environment shines full-screen on its own!\n"
         "STRICT CONSTRAINT ON TEXT: DO NOT WRITE THE WORDS 'HOST', 'HOST 3', OR ANY POINTER ARROWS NEAR THE CHARACTER. No text labels or character names pointing to the character.\n\n"
         "3. SINGLE FULL-FRAME 2D CARTOON PHYSICAL ENVIRONMENT — NO INFOGRAPHICS OR CATEGORY HEADINGS:\n"
         "CRITICAL DIRECTIVE: The image must be ONE SINGLE CONTINUOUS FULL-FRAME 16:9 2D HAND-DRAWN CARTOON SCENE (e.g., a massive 2D illustrated nightclub exterior, a 2D hand-drawn street food market stall, or a 2D cartoon nightclub interior). The physical location MUST be the hero BIG in the frame!\n"
@@ -110,7 +112,7 @@ async def call_groq_ai_prompt_engineer(session, scene_text, scene_number):
         "4. OUTPUT FORMAT:\n"
         "Output ONLY a single detailed, standalone 1-paragraph image prompt without internal multi-line breaks ready to paste directly into an AI image generator.\n\n"
         "Respond strictly in JSON format:\n"
-        '{\n  "prompt": "100% 2D hand-drawn editorial economics cartoon illustration, professional educational cartoon style, whiteboard-inspired artwork... featuring the central recurring character: a simple hand-drawn expressive 2D stick figure guide with clean black ink outlines, wearing a vibrant crimson-red backwards baseball cap, an eye-catching electric-blue oversized hoodie, deep indigo baggy jeans, fresh white sneakers, and a prominent giant glowing metallic gold dollar-sign ($) medallion necklace..."\n}'
+        '{\n  "prompt": "100% 2D hand-drawn editorial economics cartoon illustration, professional educational cartoon style, whiteboard-inspired artwork..."\n}'
     )
 
     user_prompt = f"Script Line (Beat {scene_number}): \"{scene_text}\""
@@ -172,11 +174,21 @@ def build_vector_art_scene_prompt_fallback(text):
     if money_match and len(money_match.group(0)) > 1:
         money_callout = f" Hand-drawn financial text label showing \"{money_match.group(0).upper()}\"."
 
+    # Smart check for narrator presence
+    narrator_keywords = ["you", "your", "we", "our", "welcome", "let's", "okay", "so", "look", "here"]
+    has_narrator = any(re.search(rf'\b{kw}\b', clean_line, re.IGNORECASE) for kw in narrator_keywords)
+
+    character_snippet = ""
+    if has_narrator:
+        character_snippet = (
+            "Featuring the central recurring character: a simple hand-drawn expressive 2D stick figure guide with clean black ink outlines, wearing a vibrant crimson-red backwards baseball cap, an eye-catching electric-blue oversized hoodie, deep indigo baggy jeans, fresh white sneakers, and a prominent giant glowing metallic gold dollar-sign ($) medallion necklace, standing out as the colorful narrator. "
+            "STRICT NO LABELS RULE: DO NOT WRITE THE WORDS 'HOST', 'HOST 3', OR ANY POINTER ARROWS ON OR NEAR THE CHARACTER. "
+        )
+
     prompt_str = (
         "100% 2D hand-drawn editorial economics cartoon illustration, professional educational cartoon style, whiteboard-inspired artwork, thick slightly imperfect black ink outlines, sketchy marker strokes, subtle paper grain, 60-30-10 color harmony with warm off-white canvas. "
         "STRICT NO PHOTOGRAPHY RULE: ABSOLUTELY NO REALISTIC PHOTOGRAPHY, NO REAL HUMAN PHOTOS, NO REALISTIC PEOPLE OR PHOTO-REALISTIC BACKGROUNDS. ALL BACKGROUND PEOPLE AND ENVIRONMENTS MUST BE 2D HAND-DRAWN CARTOON FIGURES. "
-        "Featuring the central recurring character: a simple hand-drawn expressive 2D stick figure guide with clean black ink outlines, wearing a vibrant crimson-red backwards baseball cap, an eye-catching electric-blue oversized hoodie, deep indigo baggy jeans, fresh white sneakers, and a prominent giant glowing metallic gold dollar-sign ($) medallion necklace, standing out as the colorful narrator. "
-        "STRICT NO LABELS RULE: DO NOT WRITE THE WORDS 'HOST', 'HOST 3', OR ANY POINTER ARROWS ON OR NEAR THE CHARACTER. "
+        f"{character_snippet}"
         f"A single full-frame 16:9 2D cartoon physical location scene depicting: \"{clean_line}\". "
         "Showing a grand 2D hand-drawn physical environment (e.g. 2D cartoon nightclub exterior, 2D illustrated street food market, or 2D cartoon building interior). "
         "ABSOLUTELY NO INFOGRAPHIC SLIDES, NO TOP CATEGORY HEADINGS, NO SPLIT-SCREEN DIAGRAM BOXES, AND NO CONNECTING ARROWS. "
