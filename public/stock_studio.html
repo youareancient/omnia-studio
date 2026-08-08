@@ -445,6 +445,11 @@
         let currentJobId = null;
         let lastScenesData = [];
 
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
         window.addEventListener('DOMContentLoaded', () => {
             const savedKey = localStorage.getItem('pexels_api_key');
             if (savedKey) {
