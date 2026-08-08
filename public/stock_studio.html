@@ -667,34 +667,39 @@
 
                 while (true) {
                     await new Promise(r => setTimeout(r, 1000));
-                    const pollRes = await fetch(`/api/job-status?id=${stockJobId}`);
-                    const pollData = await pollRes.json();
+                    try {
+                        const pollRes = await fetch(`/api/job-status?id=${stockJobId}`);
+                        if (!pollRes.ok) continue;
+                        const pollData = await pollRes.json();
 
-                    if (pollData.progress) {
-                        progressBarFill.style.width = `${pollData.progress}%`;
-                        sidebarFill.style.width = `${pollData.progress}%`;
+                        if (pollData.progress) {
+                            progressBarFill.style.width = `${pollData.progress}%`;
+                            sidebarFill.style.width = `${pollData.progress}%`;
 
-                        progressPercent.textContent = `${pollData.progress}%`;
-                        sidebarPercent.textContent = `${pollData.progress}%`;
+                            progressPercent.textContent = `${pollData.progress}%`;
+                            sidebarPercent.textContent = `${pollData.progress}%`;
 
-                        progressStatus.textContent = pollData.status_text || 'Stitching stock clips into master video...';
-                        sidebarStatus.textContent = pollData.status_text || 'Stitching stock clips into master video...';
-                    }
+                            progressStatus.textContent = pollData.status_text || 'Stitching stock clips into master video...';
+                            sidebarStatus.textContent = pollData.status_text || 'Stitching stock clips into master video...';
+                        }
 
-                    if (pollData.status === 'completed' && pollData.result) {
-                        document.getElementById('videoContainer').style.display = 'block';
-                        document.getElementById('qaReportBadge').textContent = pollData.result.qaReport || '✅ 1080p Stock Video Rendered Successfully!';
+                        if (pollData.status === 'completed' && pollData.result) {
+                            document.getElementById('videoContainer').style.display = 'block';
+                            document.getElementById('qaReportBadge').textContent = pollData.result.qaReport || '✅ 1080p Stock Video Rendered Successfully!';
 
-                        const player = document.getElementById('videoElement');
-                        const downloadLink = document.getElementById('downloadVideoLink');
+                            const player = document.getElementById('videoElement');
+                            const downloadLink = document.getElementById('downloadVideoLink');
 
-                        player.src = pollData.result.videoUrl;
-                        downloadLink.href = pollData.result.videoUrl;
+                            player.src = pollData.result.videoUrl;
+                            downloadLink.href = pollData.result.videoUrl;
 
-                        player.play();
-                        break;
-                    } else if (pollData.status === 'failed') {
-                        throw new Error(pollData.status_text || 'Video assembly failed');
+                            player.play();
+                            break;
+                        } else if (pollData.status === 'failed') {
+                            throw new Error(pollData.status_text || 'Video assembly failed');
+                        }
+                    } catch (pollErr) {
+                        console.log('Polling retry notice:', pollErr);
                     }
                 }
 

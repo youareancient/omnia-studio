@@ -1111,12 +1111,13 @@ async def process_stock_video_assembly_async(stock_job_id, original_job_id, sele
         out_stock_filepath = os.path.join(DOWNLOADS_DIR, out_stock_filename)
 
         ffmpeg_cmd = [
-            "ffmpeg", "-y",
+            "ffmpeg", "-y", "-threads", "1",
             "-f", "concat", "-safe", "0", "-i", concat_file,
             "-i", audio_filepath,
             "-vf", "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2:black,format=yuv420p",
-            "-c:v", "libx264", "-preset", "fast", "-crf", "20",
+            "-c:v", "libx264", "-preset", "ultrafast", "-crf", "26",
             "-c:a", "aac", "-b:a", "192k",
+            "-max_muxing_queue_size", "1024",
             "-shortest",
             out_stock_filepath
         ]
