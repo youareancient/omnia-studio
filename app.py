@@ -667,32 +667,27 @@ async def process_video_assembly_async(video_job_id, original_job_id, zip_bytes,
             except Exception as clip_err:
                 print(f"Non-fatal error encoding mini clip {idx}:", clip_err)
 
-        concat_filepath = os.path.join(temp_img_dir, "input_concat.txt")
+        # Master Video Assembly: Concatenate pre-rendered 1-to-1 synced mini-clips directly for zero-drift frame-perfect rendering
+        concat_filepath = os.path.join(temp_img_dir, "input_mini_clips_concat.txt")
         
         with open(concat_filepath, "w", encoding="utf-8") as f:
-            for img_path, dur in zip(extracted_imgs, image_durations):
-                escaped_path = img_path.replace("\\", "/")
-                f.write(f"file '{escaped_path}'\n")
-                f.write(f"duration {dur:.3f}\n")
-            
-            if extracted_imgs:
-                last_path = extracted_imgs[-1].replace("\\", "/")
-                f.write(f"file '{last_path}'\n")
+            for clip_item in mini_clips_data:
+                fname = clip_item["filename"]
+                fpath = os.path.join(DOWNLOADS_DIR, fname)
+                if os.path.exists(fpath):
+                    escaped_path = fpath.replace("\\", "/")
+                    f.write(f"file '{escaped_path}'\n")
 
         out_video_filename = f"video_{video_job_id[:6]}.mp4"
         out_video_filepath = os.path.join(DOWNLOADS_DIR, out_video_filename)
 
         BACKGROUND_JOBS[video_job_id]["progress"] = 75
-        BACKGROUND_JOBS[video_job_id]["status_text"] = f"Merging full master video with {total_images} scenes..."
+        BACKGROUND_JOBS[video_job_id]["status_text"] = f"🎬 Direct Mini-Clip Master Merger: Concatenating {total_images} synced scenes for zero-drift MP4..."
 
         ffmpeg_cmd = [
             "ffmpeg", "-y",
             "-f", "concat", "-safe", "0", "-i", concat_filepath,
-            "-i", audio_filepath,
-            "-vf", "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2:black,format=yuv420p",
-            "-c:v", "libx264", "-preset", "fast", "-crf", "20",
-            "-c:a", "aac", "-b:a", "192k",
-            "-shortest",
+            "-c", "copy",
             out_video_filepath
         ]
 
@@ -706,7 +701,7 @@ async def process_video_assembly_async(video_job_id, original_job_id, zip_bytes,
         if proc.returncode != 0:
             err_log = stderr.decode('utf-8', errors='ignore')
             print("FFmpeg error log:", err_log)
-            raise Exception("FFmpeg video rendering failed. Please check image formats.")
+            raise Exception("FFmpeg master clip concatenation failed.")
 
         # Phase 2: Quality Verification Agent Audit
         BACKGROUND_JOBS[video_job_id]["progress"] = 95
