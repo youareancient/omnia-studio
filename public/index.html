@@ -959,10 +959,13 @@
         }
 
         let jobStartTime = null;
+        let pollInterval = null;
+        let pollErrorCount = 0;
 
         async function startPollingJob(jobId) {
             if (pollInterval) clearInterval(pollInterval);
             jobStartTime = Date.now();
+            pollErrorCount = 0;
             
             const progressBox = document.getElementById('progressBox');
             const progressPercent = document.getElementById('progressPercent');
@@ -978,20 +981,31 @@
             const srtCard = document.getElementById('srtCard');
             const breakdownCard = document.getElementById('breakdownCard');
 
-            progressBox.classList.add('active');
+            if (progressBox) progressBox.classList.add('active');
 
             pollInterval = setInterval(async () => {
                 try {
                     const res = await fetch(`/api/job-status?id=${jobId}`);
                     if (!res.ok) {
-                        clearInterval(pollInterval);
-                        localStorage.removeItem('active_job_id');
-                        progressBox.classList.remove('active');
-                        if (videoProgressBox) videoProgressBox.classList.remove('active');
+                        pollErrorCount++;
+                        if (pollErrorCount >= 3) {
+                            clearInterval(pollInterval);
+                            localStorage.removeItem('active_job_id');
+                            if (progressBox) progressBox.classList.remove('active');
+                            if (videoProgressBox) videoProgressBox.classList.remove('active');
+                        }
                         return;
                     }
                     
                     const data = await res.json();
+                    if (data.error) {
+                        clearInterval(pollInterval);
+                        localStorage.removeItem('active_job_id');
+                        if (progressBox) progressBox.classList.remove('active');
+                        if (videoProgressBox) videoProgressBox.classList.remove('active');
+                        return;
+                    }
+                    pollErrorCount = 0;
                     
                     if (data.progress !== undefined) {
                         progressBarFill.style.width = `${data.progress}%`;

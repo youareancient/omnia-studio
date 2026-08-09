@@ -995,7 +995,7 @@ async def handle_generate_beat_clip(request):
         out_clip_filepath = os.path.join(DOWNLOADS_DIR, out_clip_filename)
 
         ffmpeg_cmd = [
-            "ffmpeg", "-y", "-threads", "0",
+            "ffmpeg", "-y", "-threads", "2",
             "-i", beat_audio_path,
             "-loop", "1", "-i", img_filepath,
             "-vf", get_ken_burns_vf(scene_idx),
