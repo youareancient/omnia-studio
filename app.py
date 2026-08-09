@@ -1043,7 +1043,23 @@ def create_app():
     return app
 
 if __name__ == "__main__":
-    print(f"Starting YouTube Voiceover Studio Online at http://{HOST}:{PORT}")
-    web.run_app(create_app(), host=HOST, port=PORT)
+    current_port = PORT
+    max_attempts = 10
+    for attempt in range(max_attempts):
+        try:
+            print(f"Starting YouTube Voiceover Studio Online at http://localhost:{current_port} (host: {HOST})")
+            web.run_app(create_app(), host=HOST, port=current_port, print=None)
+            break
+        except OSError as e:
+            if getattr(e, 'errno', None) in (10048, 98) or '10048' in str(e) or 'address already in use' in str(e).lower():
+                print(f"Port {current_port} is already in use by another process.")
+                if attempt < max_attempts - 1:
+                    current_port += 1
+                    print(f"Trying port {current_port}...")
+                else:
+                    print(f"Could not bind to any port in range {PORT}-{current_port}.")
+                    raise
+            else:
+                raise
 
 

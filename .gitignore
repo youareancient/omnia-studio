@@ -1,0 +1,7 @@
+cloudflared.exe
+__pycache__/
+*.pyc
+public/generated/*.mp3
+public/generated/*.mp4
+public/generated/*.srt
+temp_*

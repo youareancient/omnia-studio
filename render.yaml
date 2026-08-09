@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: youtube-voiceover-studio
+    env: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /
