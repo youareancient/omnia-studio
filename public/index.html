@@ -590,7 +590,7 @@
                 <span class="accuracy-tag">✓ 100% Word-for-Word</span>
             </div>
 
-            <textarea id="scriptText" placeholder="Paste your script here... (e.g. Okay, so you want to own a data center...)"></textarea>
+            <textarea id="scriptText" placeholder="Paste your script here... (e.g. Okay, so you want to own a data center...)" oninput="updateWordCount()" onchange="updateWordCount()" onkeyup="updateWordCount()" onpaste="setTimeout(updateWordCount, 10)"></textarea>
 
             <div class="meta-row">
                 <div class="meta-stats">
@@ -868,15 +868,16 @@
             if (estTimeEl) estTimeEl.textContent = `~${minutes} min audio`;
         }
 
-        window.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', () => {
             const scriptInput = document.getElementById('scriptText');
             if (scriptInput) {
                 ['input', 'change', 'paste', 'keyup', 'blur'].forEach(evt => {
-                    scriptInput.addEventListener(evt, () => setTimeout(updateWordCount, 20));
+                    scriptInput.addEventListener(evt, () => setTimeout(updateWordCount, 10));
                 });
                 updateWordCount();
             }
         });
+        window.addEventListener('load', updateWordCount);
 
         function escapeHtml(str) {
             if (!str) return '';
