@@ -877,6 +877,21 @@ async def append_natural_pause_padding(audio_path, silence_duration_sec=0.28):
     except Exception as e:
         print("Error appending natural silence padding:", e)
 
+async def safe_edge_tts_save(text, voice_id, rate, out_filepath, max_retries=3):
+    last_err = None
+    for attempt in range(1, max_retries + 1):
+        try:
+            communicate = edge_tts.Communicate(text, voice_id, rate=rate)
+            await communicate.save(out_filepath)
+            if os.path.exists(out_filepath) and os.path.getsize(out_filepath) > 100:
+                return True
+        except Exception as e:
+            last_err = e
+            print(f"[safe_edge_tts_save] Attempt {attempt}/{max_retries} failed for '{out_filepath}': {e}")
+            await asyncio.sleep(1.0 * attempt)
+    if last_err:
+        raise last_err
+
 async def handle_generate_beat_audio(request):
     try:
         data = await request.json()
@@ -906,8 +921,7 @@ async def handle_generate_beat_audio(request):
         out_filename = f"beat_audio_{job_id[:6]}_{scene_idx:02d}.mp3"
         out_filepath = os.path.join(DOWNLOADS_DIR, out_filename)
 
-        communicate = edge_tts.Communicate(cleaned_text, voice_id, rate=rate)
-        await communicate.save(out_filepath)
+        await safe_edge_tts_save(cleaned_text, voice_id, rate, out_filepath)
         await trim_trailing_audio_silence(out_filepath)
         await append_natural_pause_padding(out_filepath, 0.28)
 
@@ -969,8 +983,7 @@ async def handle_generate_beat_clip(request):
                     scene_text = scenes[scene_idx - 1].get("text", scene_text)
             
             cleaned = humanize_script(scene_text)
-            comm = edge_tts.Communicate(cleaned, "en-US-AndrewNeural", rate="-4%")
-            await comm.save(beat_audio_path)
+            await safe_edge_tts_save(cleaned, "en-US-AndrewNeural", "-4%", beat_audio_path)
             await trim_trailing_audio_silence(beat_audio_path)
             await append_natural_pause_padding(beat_audio_path, 0.28)
 
