@@ -856,16 +856,26 @@
             document.getElementById('rateVal').textContent = `${currentRateStr} ${num === 1 ? '(Optimal)' : ''}`;
         }
 
-        const scriptInput = document.getElementById('scriptText');
-        const wordCountEl = document.getElementById('wordCount');
-        const estTimeEl = document.getElementById('estTime');
-
-        scriptInput.addEventListener('input', () => {
+        function updateWordCount() {
+            const scriptInput = document.getElementById('scriptText');
+            const wordCountEl = document.getElementById('wordCount');
+            const estTimeEl = document.getElementById('estTime');
+            if (!scriptInput) return;
             const text = scriptInput.value.trim();
-            const words = text ? text.split(/\s+/).length : 0;
+            const words = text ? text.split(/\s+/).filter(Boolean).length : 0;
             const minutes = Math.ceil(words / 150);
-            wordCountEl.textContent = `${words.toLocaleString()} Words`;
-            estTimeEl.textContent = `~${minutes} min audio`;
+            if (wordCountEl) wordCountEl.textContent = `${words.toLocaleString()} Words`;
+            if (estTimeEl) estTimeEl.textContent = `~${minutes} min audio`;
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const scriptInput = document.getElementById('scriptText');
+            if (scriptInput) {
+                ['input', 'change', 'paste', 'keyup', 'blur'].forEach(evt => {
+                    scriptInput.addEventListener(evt, () => setTimeout(updateWordCount, 20));
+                });
+                updateWordCount();
+            }
         });
 
         function escapeHtml(str) {
@@ -1887,17 +1897,35 @@
         }
 
         async function generateStream(mode) {
-            const text = scriptInput.value.trim();
+            updateWordCount();
+            const scriptEl = document.getElementById('scriptText');
+            const text = scriptEl ? scriptEl.value.trim() : '';
             if (!text) {
                 alert('Please paste a script first!');
                 return;
             }
 
-            const customFilename = document.getElementById('filenameInput').value.trim();
+            const filenameInput = document.getElementById('filenameInput');
+            const customFilename = filenameInput ? filenameInput.value.trim() : '';
 
-            document.getElementById('audioCard').classList.remove('active');
-            document.getElementById('srtCard').classList.remove('active');
-            document.getElementById('breakdownCard').classList.remove('active');
+            const audioCard = document.getElementById('audioCard');
+            const srtCard = document.getElementById('srtCard');
+            const breakdownCard = document.getElementById('breakdownCard');
+            if (audioCard) audioCard.classList.remove('active');
+            if (srtCard) srtCard.classList.remove('active');
+            if (breakdownCard) breakdownCard.classList.remove('active');
+
+            const progressBox = document.getElementById('progressBox');
+            const progressTitle = document.getElementById('progressTitle');
+            const progressStatus = document.getElementById('progressStatus');
+            const progressBarFill = document.getElementById('progressBarFill');
+            const progressPercent = document.getElementById('progressPercent');
+
+            if (progressBox) progressBox.classList.add('active');
+            if (progressTitle) progressTitle.textContent = mode === 'breakdown' ? '🎬 Generating Scene Cuts...' : '🎵 Synthesizing Voiceover...';
+            if (progressStatus) progressStatus.textContent = '🚀 Sending script to cloud server...';
+            if (progressBarFill) progressBarFill.style.width = '10%';
+            if (progressPercent) progressPercent.textContent = '10%';
 
             try {
                 const response = await fetch('/api/start-job', {
@@ -1905,8 +1933,8 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         text: text,
-                        voice: selectedVoice,
-                        rate: currentRateStr,
+                        voice: typeof selectedVoice !== 'undefined' ? selectedVoice : 'andrew',
+                        rate: typeof currentRateStr !== 'undefined' ? currentRateStr : '+1%',
                         filename: customFilename || `youtube_voiceover_${Date.now()}.mp3`,
                         mode: mode
                     })
@@ -1915,6 +1943,7 @@
                 const data = await response.json();
                 if (data.error) {
                     alert('Error: ' + data.error);
+                    if (progressBox) progressBox.classList.remove('active');
                     return;
                 }
 
@@ -1924,6 +1953,7 @@
                 }
             } catch (err) {
                 alert('Connection error: ' + err.message);
+                if (progressBox) progressBox.classList.remove('active');
             }
         }
 
