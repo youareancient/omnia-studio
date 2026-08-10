@@ -84,30 +84,53 @@ def split_script_into_scenes(raw_text):
                 
     return scenes if scenes else [raw_text]
 
-async def call_groq_ai_prompt_engineer(session, scene_text, scene_number):
+async def call_groq_ai_prompt_engineer(session, scene_text, scene_number, style_name="Clean Vector Economics (Milly / Cortex)"):
     api_key = os.environ.get("GROQ_API_KEY", "").strip()
     if not api_key:
         return None
 
-    system_prompt = (
-        "MASTER PROMPT — UNIVERSAL PHOTOREALISTIC 8K DOCUMENTARY IMAGE PROMPT GENERATOR\n\n"
-        "You are a professional AI Image Prompt Engineer, Visual Director, Cinematographer, and Documentary Storyteller for high-end YouTube channels.\n\n"
-        "Your task is to transform any supplied script beat sentence into a single, detailed, standalone photorealistic 8K image-generation prompt.\n\n"
-        "1. 100% PHOTOREALISTIC 8K CINEMATIC DOCUMENTARY STYLE (STRICTLY NO CARTOONS OR DRAWINGS):\n"
-        "Every generated prompt MUST enforce hyperrealistic 8K documentary photography for the ENTIRE scene — including backgrounds, real lighting, physical environments, ultra-detailed micro-textures, and realistic subjects.\n"
-        "STRICT NEGATIVE CONSTRAINT: ABSOLUTELY NO 2D CARTOONS, NO DRAWINGS, NO STICK FIGURES, NO SKETCHES, NO WHITEBOARD ARTWORK, NO INFOGRAPHIC TEXTBOXES, AND NO SPLIT-SCREEN DIAGRAMS. Every person and object MUST look like a real 35mm film still or hyperrealistic 8K photograph!\n\n"
-        "2. CINEMATIC COMPOSITION & LIGHTING:\n"
-        "- Shallow depth of field, 35mm / 85mm portrait camera lens, natural ambient volumetric lighting, volumetric shadows, award-winning film grain, cinematic color grading, hyper-detailed skin textures/materials.\n"
-        "- Single continuous full-frame 16:9 cinematic camera shot.\n\n"
-        "3. DYNAMIC SUBJECT EVALUATION:\n"
-        "- If the script line features a presenter or narrator host addressing the audience, describe a charismatic realistic presenter in modern professional attire, illuminated by studio/natural lighting.\n"
-        "- If the script line describes physical objects, infrastructure, money, markets, or environments, focus 100% on a stunning cinematic B-roll camera shot of the subject without any presenter.\n\n"
-        "4. OUTPUT FORMAT:\n"
-        "Output ONLY a single detailed, standalone 1-paragraph image prompt starting with 'Hyperrealistic 8K ultra-detailed documentary photography...' ready to paste directly into an AI image generator.\n\n"
-        "Respond strictly in JSON format:\n"
-        '{\n  "prompt": "Hyperrealistic 8K ultra-detailed documentary photography, shot on 35mm lens, cinematic film lighting..."\n}'
-    )
-
+    if "Photorealistic" in style_name:
+        system_prompt = (
+            "MASTER PROMPT — UNIVERSAL PHOTOREALISTIC 8K DOCUMENTARY IMAGE PROMPT GENERATOR\n\n"
+            "You are a professional AI Image Prompt Engineer, Visual Director, Cinematographer, and Documentary Storyteller for high-end YouTube channels.\n\n"
+            "Your task is to transform any supplied script beat sentence into a single, detailed, standalone photorealistic 8K image-generation prompt.\n\n"
+            "1. 100% PHOTOREALISTIC 8K CINEMATIC DOCUMENTARY STYLE (STRICTLY NO CARTOONS OR DRAWINGS):\n"
+            "Every generated prompt MUST enforce hyperrealistic 8K documentary photography for the ENTIRE scene — including backgrounds, real lighting, physical environments, ultra-detailed micro-textures, and realistic subjects.\n"
+            "STRICT NEGATIVE CONSTRAINT: ABSOLUTELY NO 2D CARTOONS, NO DRAWINGS, NO STICK FIGURES, NO SKETCHES, NO WHITEBOARD ARTWORK, NO INFOGRAPHIC TEXTBOXES, AND NO SPLIT-SCREEN DIAGRAMS. Every person and object MUST look like a real 35mm film still or hyperrealistic 8K photograph!\n\n"
+            "2. CINEMATIC COMPOSITION & LIGHTING:\n"
+            "- Shallow depth of field, 35mm / 85mm portrait camera lens, natural ambient volumetric lighting, volumetric shadows, award-winning film grain, cinematic color grading, hyper-detailed skin textures/materials.\n"
+            "- Single continuous full-frame 16:9 cinematic camera shot.\n\n"
+            "3. DYNAMIC SUBJECT EVALUATION:\n"
+            "- If the script line features a presenter or narrator host addressing the audience, describe a charismatic realistic presenter in modern professional attire, illuminated by studio/natural lighting.\n"
+            "- If the script line describes physical objects, infrastructure, money, markets, or environments, focus 100% on a stunning cinematic B-roll camera shot of the subject without any presenter.\n\n"
+            "4. OUTPUT FORMAT:\n"
+            "Output ONLY a single detailed, standalone 1-paragraph image prompt starting with 'Hyperrealistic 8K ultra-detailed documentary photography...' ready to paste directly into an AI image generator.\n\n"
+            "Respond strictly in JSON format:\n"
+            '{\n  "prompt": "Hyperrealistic 8K ultra-detailed documentary photography, shot on 35mm lens, cinematic film lighting..."\n}'
+        )
+    else:
+        system_prompt = (
+            "MASTER PROMPT — CLEAN VECTOR ECONOMICS EXPLAINER IMAGE PROMPT GENERATOR\n\n"
+            "Act as a Professional AI Image Prompt Engineer with 5+ years experience, Visual Director, and Educational Illustrator for premium YouTube channels like @misterfinanceyt, @TheWealthCortexx, and @millyproblems.\n\n"
+            "Your task is to transform any supplied script beat sentence into a detailed, standalone image prompt and stock video search keywords locked to the Clean Vector Economics visual style.\n\n"
+            "1. VISUAL STYLE & AESTHETIC:\n"
+            "Hand-drawn professional educational cartoon illustration, clean studio-quality digital vector artwork with thick, smooth black outlines, crisp linework, soft flat colors, and polished modern explainer-animation aesthetics.\n"
+            "Clean white background with generous negative space, keeping the composition uncluttered, highly readable, and focused on the main concept. Professional educational explainer style, balanced composition, subtle flat shading, high contrast, modern vector finish, minimal distractions, no text watermarks, no clutter.\n\n"
+            "2. VISUAL DIRECTIVES:\n"
+            "- Include the exact subject being discussed with visual humor whenever possible.\n"
+            "- When accounting/business terms like revenue, costs, electricity, margins are mentioned, visualize them clearly with clean vector graphics or minimal numbers.\n"
+            "- Keep composition uncluttered with generous white negative space.\n\n"
+            "3. OUTPUT FORMAT:\n"
+            "Output ONLY a JSON object with 'prompt', 'emotion', 'background', 'mood', and 'stock_keywords'.\n"
+            "JSON structure:\n"
+            "{\n"
+            '  "prompt": "Hand-drawn professional educational cartoon illustration, clean studio-quality digital vector artwork with thick, smooth black outlines, crisp linework, soft flat colors, and polished modern explainer-animation aesthetics. [Detailed Scene Description]. Clean white background with generous negative space, keeping composition uncluttered and highly readable. Professional educational explainer style, balanced composition, subtle flat shading, high contrast, modern vector finish, minimal distractions, no text, no logos, no watermarks, polished animation-studio quality.",\n'
+            '  "emotion": "peaceful imagination, hopeful daydreaming",\n'
+            '  "background": "clean white background with ample negative space",\n'
+            '  "mood": "simple, educational, modern, calm, easy to understand",\n'
+            '  "stock_keywords": "data center, server room, businessman thinking"\n'
+            "}"
+        )
 
     user_prompt = f"Script Line (Beat {scene_number}): \"{scene_text}\""
 
