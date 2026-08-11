@@ -1424,9 +1424,19 @@ async def handle_generate_beat_clip(request):
         if video_filter == "vignette":
             vf_filters.append("vignette=PI/4")
         elif video_filter == "teal_orange":
-            vf_filters.append("eq=contrast=1.15:saturation=1.2:gamma_r=0.9:gamma_b=1.1")
+            vf_filters.append("eq=contrast=1.15:saturation=1.3:gamma_r=0.9:gamma_b=1.1")
+        elif video_filter == "film_grain":
+            vf_filters.append("noise=alls=12:allf=t+u")
         elif video_filter == "letterbox":
-            vf_filters.append("drawbox=y=0:h=ih*0.1:color=black:t=fill,drawbox=y=ih*0.9:h=ih*0.1:color=black:t=fill")
+            vf_filters.append("drawbox=y=0:h=ih*0.12:color=black:t=fill,drawbox=y=ih*0.88:h=ih*0.12:color=black:t=fill")
+        elif video_filter == "noir_bw":
+            vf_filters.append("hue=s=0,eq=contrast=1.2")
+        elif video_filter == "sunset_gold":
+            vf_filters.append("eq=contrast=1.1:saturation=1.25:gamma_r=1.15:gamma_g=1.05:gamma_b=0.85")
+        elif video_filter == "cyberpunk_neon":
+            vf_filters.append("eq=contrast=1.25:saturation=1.4:gamma_r=1.1:gamma_b=1.25")
+        elif video_filter == "vhs_crt":
+            vf_filters.append("noise=alls=15:allf=t+u,eq=contrast=1.15:saturation=1.2")
 
         # Subtitle overlay
         if subtitle_style and subtitle_style != "none":

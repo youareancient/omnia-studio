@@ -1204,6 +1204,10 @@
                             <option value="mrbeast">🔥 MrBeast Kinetic (Neon Cyan/Green)</option>
                             <option value="cinematic">🎬 Minimalist Cinematic (Smooth Fade)</option>
                             <option value="cyberpunk">🌆 Cyberpunk Neon (Magenta Glow)</option>
+                            <option value="news_ticker">📰 Editorial News Ticker (Bold Bottom Banner)</option>
+                            <option value="gold_luxury">💎 Luxury Gold Metallic (Gradient Pop)</option>
+                            <option value="comic_boom">💥 Comic Book Boom (Bold Red Outline)</option>
+                            <option value="hologram">🌌 Deep Space Hologram (Ice Blue Glow)</option>
                         </select>
                         <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
                             <div>
@@ -1240,6 +1244,10 @@
                                 <option value="teal_orange">🎨 Hollywood Teal & Orange LUT</option>
                                 <option value="film_grain">📼 35mm Vintage Film Grain</option>
                                 <option value="letterbox">🎞️ 2.35:1 Cinematic Letterbox Bars</option>
+                                <option value="noir_bw">🕶️ Crime Noir Monochromatic B&W</option>
+                                <option value="sunset_gold">🌇 Warm Sunset Gold LUT</option>
+                                <option value="cyberpunk_neon">🌆 Cyberpunk Neon Glow Filter</option>
+                                <option value="vhs_crt">📺 Vintage VHS CRT Scanlines</option>
                                 <option value="none">None (Clean Original)</option>
                             </select>
                         </div>
@@ -1250,6 +1258,14 @@
                                 <option value="crossfade">🌊 Smooth Crossfade Dissolve (0.5s)</option>
                                 <option value="fade_black">🌑 Fade to Black (0.4s)</option>
                                 <option value="flash_white">💥 Flash White (0.3s)</option>
+                                <option value="whip_zoom">🌀 Whip Zoom In (0.4s)</option>
+                                <option value="whip_pan">↔️ Fast Whip Pan Swipe (0.4s)</option>
+                                <option value="spin_rotate">🔄 Spin Rotate Blur (0.4s)</option>
+                                <option value="film_burn">📽️ Film Burn Light Leak (0.4s)</option>
+                                <option value="zoom_out">🔎 Lens Zoom Out (0.4s)</option>
+                                <option value="glitch_slice">🔲 Glitch Slice Distortion (0.3s)</option>
+                                <option value="ripple_water">💧 Ripple Water Wave (0.5s)</option>
+                                <option value="slide_push">📐 Slide Push Left (0.4s)</option>
                             </select>
                         </div>
 
@@ -3525,6 +3541,14 @@
                 box.innerHTML = `<span class="sub-fade-cinematic" style="color:#ffffff; font-family:'Inter', sans-serif;">BECAUSE IN THE NIGHTCLUB</span>`;
             } else if (preset === 'cyberpunk') {
                 box.innerHTML = `<span class="sub-glow-cyberpunk">BECAUSE IN THE NIGHTCLUB</span>`;
+            } else if (preset === 'news_ticker') {
+                box.innerHTML = `<span style="background:#cc0000; color:#fff; padding:4px 10px; font-weight:900; border-radius:4px; font-size:0.8rem;">NEWS FLASH • BECAUSE IN THE NIGHTCLUB</span>`;
+            } else if (preset === 'gold_luxury') {
+                box.innerHTML = `<span style="background:linear-gradient(135deg, #ffe500, #d97706); -webkit-background-clip:text; -webkit-text-fill-color:transparent; font-weight:900; font-size:0.9rem;">BECAUSE IN THE NIGHTCLUB</span>`;
+            } else if (preset === 'comic_boom') {
+                box.innerHTML = `<span style="color:#ff2d55; -webkit-text-stroke:1px #ffffff; font-weight:900; font-size:0.9rem; letter-spacing:1px;">BECAUSE IN THE NIGHTCLUB</span>`;
+            } else if (preset === 'hologram') {
+                box.innerHTML = `<span style="color:#00ffff; text-shadow:0 0 10px #00ffff; font-weight:800; font-size:0.85rem;">[ HOLO-CAPTION: BECAUSE IN THE NIGHTCLUB ]</span>`;
             }
         }
 
@@ -3537,12 +3561,22 @@
             if (!box || !statusText) return;
 
             box.className = '';
-            if (transVal === 'crossfade') box.classList.add('anim-crossfade');
+            if (transVal === 'crossfade' || transVal === 'ripple_water') box.classList.add('anim-crossfade');
             if (transVal === 'fade_black') box.classList.add('anim-fade-black');
-            if (transVal === 'flash_white') box.classList.add('anim-flash-white');
+            if (transVal === 'flash_white' || transVal === 'film_burn') box.classList.add('anim-flash-white');
 
-            const filterNames = { vignette: '🌑 Soft Vignette', teal_orange: '🎨 Teal & Orange LUT', film_grain: '📼 35mm Grain', letterbox: '🎞️ 2.35:1 Letterbox', none: 'None' };
-            const transNames = { smash_cut: '⚡ Smash Cut', crossfade: '🌊 Smooth Crossfade', fade_black: '🌑 Fade to Black', flash_white: '💥 Flash White' };
+            const filterNames = { 
+                vignette: '🌑 Soft Vignette', teal_orange: '🎨 Teal & Orange LUT', film_grain: '📼 35mm Grain', 
+                letterbox: '🎞️ 2.35:1 Letterbox', noir_bw: '🕶️ Crime Noir B&W', sunset_gold: '🌇 Sunset Gold LUT', 
+                cyberpunk_neon: '🌆 Cyberpunk Neon', vhs_crt: '📺 VHS CRT Scanlines', none: 'None' 
+            };
+            
+            const transNames = { 
+                smash_cut: '⚡ Smash Cut', crossfade: '🌊 Smooth Crossfade', fade_black: '🌑 Fade to Black', 
+                flash_white: '💥 Flash White', whip_zoom: '🌀 Whip Zoom', whip_pan: '↔️ Fast Whip Pan', 
+                spin_rotate: '🔄 Spin Rotate', film_burn: '📽️ Film Burn', zoom_out: '🔎 Zoom Out', 
+                glitch_slice: '🔲 Glitch Slice', ripple_water: '💧 Ripple Wave', slide_push: '📐 Slide Push' 
+            };
 
             statusText.innerText = `${filterNames[filterVal] || filterVal} + ${transNames[transVal] || transVal} Active`;
         }
