@@ -1174,7 +1174,7 @@
                         <div style="font-size:0.8rem; font-weight:800; color:var(--text-primary); margin-bottom:6px; display:flex; align-items:center; gap:6px;">
                             <span>🎨 AI Prompt Style Enhancer</span>
                         </div>
-                        <select id="promptStyleSelect" style="width:100%; font-size:0.82rem; font-weight:700; background:var(--bg-card); color:var(--text-primary); border:1px solid var(--border-subtle); padding:8px 10px; border-radius:10px; outline:none; margin-bottom:8px;">
+                        <select id="promptStyleSelect" style="width:100%; font-size:0.82rem; font-weight:700; background:var(--bg-card); color:var(--text-primary); border:1px solid var(--border-subtle); padding:8px 10px; border-radius:10px; outline:none; margin-bottom:8px;" onchange="updateStylePreviewBox()">
                             <option value="vox_2d" selected>🎨 2D Vox Editorial Vector (YouTube Documentary)</option>
                             <option value="kurzgesagt">🪐 Kurzgesagt Flat Vector (Educational Space)</option>
                             <option value="claymation">🕵️ 3D Claymation & Stop-Motion (Tactile Studio)</option>
@@ -1186,10 +1186,15 @@
                             <option value="oil_painting">🖌️ Renaissance Oil Painting (Impasto Canvas)</option>
                             <option value="midjourney_raw">🎯 Midjourney Raw Widescreen (--ar 16:9 --v 6.0)</option>
                         </select>
-                        <button class="btn-apple" style="width:100%; font-size:0.78rem; padding:8px; background:linear-gradient(135deg, #ff9500, #ff2d55);" onclick="applyStyleToAllPrompts()">
-                            ✨ Apply Style to All Visual Prompts
-                        </button>
-                    </div>
+                        
+                        <div style="display:flex; gap:6px; margin-bottom:6px;">
+                            <button class="btn-apple" style="flex:1; font-size:0.75rem; padding:8px; background:linear-gradient(135deg, #f59e0b, #d97706);" onclick="applyStyleToAllPrompts()">
+                                ✨ Apply Style
+                            </button>
+                            <button class="btn-apple btn-apple-secondary" style="font-size:0.75rem; padding:8px;" onclick="openVisualStylesModal()">
+                                👁️ View 10 Styles Gallery
+                            </button>
+                        </div>
 
                     <!-- 2. Subtitles Style -->
                     <div style="background:var(--bg-input); padding:12px; border-radius:12px; border:1px solid var(--border-subtle);">
@@ -1203,7 +1208,7 @@
                         <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
                             <div>
                                 <label style="font-size:0.7rem; color:var(--text-secondary);">Font:</label>
-                                <select id="subtitleFontSelect" style="width:100%; font-size:0.75rem; background:var(--bg-card); color:var(--text-primary); border:1px solid var(--border-subtle); padding:4px 6px; border-radius:6px;">
+                                <select id="subtitleFontSelect" style="width:100%; font-size:0.75rem; background:var(--bg-card); color:var(--text-primary); border:1px solid var(--border-subtle); padding:4px 6px; border-radius:6px;" onchange="updateSubtitlePreview()">
                                     <option value="montserrat" selected>Montserrat Bold</option>
                                     <option value="impact">Impact Heavy</option>
                                     <option value="inter">Inter Clean</option>
@@ -1211,12 +1216,17 @@
                             </div>
                             <div>
                                 <label style="font-size:0.7rem; color:var(--text-secondary);">Position:</label>
-                                <select id="subtitlePosSelect" style="width:100%; font-size:0.75rem; background:var(--bg-card); color:var(--text-primary); border:1px solid var(--border-subtle); padding:4px 6px; border-radius:6px;">
+                                <select id="subtitlePosSelect" style="width:100%; font-size:0.75rem; background:var(--bg-card); color:var(--text-primary); border:1px solid var(--border-subtle); padding:4px 6px; border-radius:6px;" onchange="updateSubtitlePreview()">
                                     <option value="bottom" selected>Bottom Third</option>
                                     <option value="middle">Center Screen</option>
                                     <option value="top">Top Third</option>
                                 </select>
                             </div>
+                        </div>
+
+                        <!-- Live Interactive Subtitle Animation Box -->
+                        <div id="subtitlePreviewBox" style="background:#000; padding:10px; border-radius:8px; text-align:center; font-size:0.85rem; margin-top:8px; min-height:42px; display:flex; align-items:center; justify-content:center; border:1px solid var(--border-subtle);">
+                            <span class="sub-pop-hormozi">BECAUSE IN THE <span style="color:#ffffff;">NIGHTCLUB</span></span>
                         </div>
                     </div>
 
@@ -1225,7 +1235,7 @@
                         <div style="font-size:0.8rem; font-weight:800; color:var(--text-primary); margin-bottom:6px;">🎥 Video Filters & Transitions</div>
                         <div style="margin-bottom:8px;">
                             <label style="font-size:0.72rem; color:var(--text-secondary); display:block; margin-bottom:4px;">Color Filter & Vignette:</label>
-                            <select id="videoFilterSelect" style="width:100%; font-size:0.8rem; font-weight:700; background:var(--bg-card); color:var(--text-primary); border:1px solid var(--border-subtle); padding:6px 8px; border-radius:8px; outline:none;">
+                            <select id="videoFilterSelect" style="width:100%; font-size:0.8rem; font-weight:700; background:var(--bg-card); color:var(--text-primary); border:1px solid var(--border-subtle); padding:6px 8px; border-radius:8px; outline:none;" onchange="updateFilterTransitionPreview()">
                                 <option value="vignette" selected>🌑 Soft Inward Vignette (Dark Border)</option>
                                 <option value="teal_orange">🎨 Hollywood Teal & Orange LUT</option>
                                 <option value="film_grain">📼 35mm Vintage Film Grain</option>
@@ -1235,12 +1245,17 @@
                         </div>
                         <div>
                             <label style="font-size:0.72rem; color:var(--text-secondary); display:block; margin-bottom:4px;">Scene Cut Transition:</label>
-                            <select id="transitionStyleSelect" style="width:100%; font-size:0.8rem; font-weight:700; background:var(--bg-card); color:var(--text-primary); border:1px solid var(--border-subtle); padding:6px 8px; border-radius:8px; outline:none;">
+                            <select id="transitionStyleSelect" style="width:100%; font-size:0.8rem; font-weight:700; background:var(--bg-card); color:var(--text-primary); border:1px solid var(--border-subtle); padding:6px 8px; border-radius:8px; outline:none;" onchange="updateFilterTransitionPreview()">
                                 <option value="smash_cut" selected>⚡ Smash Cut / Hard Cut (Documentary)</option>
                                 <option value="crossfade">🌊 Smooth Crossfade Dissolve (0.5s)</option>
                                 <option value="fade_black">🌑 Fade to Black (0.4s)</option>
                                 <option value="flash_white">💥 Flash White (0.3s)</option>
                             </select>
+                        </div>
+
+                        <!-- Live Interactive FX & Transition Animation Monitor -->
+                        <div id="fxTransitionPreviewBox" style="background:#0a0c16; height:65px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:0.78rem; font-weight:700; color:var(--accent-apple); border:1px solid var(--border-subtle); margin-top:10px; position:relative; overflow:hidden; text-align:center;">
+                            <span id="fxTransitionStatusText">🌑 Soft Inward Vignette + ⚡ Smash Cut Active</span>
                         </div>
                     </div>
                 </div>
@@ -3497,6 +3512,95 @@
             });
         }
 
+        function updateSubtitlePreview() {
+            const preset = document.getElementById('subtitlePresetSelect') ? document.getElementById('subtitlePresetSelect').value : 'hormozi';
+            const box = document.getElementById('subtitlePreviewBox');
+            if (!box) return;
+
+            if (preset === 'hormozi') {
+                box.innerHTML = `<span class="sub-pop-hormozi">BECAUSE IN THE <span style="color:#ffffff;">NIGHTCLUB</span></span>`;
+            } else if (preset === 'mrbeast') {
+                box.innerHTML = `<span class="sub-jump-mrbeast">BECAUSE IN THE <span style="color:#00ffff;">NIGHTCLUB</span></span>`;
+            } else if (preset === 'cinematic') {
+                box.innerHTML = `<span class="sub-fade-cinematic" style="color:#ffffff; font-family:'Inter', sans-serif;">BECAUSE IN THE NIGHTCLUB</span>`;
+            } else if (preset === 'cyberpunk') {
+                box.innerHTML = `<span class="sub-glow-cyberpunk">BECAUSE IN THE NIGHTCLUB</span>`;
+            }
+        }
+
+        function updateFilterTransitionPreview() {
+            const filterVal = document.getElementById('videoFilterSelect') ? document.getElementById('videoFilterSelect').value : 'vignette';
+            const transVal = document.getElementById('transitionStyleSelect') ? document.getElementById('transitionStyleSelect').value : 'smash_cut';
+            const box = document.getElementById('fxTransitionPreviewBox');
+            const statusText = document.getElementById('fxTransitionStatusText');
+
+            if (!box || !statusText) return;
+
+            box.className = '';
+            if (transVal === 'crossfade') box.classList.add('anim-crossfade');
+            if (transVal === 'fade_black') box.classList.add('anim-fade-black');
+            if (transVal === 'flash_white') box.classList.add('anim-flash-white');
+
+            const filterNames = { vignette: '🌑 Soft Vignette', teal_orange: '🎨 Teal & Orange LUT', film_grain: '📼 35mm Grain', letterbox: '🎞️ 2.35:1 Letterbox', none: 'None' };
+            const transNames = { smash_cut: '⚡ Smash Cut', crossfade: '🌊 Smooth Crossfade', fade_black: '🌑 Fade to Black', flash_white: '💥 Flash White' };
+
+            statusText.innerText = `${filterNames[filterVal] || filterVal} + ${transNames[transVal] || transVal} Active`;
+        }
+
+        function openVisualStylesModal() {
+            let modal = document.getElementById('visualStylesModal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'visualStylesModal';
+                modal.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.85); backdrop-filter:blur(15px); z-index:9999; display:flex; align-items:center; justify-content:center; padding:20px; box-sizing:border-box;';
+                modal.innerHTML = `
+                    <div style="background:var(--bg-card); border:1.5px solid var(--accent-apple); border-radius:24px; max-width:1100px; width:100%; max-height:90vh; overflow-y:auto; padding:24px; box-shadow:var(--shadow-card); position:relative;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid var(--border-subtle); padding-bottom:12px;">
+                            <div>
+                                <h2 style="font-size:1.4rem; font-weight:900; color:var(--text-primary); margin:0;">🎨 10 Masterpiece Art Styles Gallery Showcase</h2>
+                                <p style="font-size:0.82rem; color:var(--text-secondary); margin:4px 0 0 0;">Same Anchor Scene: "Night security guard standing outside a mysterious glowing building"</p>
+                            </div>
+                            <button onclick="document.getElementById('visualStylesModal').style.display='none'" style="background:var(--bg-input); color:var(--text-primary); border:1px solid var(--border-subtle); width:36px; height:36px; border-radius:50%; font-weight:800; cursor:pointer;">✕</button>
+                        </div>
+                        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:16px;">
+                            <div style="background:var(--bg-input); border-radius:16px; padding:12px; border:1px solid var(--border-subtle); text-align:center;">
+                                <img src="/static/sample_ai_art.png" style="width:100%; border-radius:10px; margin-bottom:8px;" onerror="this.src='/static/icon.png'">
+                                <div style="font-size:0.9rem; font-weight:800; color:var(--text-primary);">🎨 2D Vox Editorial Vector</div>
+                                <div style="font-size:0.75rem; color:var(--text-secondary);">Vox & Economics Explained YouTube style</div>
+                            </div>
+                            <div style="background:var(--bg-input); border-radius:16px; padding:12px; border:1px solid var(--border-subtle); text-align:center;">
+                                <div style="width:100%; height:140px; background:linear-gradient(135deg, #0d0e12, #f59e0b); border-radius:10px; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:900; font-size:1.1rem; margin-bottom:8px;">🪐 KURZGESAGT</div>
+                                <div style="font-size:0.9rem; font-weight:800; color:var(--text-primary);">🪐 Kurzgesagt Flat Vector</div>
+                                <div style="font-size:0.75rem; color:var(--text-secondary);">High-contrast educational neon graphics</div>
+                            </div>
+                            <div style="background:var(--bg-input); border-radius:16px; padding:12px; border:1px solid var(--border-subtle); text-align:center;">
+                                <div style="width:100%; height:140px; background:linear-gradient(135deg, #1f2937, #374151); border-radius:10px; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:900; font-size:1.1rem; margin-bottom:8px;">🕵️ CLAYMATION</div>
+                                <div style="font-size:0.9rem; font-weight:800; color:var(--text-primary);">🕵️ 3D Claymation & Stop-Motion</div>
+                                <div style="font-size:0.75rem; color:var(--text-secondary);">Tactile clay figures with studio spotlight</div>
+                            </div>
+                            <div style="background:var(--bg-input); border-radius:16px; padding:12px; border:1px solid var(--border-subtle); text-align:center;">
+                                <div style="width:100%; height:140px; background:linear-gradient(135deg, #000, #111827); border-radius:10px; display:flex; align-items:center; justify-content:center; color:#3b82f6; font-weight:900; font-size:1.1rem; margin-bottom:8px;">📸 35MM CINEMATIC</div>
+                                <div style="font-size:0.9rem; font-weight:800; color:var(--text-primary);">📸 35mm Hollywood Film</div>
+                                <div style="font-size:0.75rem; color:var(--text-secondary);">Photorealistic anamorphic movie stills</div>
+                            </div>
+                            <div style="background:var(--bg-input); border-radius:16px; padding:12px; border:1px solid var(--border-subtle); text-align:center;">
+                                <div style="width:100%; height:140px; background:linear-gradient(135deg, #050505, #1c1917); border-radius:10px; display:flex; align-items:center; justify-content:center; color:#ef4444; font-weight:900; font-size:1.1rem; margin-bottom:8px;">👻 ANALOG HORROR</div>
+                                <div style="font-size:0.9rem; font-weight:800; color:var(--text-primary);">👻 Dark Analog Horror</div>
+                                <div style="font-size:0.75rem; color:var(--text-secondary);">Auto character-consistent creepypasta</div>
+                            </div>
+                            <div style="background:var(--bg-input); border-radius:16px; padding:12px; border:1px solid var(--border-subtle); text-align:center;">
+                                <div style="width:100%; height:140px; background:linear-gradient(135deg, #fef3c7, #d97706); border-radius:10px; display:flex; align-items:center; justify-content:center; color:#000; font-weight:900; font-size:1.1rem; margin-bottom:8px;">📜 ENGRAVING</div>
+                                <div style="font-size:0.9rem; font-weight:800; color:var(--text-primary);">📜 19th C. Copperplate</div>
+                                <div style="font-size:0.75rem; color:var(--text-secondary);">Etched ink cross-hatching history style</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            }
+            modal.style.display = 'flex';
+        }
+
         window.addEventListener('load', () => {
             const savedJobId = localStorage.getItem('active_job_id');
             if (savedJobId) {
@@ -3507,6 +3611,8 @@
                 document.getElementById('geminiApiKeyInput').value = savedGeminiKey;
             }
             calculateScriptRetentionStats();
+            updateSubtitlePreview();
+            updateFilterTransitionPreview();
         });
     </script>
 

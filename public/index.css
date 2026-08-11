@@ -241,3 +241,49 @@ input, select, textarea, button, audio, video, iframe {
     gap: 12px;
     flex-wrap: wrap;
 }
+
+/* Live Animated Subtitle Preview Animations */
+@keyframes hormoziPop {
+    0%, 100% { transform: scale(1); color: #ffe500; text-shadow: 0 0 10px rgba(255,229,0,0.8); }
+    50% { transform: scale(1.18); color: #ffffff; text-shadow: 0 0 16px rgba(255,255,255,0.9); }
+}
+
+@keyframes mrbeastJump {
+    0%, 100% { transform: translateY(0) scale(1); color: #00ffff; }
+    50% { transform: translateY(-4px) scale(1.15); color: #34c759; text-shadow: 0 0 12px #34c759; }
+}
+
+@keyframes cyberpunkGlow {
+    0%, 100% { color: #ff00ff; text-shadow: 0 0 8px #ff00ff, 0 0 16px #ff00ff; }
+    50% { color: #00ffff; text-shadow: 0 0 12px #00ffff, 0 0 20px #00ffff; }
+}
+
+@keyframes fadePulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+}
+
+.sub-pop-hormozi { animation: hormoziPop 1.2s infinite ease-in-out; display: inline-block; font-weight: 900; }
+.sub-jump-mrbeast { animation: mrbeastJump 1.2s infinite ease-in-out; display: inline-block; font-weight: 900; }
+.sub-glow-cyberpunk { animation: cyberpunkGlow 1.5s infinite ease-in-out; display: inline-block; font-weight: 900; }
+.sub-fade-cinematic { animation: fadePulse 2s infinite ease-in-out; display: inline-block; font-weight: 600; }
+
+/* Live Animated Transition Box Effects */
+@keyframes crossfadeAnim {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.2; }
+}
+
+@keyframes fadeBlackAnim {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(0); }
+}
+
+@keyframes flashWhiteAnim {
+    0%, 90%, 100% { filter: brightness(1); }
+    95% { filter: brightness(3) contrast(2); }
+}
+
+.anim-crossfade { animation: crossfadeAnim 2s infinite ease-in-out; }
+.anim-fade-black { animation: fadeBlackAnim 2s infinite ease-in-out; }
+.anim-flash-white { animation: flashWhiteAnim 2s infinite ease-in-out; }
