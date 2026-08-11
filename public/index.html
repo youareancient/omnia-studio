@@ -953,8 +953,12 @@
                     <button class="theme-toggle-btn" style="background: rgba(0, 113, 227, 0.15); color: var(--accent-apple); border-color: var(--accent-apple); font-weight: 700;" onclick="switchView('landing')">
                         🏠 Home
                     </button>
-                    <!-- Project Selector & DB Status -->
+                    <!-- Gemini API Key & Project Selector -->
                     <div style="display:flex; align-items:center; gap:6px; background:var(--bg-input); border:1px solid var(--accent-apple); border-radius:12px; padding:4px 10px;">
+                        <span style="font-size:0.78rem; font-weight:700; color:var(--accent-apple);">🔑 Gemini Key:</span>
+                        <input type="password" id="geminiApiKeyInput" placeholder="Paste AIzaSy... key" style="width:130px; font-size:0.78rem; font-weight:700; background:transparent; color:var(--text-primary); border:none; outline:none;" onchange="saveGeminiKey(this.value)">
+                    </div>
+                    <div style="display:flex; align-items:center; gap:6px; background:var(--bg-input); border:1px solid var(--border-subtle); border-radius:12px; padding:4px 10px;">
                         <span style="font-size:0.78rem; font-weight:700; color:var(--text-secondary);">📂 Project:</span>
                         <select id="projectSelect" style="font-size:0.8rem; font-weight:700; background:transparent; color:var(--accent-apple); border:none; outline:none; cursor:pointer;" onchange="handleProjectSwitch(this.value)">
                             <option value="default" selected>Default Project (Active)</option>
@@ -1444,6 +1448,32 @@
                         <button class="btn-apple" style="background:linear-gradient(135deg, #FF9500, #FF2D55); font-weight:800; font-size:0.95rem; padding:12px 24px;" onclick="exportSelectedClipsZIP()">
                             📦 Export Selected Clips (.ZIP)
                         </button>
+                    </div>
+                </div>
+
+                <!-- YouTube SEO & Upload Packaging Suite Card -->
+                <div class="apple-card" style="margin-top:1.25rem; border:1.5px solid var(--accent-apple);">
+                    <div class="card-header">
+                        <span class="card-title">📦 YouTube SEO & Upload Packaging Suite</span>
+                        <span style="font-size:0.75rem; font-weight:800; background:rgba(245,158,11,0.15); color:var(--accent-apple); padding:2px 8px; border-radius:10px;">GOOGLE AI STUDIO GEMINI</span>
+                    </div>
+                    
+                    <div style="display:flex; flex-direction:column; gap:12px;">
+                        <p style="font-size:0.84rem; color:var(--text-secondary); margin:0;">
+                            Generates 5 high-CTR titles, auto-timestamp chapters, SEO video description, 25 search tags, and 3 Midjourney thumbnail prompts using Google AI Studio Gemini.
+                        </p>
+                        
+                        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                            <button class="btn-apple" style="flex:1; background:linear-gradient(135deg, #f59e0b, #3b82f6); font-weight:800;" onclick="generateSeoPackage()">
+                                ⚡ Generate YouTube SEO Package (Gemini AI)
+                            </button>
+                            <button class="btn-apple btn-apple-secondary" style="font-weight:700;" onclick="copySeoPackageToClipboard()">
+                                📋 Copy Full Package
+                            </button>
+                        </div>
+                        
+                        <div id="seoPackageDisplayBox" style="display:none; background:var(--bg-input); border:1px solid var(--border-subtle); border-radius:12px; padding:14px; font-size:0.82rem; color:var(--text-primary); line-height:1.5; white-space:pre-wrap; max-height:400px; overflow-y:auto; font-family:'Inter', monospace;">
+                        </div>
                     </div>
                 </div>
             </div>
@@ -3389,10 +3419,92 @@
             }
         }
 
+        function saveGeminiKey(val) {
+            if (val) {
+                localStorage.setItem('gemini_api_key', val.trim());
+                showTopNotification('🔑 Gemini API Key saved securely in local storage!', 'success');
+            } else {
+                localStorage.removeItem('gemini_api_key');
+            }
+        }
+
+        async function generateSeoPackage() {
+            const scriptText = document.getElementById('scriptText') ? document.getElementById('scriptText').value.trim() : '';
+            if (!scriptText) {
+                alert('Please paste a video script in the Script Editor first!');
+                return;
+            }
+
+            const apiKey = localStorage.getItem('gemini_api_key') || (document.getElementById('geminiApiKeyInput') ? document.getElementById('geminiApiKeyInput').value.trim() : '');
+            showTopNotification('📦 Generating YouTube SEO Package via Gemini AI...', 'info');
+
+            try {
+                const res = await fetch('/api/generate-seo-package', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        script_text: scriptText,
+                        scenes: lastBreakdownData || [],
+                        gemini_api_key: apiKey
+                    })
+                });
+
+                const data = await res.json();
+                if (data.error) {
+                    alert('SEO Package Error: ' + data.error);
+                    return;
+                }
+
+                let textContent = `📌 5 HIGH-CTR YOUTUBE TITLES:\n`;
+                (data.titles || []).forEach((t, i) => { textContent += `${i+1}. ${t}\n`; });
+
+                textContent += `\n⏱️ YOUTUBE AUTOMATED CHAPTERS:\n`;
+                (data.chapters || []).forEach(c => { textContent += `${c}\n`; });
+
+                textContent += `\n📝 SEO VIDEO DESCRIPTION:\n${data.description || ''}\n`;
+
+                textContent += `\n🏷️ YOUTUBE TAGS (READY TO PASTE):\n${(data.tags || []).join(', ')}\n`;
+
+                textContent += `\n🖼️ 3 MIDJOURNEY / AI THUMBNAIL PROMPTS:\n`;
+                (data.thumbnailPrompts || []).forEach((p, i) => { textContent += `Thumbnail #${i+1}: ${p}\n\n`; });
+
+                const box = document.getElementById('seoPackageDisplayBox');
+                if (box) {
+                    box.innerText = textContent;
+                    box.style.display = 'block';
+                }
+
+                if (data.geminiUsed) {
+                    showTopNotification('⚡ SEO Package generated successfully via Google AI Studio Gemini API!', 'success');
+                } else {
+                    showTopNotification('⚡ SEO Package generated via Native Fallback Engine! (Paste Gemini Key in header for LLM AI titles)', 'info');
+                }
+            } catch (err) {
+                alert('Failed to connect to SEO package endpoint: ' + err.message);
+            }
+        }
+
+        function copySeoPackageToClipboard() {
+            const box = document.getElementById('seoPackageDisplayBox');
+            if (!box || !box.innerText) {
+                alert('Please generate the SEO package first!');
+                return;
+            }
+            navigator.clipboard.writeText(box.innerText).then(() => {
+                showTopNotification('📋 Full YouTube SEO Package copied to clipboard!', 'success');
+            }).catch(err => {
+                alert('Copy failed: ' + err);
+            });
+        }
+
         window.addEventListener('load', () => {
             const savedJobId = localStorage.getItem('active_job_id');
             if (savedJobId) {
                 startPollingJob(savedJobId);
+            }
+            const savedGeminiKey = localStorage.getItem('gemini_api_key');
+            if (savedGeminiKey && document.getElementById('geminiApiKeyInput')) {
+                document.getElementById('geminiApiKeyInput').value = savedGeminiKey;
             }
             calculateScriptRetentionStats();
         });

@@ -1476,6 +1476,115 @@ async def handle_generate_beat_clip(request):
     except Exception as e:
         return web.json_response({"error": str(e)}, status=500)
 
+async def handle_generate_seo_package(request):
+    try:
+        data = await request.json()
+        script_text = data.get("script_text", "").strip()
+        scenes = data.get("scenes", [])
+        gemini_api_key = data.get("gemini_api_key", "").strip() or os.environ.get("GEMINI_API_KEY", "")
+        
+        if not script_text:
+            return web.json_response({"error": "Script text is required"}, status=400)
+            
+        chapters = []
+        curr_time = 0.0
+        chapters.append("0:00 Introduction")
+        
+        for idx, sc in enumerate(scenes):
+            dur = float(sc.get("durSec", 3.5) or 3.5)
+            if idx > 0 and idx % 4 == 0:
+                mins = int(curr_time // 60)
+                secs = int(curr_time % 60)
+                snippet = sc.get("text", f"Section {idx+1}")[:30].strip()
+                chapters.append(f"{mins}:{secs:02d} {snippet}...")
+            curr_time += dur
+            
+        titles = []
+        description = ""
+        tags = []
+        thumbnail_prompts = []
+        
+        if gemini_api_key:
+            try:
+                import urllib.request
+                import json
+                
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_api_key}"
+                
+                prompt_input = f"""Analyze this YouTube script and output ONLY valid JSON matching this exact structure:
+{{
+  "titles": ["5 high-CTR curiosity-hook titles"],
+  "description": "Engaging SEO description with keywords",
+  "tags": ["25 relevant search tags"],
+  "thumbnail_prompts": ["3 detailed Midjourney/AI thumbnail prompts with text overlay ideas"]
+}}
+
+Script Text:
+{script_text[:3000]}"""
+
+                req_payload = json.dumps({
+                    "contents": [{"parts": [{"text": prompt_input}]}]
+                }).encode('utf-8')
+                
+                req = urllib.request.Request(url, data=req_payload, headers={'Content-Type': 'application/json'})
+                
+                with urllib.request.urlopen(req, timeout=12) as response:
+                    res_body = json.loads(response.read().decode('utf-8'))
+                    raw_text = res_body['candidates'][0]['content']['parts'][0]['text']
+                    
+                    json_str = raw_text
+                    if "```json" in raw_text:
+                        json_str = raw_text.split("```json")[1].split("```")[0].strip()
+                    elif "```" in raw_text:
+                        json_str = raw_text.split("```")[1].split("```")[0].strip()
+                        
+                    parsed = json.loads(json_str)
+                    titles = parsed.get("titles", [])
+                    description = parsed.get("description", "")
+                    tags = parsed.get("tags", [])
+                    thumbnail_prompts = parsed.get("thumbnail_prompts", [])
+            except Exception as gem_err:
+                print(f"Gemini API query warning: {gem_err}")
+                
+        if not titles:
+            words = [w.strip(".,!?\"'") for w in script_text.split() if len(w) > 3]
+            top_words = list(dict.fromkeys(words))[:6]
+            kw_str = " ".join(top_words[:3]).title() if top_words else "Viral Story"
+            
+            titles = [
+                f"The Hidden Truth About {kw_str}",
+                f"Why Everyone Is Wrong About {kw_str}",
+                f"The $100B Industry Secrets Revealed",
+                f"Inside The Operation: {kw_str} Explained",
+                f"What Nobody Told You About {kw_str}"
+            ]
+            
+        if not description:
+            description = f"In this video, we break down {script_text[:200]}...\n\nSubscribe for more documentary essays!\n\nTimestamps:\n" + "\n".join(chapters)
+            
+        if not tags:
+            words = list(set([w.lower().strip(".,!?\"'") for w in script_text.split() if len(w) > 4]))[:20]
+            tags = words + ["documentary", "youtube essay", "explained", "business", "viral"]
+            
+        if not thumbnail_prompts:
+            thumbnail_prompts = [
+                "3D cinematic renders of dramatic scene lighting, hyperdetailed, 16:9, bold text overlay: 'THE SECRET'",
+                "High contrast 2D editorial illustration, neon glowing accents, bold text overlay: 'REVEALED'",
+                "35mm film still, dramatic chiaroscuro spotlight, bold text overlay: 'EXPOSED'"
+            ]
+            
+        return web.json_response({
+            "status": "success",
+            "geminiUsed": bool(gemini_api_key),
+            "titles": titles,
+            "chapters": chapters,
+            "description": description,
+            "tags": tags,
+            "thumbnailPrompts": thumbnail_prompts
+        })
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)
+
 def create_app():
     # Allow large ZIP and batch uploads up to 2GB (2048MB)
     app = web.Application(client_max_size=2048 * 1024 * 1024)
@@ -1489,6 +1598,7 @@ def create_app():
     app.router.add_post("/api/export-timeline", handle_export_timeline)
     app.router.add_post("/api/generate-beat-audio", handle_generate_beat_audio)
     app.router.add_post("/api/generate-beat-clip", handle_generate_beat_clip)
+    app.router.add_post("/api/generate-seo-package", handle_generate_seo_package)
     app.router.add_get("/api/projects", handle_list_projects)
     app.router.add_get("/api/projects/{id}", handle_get_project)
     app.router.add_post("/api/projects", handle_save_project)
