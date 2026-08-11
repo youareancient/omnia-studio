@@ -66,6 +66,33 @@ h1, h2, h3, .brand-title {
     letter-spacing: -0.02em;
 }
 
+/* Strict View Isolation Engine */
+#landingView {
+    display: block;
+    width: 100%;
+    min-height: 100vh;
+    background: var(--bg-primary);
+    position: relative;
+    z-index: 1;
+}
+
+#studioView {
+    display: none;
+    width: 100%;
+    min-height: 100vh;
+    background: var(--bg-primary);
+    position: relative;
+    z-index: 1;
+}
+
+body.in-studio-mode #landingView {
+    display: none !important;
+}
+
+body.in-studio-mode #studioView {
+    display: block !important;
+}
+
 /* Strict Layout Constraints */
 .main-wrapper {
     max-width: 1600px;

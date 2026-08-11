@@ -967,7 +967,7 @@
     </div>
 
     <!-- STUDIO WORKBENCH VIEW -->
-    <div id="studioView">
+    <div id="studioView" style="display:none;">
         <header>
             <div class="header-container">
                 <div class="brand">
@@ -3815,10 +3815,12 @@
             const studioView = document.getElementById('studioView');
 
             if (viewName === 'studio') {
+                document.body.classList.add('in-studio-mode');
                 if (landingView) landingView.style.display = 'none';
                 if (studioView) studioView.style.display = 'block';
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             } else {
+                document.body.classList.remove('in-studio-mode');
                 if (studioView) studioView.style.display = 'none';
                 if (landingView) landingView.style.display = 'block';
                 window.scrollTo({ top: 0, behavior: 'smooth' });
