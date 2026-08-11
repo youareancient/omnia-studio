@@ -1579,7 +1579,24 @@
             updateMuteUI();
         });
 
-        async function generateBeatAudio(beatNum, autoPlay = true) {
+        async function fetchWithTimeout(resource, options = {}) {
+            const { timeout = 25000 } = options;
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), timeout);
+            try {
+                const response = await fetch(resource, {
+                    ...options,
+                    signal: controller.signal
+                });
+                clearTimeout(timer);
+                return response;
+            } catch (error) {
+                clearTimeout(timer);
+                throw error;
+            }
+        }
+
+        async function generateBeatAudio(beatNum, autoPlay = true, maxRetries = 3) {
             const btn = document.getElementById(`btnBeatAudio_${beatNum}`);
             const progressBox = document.getElementById(`cardProgress_${beatNum}`);
             const statusText = document.getElementById(`cardStatus_${beatNum}`);
@@ -1587,7 +1604,7 @@
             const activeJobId = localStorage.getItem('last_active_job_id') || '';
             if (!activeJobId) {
                 alert('Please click Scene Cuts first to initialize your job!');
-                return;
+                return false;
             }
             if (btn) {
                 btn.disabled = true;
@@ -1598,63 +1615,67 @@
                 progressBox.style.display = 'block';
             }
 
-            try {
-                const chosenVoice = (typeof selectedVoice !== 'undefined' && selectedVoice) ? selectedVoice : 'andrew';
-                const sliderVal = document.getElementById('rateSlider') ? parseInt(document.getElementById('rateSlider').value || 1) : 1;
-                const rateVal = `${sliderVal >= 0 ? '+' : ''}${sliderVal}%`;
+            let success = false;
+            for (let attempt = 1; attempt <= maxRetries; attempt++) {
+                try {
+                    const chosenVoice = (typeof selectedVoice !== 'undefined' && selectedVoice) ? selectedVoice : 'andrew';
+                    const sliderVal = document.getElementById('rateSlider') ? parseInt(document.getElementById('rateSlider').value || 1) : 1;
+                    const rateVal = `${sliderVal >= 0 ? '+' : ''}${sliderVal}%`;
 
-                const res = await fetch('/api/generate-beat-audio', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        job_id: activeJobId,
-                        scene_index: beatNum,
-                        voice: chosenVoice,
-                        rate: rateVal
-                    })
-                });
+                    const res = await fetchWithTimeout('/api/generate-beat-audio', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            job_id: activeJobId,
+                            scene_index: beatNum,
+                            voice: chosenVoice,
+                            rate: rateVal
+                        }),
+                        timeout: 20000
+                    });
 
-                if (!res.ok) {
-                    const rawText = await res.text();
-                    let errMsg = rawText;
-                    try {
-                        const parsed = JSON.parse(rawText);
-                        if (parsed.error) errMsg = parsed.error;
-                    } catch (e) {}
-                    alert('Server Error (' + res.status + '): ' + errMsg);
-                    return;
-                }
-
-                const data = await res.json();
-                if (data.status === 'success') {
-                    const audioBox = document.getElementById(`beatAudioBox_${beatNum}`);
-                    const audioPlayer = document.getElementById(`beatAudioPlayer_${beatNum}`);
-                    if (audioBox && audioPlayer) {
-                        audioPlayer.src = data.audioUrl;
-                        audioPlayer.muted = isStudioMuted;
-                        audioBox.style.display = 'block';
-                        if (autoPlay && !isStudioMuted) {
-                            audioPlayer.play().catch(e => console.log('Autoplay prevented:', e));
-                        }
+                    if (!res.ok) {
+                        throw new Error(`HTTP Error ${res.status}`);
                     }
-                    updateChecklistStatus();
-                } else {
-                    alert(data.error || 'Failed to generate beat audio.');
-                }
-            } catch (e) {
-                alert('Error: ' + e.message);
-            } finally {
-                if (btn) {
-                    btn.disabled = false;
-                    btn.textContent = '🎙️ Voiceover Line';
-                }
-                if (progressBox) {
-                    progressBox.style.display = 'none';
+
+                    const data = await res.json();
+                    if (data.status === 'success') {
+                        const audioBox = document.getElementById(`beatAudioBox_${beatNum}`);
+                        const audioPlayer = document.getElementById(`beatAudioPlayer_${beatNum}`);
+                        if (audioBox && audioPlayer) {
+                            audioPlayer.src = data.audioUrl;
+                            audioPlayer.muted = isStudioMuted;
+                            audioBox.style.display = 'block';
+                            if (autoPlay && !isStudioMuted) {
+                                audioPlayer.play().catch(e => console.log('Autoplay prevented:', e));
+                            }
+                        }
+                        updateChecklistStatus();
+                        success = true;
+                        break;
+                    } else {
+                        throw new Error(data.error || 'Audio generation failed');
+                    }
+                } catch (e) {
+                    console.warn(`Attempt ${attempt}/${maxRetries} failed for Beat #${beatNum} Audio:`, e.message);
+                    if (attempt < maxRetries) {
+                        if (statusText) statusText.textContent = `⚠️ Retry ${attempt}/${maxRetries} for Beat #${beatNum}...`;
+                        await new Promise(r => setTimeout(r, 1000 * attempt));
+                    }
                 }
             }
+
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = '🎙️ Voiceover Line';
+            }
+            if (progressBox) {
+                progressBox.style.display = 'none';
+            }
+            return success;
         }
 
-        async function generateBeatClip(beatNum, autoPlay = true) {
+        async function generateBeatClip(beatNum, autoPlay = true, maxRetries = 3) {
             const btn = document.getElementById(`btnBeatClip_${beatNum}`);
             const progressBox = document.getElementById(`cardProgress_${beatNum}`);
             const statusText = document.getElementById(`cardStatus_${beatNum}`);
@@ -1663,11 +1684,11 @@
             
             if (!perBeatImages[beatNum]) {
                 alert(`Please upload an image for Beat #${beatNum} before generating its mini-clip!`);
-                return;
+                return false;
             }
             if (!activeJobId) {
                 alert('Please click Scene Cuts first to initialize your job!');
-                return;
+                return false;
             }
 
             if (btn) {
@@ -1679,72 +1700,76 @@
                 progressBox.style.display = 'block';
             }
 
-            try {
-                const formData = new FormData();
-                formData.append('job_id', activeJobId);
-                formData.append('scene_index', beatNum);
-                formData.append('image', perBeatImages[beatNum]);
+            let success = false;
+            for (let attempt = 1; attempt <= maxRetries; attempt++) {
+                try {
+                    const formData = new FormData();
+                    formData.append('job_id', activeJobId);
+                    formData.append('scene_index', beatNum);
+                    formData.append('image', perBeatImages[beatNum]);
 
-                const res = await fetch('/api/generate-beat-clip', {
-                    method: 'POST',
-                    body: formData
-                });
+                    const res = await fetchWithTimeout('/api/generate-beat-clip', {
+                        method: 'POST',
+                        body: formData,
+                        timeout: 30000
+                    });
 
-                if (!res.ok) {
-                    const rawText = await res.text();
-                    let errMsg = rawText;
-                    try {
-                        const parsed = JSON.parse(rawText);
-                        if (parsed.error) errMsg = parsed.error;
-                    } catch (e) {}
-                    alert('Server Error (' + res.status + '): ' + errMsg);
-                    return;
-                }
+                    if (!res.ok) {
+                        throw new Error(`HTTP Error ${res.status}`);
+                    }
 
-                const data = await res.json();
-                if (data.status === 'success') {
-                    const playerBox = document.getElementById(`beatPlayer_${beatNum}`);
-                    const videoEl = document.getElementById(`beatVideo_${beatNum}`);
-                    if (playerBox && videoEl) {
-                        videoEl.src = data.clipUrl;
-                        videoEl.muted = isStudioMuted;
-                        playerBox.style.display = 'block';
-                        if (autoPlay && !isStudioMuted) {
-                            videoEl.play().catch(e => console.log('Autoplay prevented:', e));
+                    const data = await res.json();
+                    if (data.status === 'success') {
+                        const playerBox = document.getElementById(`beatPlayer_${beatNum}`);
+                        const videoEl = document.getElementById(`beatVideo_${beatNum}`);
+                        if (playerBox && videoEl) {
+                            videoEl.src = data.clipUrl;
+                            videoEl.muted = isStudioMuted;
+                            playerBox.style.display = 'block';
+                            if (autoPlay && !isStudioMuted) {
+                                videoEl.play().catch(e => console.log('Autoplay prevented:', e));
+                            }
                         }
-                    }
 
-                    // Update active mini-clips list for timeline studio
-                    const existingIdx = activeMiniClips.findIndex(c => c.sceneIndex === beatNum);
-                    const clipObj = {
-                        sceneIndex: beatNum,
-                        filename: data.filename,
-                        url: data.clipUrl,
-                        durSec: data.durSec,
-                        text: `Beat #${beatNum}`
-                    };
-                    if (existingIdx >= 0) {
-                        activeMiniClips[existingIdx] = clipObj;
+                        // Update active mini-clips list for timeline studio
+                        const existingIdx = activeMiniClips.findIndex(c => c.sceneIndex === beatNum);
+                        const clipObj = {
+                            sceneIndex: beatNum,
+                            filename: data.filename,
+                            url: data.clipUrl,
+                            durSec: data.durSec,
+                            text: `Beat #${beatNum}`
+                        };
+                        if (existingIdx >= 0) {
+                            activeMiniClips[existingIdx] = clipObj;
+                        } else {
+                            activeMiniClips.push(clipObj);
+                            activeMiniClips.sort((a, b) => a.sceneIndex - b.sceneIndex);
+                        }
+                        renderMiniClipsGrid(activeMiniClips);
+                        updateChecklistStatus();
+                        success = true;
+                        break;
                     } else {
-                        activeMiniClips.push(clipObj);
-                        activeMiniClips.sort((a, b) => a.sceneIndex - b.sceneIndex);
+                        throw new Error(data.error || 'Mini-clip rendering failed');
                     }
-                    renderMiniClipsGrid(activeMiniClips);
-                    updateChecklistStatus();
-                } else {
-                    alert(data.error || 'Failed to render mini-clip.');
-                }
-            } catch (e) {
-                alert('Error rendering mini-clip: ' + e.message);
-            } finally {
-                if (btn) {
-                    btn.disabled = false;
-                    btn.textContent = '🎬 Generate Mini-Clip';
-                }
-                if (progressBox) {
-                    progressBox.style.display = 'none';
+                } catch (e) {
+                    console.warn(`Attempt ${attempt}/${maxRetries} failed for Beat #${beatNum} Clip:`, e.message);
+                    if (attempt < maxRetries) {
+                        if (statusText) statusText.textContent = `⚠️ Retry ${attempt}/${maxRetries} for Clip #${beatNum}...`;
+                        await new Promise(r => setTimeout(r, 1000 * attempt));
+                    }
                 }
             }
+
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = '🎬 Generate Mini-Clip';
+            }
+            if (progressBox) {
+                progressBox.style.display = 'none';
+            }
+            return success;
         }
 
         async function autoGenerateAllBeatVoiceovers(isResuming = false) {
@@ -1788,16 +1813,18 @@
                 const statusMsg = `🎙️ Synthesizing Voiceover ${i + 1}/${total} (Beat #${beatNum})...`;
                 if (autoStatus) autoStatus.textContent = statusMsg;
                 if (statusDetail) statusDetail.textContent = statusMsg;
+                showTopNotification(statusMsg, 'info', pct);
 
                 // Check if beat audio is already generated
                 const existingAudio = document.getElementById(`beatAudioPlayer_${beatNum}`);
                 if (existingAudio && existingAudio.src && !existingAudio.src.endsWith('#') && existingAudio.src !== window.location.href) {
                     console.log(`Skipping already generated voiceover for Beat #${beatNum}`);
                 } else {
-                    // Pass autoPlay = false so batch processing runs 100% silently!
-                    await generateBeatAudio(beatNum, false);
-                    // Short rate-limit protection pause
-                    await new Promise(r => setTimeout(r, 250));
+                    const ok = await generateBeatAudio(beatNum, false, 3);
+                    if (!ok) {
+                        showTopNotification(`⚠️ Voiceover Beat #${beatNum} failed after 3 retries. Continuing to Beat #${beatNum+1}...`, 'warning');
+                    }
+                    await new Promise(r => setTimeout(r, 150));
                 }
             }
 
@@ -1809,6 +1836,7 @@
             if (autoStatus) autoStatus.textContent = finishMsg;
             if (statusDetail) statusDetail.textContent = finishMsg;
             if (masterBtn) { masterBtn.disabled = false; }
+            showTopNotification(finishMsg, 'success', 100);
         }
 
         async function autoRenderAllSceneMiniClips(isResuming = false) {
@@ -1859,16 +1887,18 @@
                     const statusMsg = `🎬 Auto-Rendering Mini-Clip ${i + 1}/${total} (Beat #${beatNum})...`;
                     if (autoStatus) autoStatus.textContent = statusMsg;
                     if (statusDetail) statusDetail.textContent = statusMsg;
+                    showTopNotification(statusMsg, 'info', pct);
 
                     // Check if mini-clip is already rendered
                     const existingVideo = document.getElementById(`beatVideo_${beatNum}`);
                     if (existingVideo && existingVideo.src && !existingVideo.src.endsWith('#') && existingVideo.src !== window.location.href) {
                         console.log(`Skipping already rendered mini-clip for Beat #${beatNum}`);
                     } else {
-                        // Pass autoPlay = false so batch rendering runs 100% silently!
-                        await generateBeatClip(beatNum, false);
-                        // Short rate-limit protection pause
-                        await new Promise(r => setTimeout(r, 250));
+                        const ok = await generateBeatClip(beatNum, false, 3);
+                        if (!ok) {
+                            showTopNotification(`⚠️ Mini-Clip #${beatNum} failed after 3 retries. Continuing to Beat #${beatNum+1}...`, 'warning');
+                        }
+                        await new Promise(r => setTimeout(r, 150));
                     }
                 }
             }
@@ -1881,6 +1911,7 @@
             if (autoStatus) autoStatus.textContent = finishMsg;
             if (statusDetail) statusDetail.textContent = finishMsg;
             if (masterBtn) { masterBtn.disabled = false; }
+            showTopNotification(finishMsg, 'success', 100);
         }
 
         function renderMiniClipsGrid(clips) {

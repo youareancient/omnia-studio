@@ -1122,6 +1122,23 @@ async def handle_generate_beat_clip(request):
         out_clip_filename = f"mini_clip_{job_id[:6]}_{scene_idx:02d}.mp4"
         out_clip_filepath = os.path.join(DOWNLOADS_DIR, out_clip_filename)
 
+        # Instant Cache Check: If clip was already rendered successfully on server, return immediately in 0.001s!
+        if os.path.exists(out_clip_filepath) and os.path.getsize(out_clip_filepath) > 1000:
+            dur_sec = await get_media_duration_sec(out_clip_filepath)
+            if dur_sec <= 0.2:
+                dur_sec = 3.0
+            try:
+                shutil.rmtree(temp_dir)
+            except Exception:
+                pass
+            return web.json_response({
+                "status": "success",
+                "sceneIndex": scene_idx,
+                "filename": out_clip_filename,
+                "clipUrl": f"/static/generated/{out_clip_filename}",
+                "durSec": round(dur_sec, 1)
+            })
+
         ffmpeg_cmd = [
             "ffmpeg", "-y", "-threads", "2",
             "-i", beat_audio_path,
@@ -1142,6 +1159,9 @@ async def handle_generate_beat_clip(request):
             shutil.rmtree(temp_dir)
         except Exception:
             pass
+
+        import gc
+        gc.collect()
 
         return web.json_response({
             "status": "success",
