@@ -639,52 +639,65 @@ async def process_video_assembly_async(video_job_id, original_job_id, zip_bytes,
         elif len(image_durations) == 1:
             image_durations[0] = round(total_audio_duration, 3)
 
-        # Render Per-Scene Individual Mini-Clips sequentially for Grid Gallery & Previewing
-        mini_clips_data = []
-        for idx, (img_path, dur) in enumerate(zip(extracted_imgs, image_durations), start=1):
-            try:
-                pct = 20 + int((idx / total_images) * 60)
-                BACKGROUND_JOBS[video_job_id]["progress"] = pct
-                BACKGROUND_JOBS[video_job_id]["status_text"] = f"🎬 Synthesizing 16:9 Mini-Clip {idx}/{total_images} for Beat #{idx} ({dur:.1f}s)..."
+        # Render Per-Scene Individual Mini-Clips with Semaphore Concurrency Pool (4x faster)
+        mini_clips_data = [None] * total_images
+        completed_clips = 0
+        semaphore = asyncio.Semaphore(4)
 
-                mini_filename = f"mini_clip_{video_job_id[:6]}_{idx:02d}.mp4"
-                mini_filepath = os.path.join(DOWNLOADS_DIR, mini_filename)
-                
-                if idx <= len(scenes):
-                    sc = scenes[idx - 1]
-                    st_sec = sc.get("start_ms", 0) / 1000.0
-                else:
-                    st_sec = (idx - 1) * (total_audio_duration / total_images)
+        async def render_single_mini_clip(idx, img_path, dur):
+            nonlocal completed_clips
+            async with semaphore:
+                try:
+                    mini_filename = f"mini_clip_{video_job_id[:6]}_{idx:02d}.mp4"
+                    mini_filepath = os.path.join(DOWNLOADS_DIR, mini_filename)
+                    
+                    if idx <= len(scenes):
+                        sc = scenes[idx - 1]
+                        st_sec = sc.get("start_ms", 0) / 1000.0
+                    else:
+                        st_sec = (idx - 1) * (total_audio_duration / total_images)
 
-                ffmpeg_mini = [
-                    "ffmpeg", "-y",
-                    "-ss", f"{st_sec:.3f}", "-t", f"{dur:.3f}", "-i", audio_filepath,
-                    "-loop", "1", "-i", img_path,
-                    "-vf", get_ken_burns_vf(idx),
-                    "-c:v", "libx264", "-preset", "ultrafast", "-crf", "26",
-                    "-c:a", "aac", "-b:a", "192k",
-                    "-shortest",
-                    mini_filepath
-                ]
+                    ffmpeg_mini = [
+                        "ffmpeg", "-y",
+                        "-ss", f"{st_sec:.3f}", "-t", f"{dur:.3f}", "-i", audio_filepath,
+                        "-loop", "1", "-i", img_path,
+                        "-vf", get_ken_burns_vf(idx),
+                        "-c:v", "libx264", "-preset", "ultrafast", "-crf", "26",
+                        "-c:a", "aac", "-b:a", "192k",
+                        "-shortest",
+                        mini_filepath
+                    ]
 
-                proc_mini = await asyncio.create_subprocess_exec(
-                    *ffmpeg_mini, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
-                )
-                await proc_mini.communicate()
-                
-                scene_text = scenes[idx - 1].get("text", f"Beat #{idx}") if idx <= len(scenes) else f"Beat #{idx}"
-                mini_clips_data.append({
-                    "sceneIndex": idx,
-                    "filename": mini_filename,
-                    "url": f"/static/generated/{mini_filename}",
-                    "durSec": dur,
-                    "text": scene_text
-                })
-                await asyncio.sleep(0.05)
-            except Exception as clip_err:
-                print(f"Non-fatal error encoding mini clip {idx}:", clip_err)
+                    proc_mini = await asyncio.create_subprocess_exec(
+                        *ffmpeg_mini, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+                    )
+                    await proc_mini.communicate()
+                    
+                    scene_text = scenes[idx - 1].get("text", f"Beat #{idx}") if idx <= len(scenes) else f"Beat #{idx}"
+                    mini_clips_data[idx - 1] = {
+                        "sceneIndex": idx,
+                        "filename": mini_filename,
+                        "url": f"/static/generated/{mini_filename}",
+                        "durSec": dur,
+                        "text": scene_text
+                    }
+                    completed_clips += 1
+                    pct = 20 + int((completed_clips / total_images) * 55)
+                    BACKGROUND_JOBS[video_job_id]["progress"] = pct
+                    BACKGROUND_JOBS[video_job_id]["status_text"] = f"🎬 Synthesizing 16:9 Mini-Clip {completed_clips}/{total_images} for Beat #{idx} ({dur:.1f}s)..."
+                except Exception as clip_err:
+                    print(f"Non-fatal error encoding mini clip {idx}:", clip_err)
 
-        # Master Video Assembly: Concatenate pre-rendered 1-to-1 synced mini-clips directly for zero-drift frame-perfect rendering
+        render_tasks = [
+            render_single_mini_clip(idx, img_path, dur)
+            for idx, (img_path, dur) in enumerate(zip(extracted_imgs, image_durations), start=1)
+        ]
+        await asyncio.gather(*render_tasks)
+
+        # Filter out failed clip items
+        mini_clips_data = [item for item in mini_clips_data if item is not None]
+
+        # Master Video Assembly: Fast Stream Copy Concatenation of pre-rendered synced clips
         concat_filepath = os.path.join(temp_img_dir, "input_mini_clips_concat.txt")
         
         with open(concat_filepath, "w", encoding="utf-8") as f:
@@ -698,14 +711,14 @@ async def process_video_assembly_async(video_job_id, original_job_id, zip_bytes,
         out_video_filename = f"video_{video_job_id[:6]}.mp4"
         out_video_filepath = os.path.join(DOWNLOADS_DIR, out_video_filename)
 
-        BACKGROUND_JOBS[video_job_id]["progress"] = 75
-        BACKGROUND_JOBS[video_job_id]["status_text"] = f"🎬 Direct Mini-Clip Master Merger: Concatenating {total_images} synced scenes for zero-drift MP4..."
+        BACKGROUND_JOBS[video_job_id]["progress"] = 80
+        BACKGROUND_JOBS[video_job_id]["status_text"] = f"🎬 Fast Stream Copy Merger: Concatenating {len(mini_clips_data)} synced scenes..."
 
+        # Try fast stream copy concat first (-c copy)
         ffmpeg_cmd = [
             "ffmpeg", "-y",
             "-f", "concat", "-safe", "0", "-i", concat_filepath,
-            "-c:v", "libx264", "-preset", "ultrafast", "-crf", "22",
-            "-c:a", "aac", "-b:a", "192k",
+            "-c", "copy",
             "-movflags", "+faststart",
             out_video_filepath
         ]
@@ -717,10 +730,20 @@ async def process_video_assembly_async(video_job_id, original_job_id, zip_bytes,
         )
         _, stderr = await proc.communicate()
 
-        if proc.returncode != 0:
-            err_log = stderr.decode('utf-8', errors='ignore')
-            print("FFmpeg error log:", err_log)
-            raise Exception("FFmpeg master clip concatenation failed.")
+        if proc.returncode != 0 or not os.path.exists(out_video_filepath) or os.path.getsize(out_video_filepath) < 100:
+            # Fallback to ultrafast re-encode if stream copy fails
+            ffmpeg_cmd_reencode = [
+                "ffmpeg", "-y",
+                "-f", "concat", "-safe", "0", "-i", concat_filepath,
+                "-c:v", "libx264", "-preset", "ultrafast", "-crf", "22",
+                "-c:a", "aac", "-b:a", "192k",
+                "-movflags", "+faststart",
+                out_video_filepath
+            ]
+            proc_re = await asyncio.create_subprocess_exec(
+                *ffmpeg_cmd_reencode, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+            )
+            await proc_re.communicate()
 
         # Phase 2: Quality Verification Agent Audit
         BACKGROUND_JOBS[video_job_id]["progress"] = 95
@@ -765,6 +788,99 @@ async def process_video_assembly_async(video_job_id, original_job_id, zip_bytes,
             "result": None
         }
 
+async def process_export_timeline_async(export_job_id, clip_filenames):
+    try:
+        BACKGROUND_JOBS[export_job_id] = {
+            "status": "processing",
+            "progress": 20,
+            "status_text": f"🎬 Preparing master timeline export for {len(clip_filenames)} clips...",
+            "mode": "video",
+            "result": None
+        }
+
+        temp_dir = os.path.join(STUDIO_DIR, f"temp_export_{export_job_id[:6]}")
+        os.makedirs(temp_dir, exist_ok=True)
+
+        concat_file = os.path.join(temp_dir, "concat_timeline.txt")
+        valid_clips_count = 0
+        with open(concat_file, "w", encoding="utf-8") as f:
+            for fname in clip_filenames:
+                fpath = os.path.join(DOWNLOADS_DIR, fname)
+                if os.path.exists(fpath):
+                    escaped = fpath.replace("\\", "/")
+                    f.write(f"file '{escaped}'\n")
+                    valid_clips_count += 1
+
+        if valid_clips_count == 0:
+            raise Exception("None of the selected mini clips were found on the server.")
+
+        master_filename = f"master_timeline_{export_job_id[:6]}.mp4"
+        master_filepath = os.path.join(DOWNLOADS_DIR, master_filename)
+
+        BACKGROUND_JOBS[export_job_id]["progress"] = 60
+        BACKGROUND_JOBS[export_job_id]["status_text"] = f"⚡ Merging {valid_clips_count} mini-clips instantly with Stream Copy..."
+
+        # Stream copy mode (-c copy) for 2-second export of 500+ clips
+        cmd_copy = [
+            "ffmpeg", "-y",
+            "-f", "concat", "-safe", "0", "-i", concat_file,
+            "-c", "copy",
+            "-movflags", "+faststart",
+            master_filepath
+        ]
+
+        proc = await asyncio.create_subprocess_exec(
+            *cmd_copy, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+        )
+        _, stderr = await proc.communicate()
+
+        if proc.returncode != 0 or not os.path.exists(master_filepath) or os.path.getsize(master_filepath) < 100:
+            BACKGROUND_JOBS[export_job_id]["status_text"] = f"🎬 Stream copy unavailable. Re-encoding {valid_clips_count} mini-clips..."
+            cmd_reencode = [
+                "ffmpeg", "-y",
+                "-f", "concat", "-safe", "0", "-i", concat_file,
+                "-c:v", "libx264", "-preset", "ultrafast", "-crf", "22",
+                "-c:a", "aac", "-b:a", "192k",
+                "-movflags", "+faststart",
+                master_filepath
+            ]
+            proc2 = await asyncio.create_subprocess_exec(
+                *cmd_reencode, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+            )
+            await proc2.communicate()
+
+        try:
+            shutil.rmtree(temp_dir)
+        except Exception:
+            pass
+
+        if not os.path.exists(master_filepath) or os.path.getsize(master_filepath) < 1000:
+            raise Exception("Export failed: Final master video file is missing or corrupted.")
+
+        video_dur = await get_media_duration_sec(master_filepath)
+        qa_report = f"✅ Master Timeline Exported: {valid_clips_count} Mini-Clips merged seamlessly! ({video_dur:.1f}s total)"
+
+        BACKGROUND_JOBS[export_job_id] = {
+            "status": "completed",
+            "progress": 100,
+            "status_text": qa_report,
+            "mode": "video",
+            "result": {
+                "videoFilename": master_filename,
+                "videoUrl": f"/static/generated/{master_filename}",
+                "qaReport": qa_report
+            }
+        }
+    except Exception as e:
+        print(f"Error exporting timeline {export_job_id}:", e)
+        BACKGROUND_JOBS[export_job_id] = {
+            "status": "failed",
+            "progress": 0,
+            "status_text": f"Error: {str(e)}",
+            "mode": "video",
+            "result": None
+        }
+
 async def handle_export_timeline(request):
     try:
         data = await request.json()
@@ -772,45 +888,10 @@ async def handle_export_timeline(request):
         if not clip_filenames:
             return web.json_response({"error": "No mini clips selected for export."}, status=400)
 
-        temp_dir = os.path.join(STUDIO_DIR, f"temp_export_{uuid.uuid4().hex[:6]}")
-        os.makedirs(temp_dir, exist_ok=True)
+        export_job_id = str(uuid.uuid4())
+        asyncio.create_task(process_export_timeline_async(export_job_id, clip_filenames))
 
-        concat_file = os.path.join(temp_dir, "concat_timeline.txt")
-        with open(concat_file, "w", encoding="utf-8") as f:
-            for fname in clip_filenames:
-                fpath = os.path.join(DOWNLOADS_DIR, fname)
-                if os.path.exists(fpath):
-                    escaped = fpath.replace("\\", "/")
-                    f.write(f"file '{escaped}'\n")
-
-        master_filename = f"master_timeline_{uuid.uuid4().hex[:6]}.mp4"
-        master_filepath = os.path.join(DOWNLOADS_DIR, master_filename)
-
-        cmd = [
-            "ffmpeg", "-y",
-            "-f", "concat", "-safe", "0", "-i", concat_file,
-            "-c:v", "libx264", "-preset", "ultrafast", "-crf", "22",
-            "-c:a", "aac", "-b:a", "192k",
-            "-movflags", "+faststart",
-            master_filepath
-        ]
-
-        proc = await asyncio.create_subprocess_exec(
-            *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
-        )
-        await proc.communicate()
-
-        try:
-            shutil.rmtree(temp_dir)
-        except Exception:
-            pass
-
-        return web.json_response({
-            "status": "success",
-            "videoFilename": master_filename,
-            "videoUrl": f"/static/generated/{master_filename}",
-            "qaReport": f"✅ Master Timeline Exported: {len(clip_filenames)} Mini-Clips merged seamlessly!"
-        })
+        return web.json_response({"job_id": export_job_id, "status": "processing"})
     except Exception as e:
         return web.json_response({"error": str(e)}, status=500)
 
@@ -926,21 +1007,51 @@ async def handle_generate_beat_audio(request):
         
         job = BACKGROUND_JOBS.get(job_id)
         scene_text = ""
+        master_audio_filepath = None
+        start_ms = 0
+        end_ms = 0
+
         if job and job.get("result") and job["result"].get("scenes"):
             scenes = job["result"]["scenes"]
+            audio_fn = job["result"].get("filename")
+            if audio_fn:
+                master_audio_filepath = os.path.join(DOWNLOADS_DIR, audio_fn)
             if 1 <= scene_idx <= len(scenes):
-                scene_text = scenes[scene_idx - 1].get("text", "")
+                sc = scenes[scene_idx - 1]
+                scene_text = sc.get("text", "")
+                start_ms = sc.get("start_ms", 0)
+                end_ms = sc.get("end_ms", 0)
 
         if not scene_text:
             return web.json_response({"error": "Scene line text not found."}, status=400)
 
-        cleaned_text = humanize_script(scene_text)
         out_filename = f"beat_audio_{job_id[:6]}_{scene_idx:02d}.mp3"
         out_filepath = os.path.join(DOWNLOADS_DIR, out_filename)
 
-        await safe_edge_tts_save(cleaned_text, voice_id, rate, out_filepath)
-        await trim_trailing_audio_silence(out_filepath)
-        await append_natural_pause_padding(out_filepath, 0.28)
+        sliced_from_master = False
+        if master_audio_filepath and os.path.exists(master_audio_filepath) and end_ms > start_ms:
+            try:
+                st_sec = start_ms / 1000.0
+                dur_sec_val = (end_ms - start_ms) / 1000.0
+                slice_cmd = [
+                    "ffmpeg", "-y",
+                    "-ss", f"{st_sec:.3f}", "-t", f"{dur_sec_val:.3f}",
+                    "-i", master_audio_filepath,
+                    "-c:a", "libmp3lame", "-b:a", "192k",
+                    out_filepath
+                ]
+                proc_slice = await asyncio.create_subprocess_exec(*slice_cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+                await proc_slice.communicate()
+                if os.path.exists(out_filepath) and os.path.getsize(out_filepath) > 100:
+                    sliced_from_master = True
+            except Exception as slice_err:
+                print(f"Master audio slice fallback for beat {scene_idx}:", slice_err)
+
+        if not sliced_from_master:
+            cleaned_text = humanize_script(scene_text)
+            await safe_edge_tts_save(cleaned_text, voice_id, rate, out_filepath)
+            await trim_trailing_audio_silence(out_filepath)
+            await append_natural_pause_padding(out_filepath, 0.28)
 
         dur_sec = await get_media_duration_sec(out_filepath)
 

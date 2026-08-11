@@ -574,6 +574,9 @@
             </div>
             
             <div class="header-actions">
+                <button class="theme-toggle-btn" style="background: rgba(255, 59, 48, 0.14); color: #ff3b30; border-color: rgba(255, 59, 48, 0.35); font-weight: 700;" onclick="resetStudioProject()">
+                    🔄 New Project
+                </button>
                 <button class="theme-toggle-btn" onclick="toggleTheme()">
                     <span id="themeIcon">☀️</span>
                     <span id="themeText">Light</span>
@@ -581,6 +584,32 @@
             </div>
         </div>
     </header>
+
+    <!-- Top Notification & Studio Activity Command Center Dashboard -->
+    <div id="topNotificationDashboard" style="max-width: 1400px; margin: 1rem auto 0; padding: 0 1rem; width: 100%;">
+        <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 16px; padding: 14px 18px; box-shadow: var(--shadow-card); display: flex; flex-direction: column; gap: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 280px;">
+                    <span id="topNotificationBadge" style="font-size: 0.75rem; font-weight: 800; padding: 4px 10px; border-radius: 20px; background: rgba(0, 113, 227, 0.15); color: var(--accent-apple); border: 1px solid var(--accent-apple); white-space: nowrap;">⚡ LIVE ACTIVITY</span>
+                    <span id="topNotificationMsg" style="font-size: 0.88rem; font-weight: 600; color: var(--text-primary); line-height: 1.3;">Studio Ready. Paste a script or click Scene Cuts to begin.</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    <span id="topChecklistBadge" style="font-size: 0.75rem; font-weight: 700; background: var(--bg-input); color: var(--accent-apple); padding: 4px 10px; border-radius: 10px; border: 1px solid var(--accent-apple);">Checklist: 0 / 3</span>
+                    <button class="theme-toggle-btn" style="background: rgba(255, 59, 48, 0.12); color: #ff3b30; border-color: rgba(255, 59, 48, 0.3); font-size: 0.75rem; padding: 4px 10px;" onclick="resetStudioProject()">
+                        🔄 Reset Studio
+                    </button>
+                </div>
+            </div>
+            <div id="topProgressContainer" style="display: none; flex-direction: column; gap: 4px;">
+                <div class="progress-bar" style="height: 6px; margin: 0;">
+                    <div class="progress-fill" id="topProgressBarFill" style="width: 0%;"></div>
+                </div>
+            </div>
+            <div id="topAlertBox" style="display: none; background: rgba(255, 149, 0, 0.12); border: 1px solid rgba(255, 149, 0, 0.4); border-radius: 10px; padding: 10px 14px; font-size: 0.82rem; color: #ff9500; font-weight: 700;">
+                <span id="topAlertText">⚠️ Warning alert message</span>
+            </div>
+        </div>
+    </div>
 
     <main>
         <!-- Script Editor -->
@@ -1038,6 +1067,7 @@
                     if (data.status_text) {
                         progressStatus.textContent = data.status_text;
                         if (videoProgressStatus) videoProgressStatus.textContent = data.status_text;
+                        showTopNotification(data.status_text, 'info', data.progress);
 
                         const match = data.status_text.match(/Mini-Clip (\d+)\/(\d+)/);
                         if (match) {
@@ -1067,6 +1097,7 @@
                         localStorage.removeItem('active_job_id');
                         progressBox.classList.remove('active');
                         if (videoProgressBox) videoProgressBox.classList.remove('active');
+                        showTopNotification(data.status_text || '✓ Operation Completed Successfully!', 'success', 100);
 
                         const renderBtn = document.getElementById('renderVideoBtn');
                         if (renderBtn) {
@@ -1207,11 +1238,112 @@
         let currentBatchTask = null; // 'voiceovers' or 'miniclips'
         let currentBatchIndex = 0;
 
+        function showTopNotification(msg, type = 'info', progress = null, alertText = null) {
+            const badge = document.getElementById('topNotificationBadge');
+            const msgEl = document.getElementById('topNotificationMsg');
+            const progressBox = document.getElementById('topProgressContainer');
+            const progressFill = document.getElementById('topProgressBarFill');
+            const alertBox = document.getElementById('topAlertBox');
+            const alertEl = document.getElementById('topAlertText');
+
+            if (badge) {
+                if (type === 'success') {
+                    badge.style.background = 'rgba(52, 199, 89, 0.18)';
+                    badge.style.color = '#34c759';
+                    badge.style.borderColor = '#34c759';
+                    badge.textContent = '✅ SUCCESS';
+                } else if (type === 'warning') {
+                    badge.style.background = 'rgba(255, 149, 0, 0.18)';
+                    badge.style.color = '#ff9500';
+                    badge.style.borderColor = '#ff9500';
+                    badge.textContent = '⚠️ WARNING';
+                } else if (type === 'danger' || type === 'error') {
+                    badge.style.background = 'rgba(255, 59, 48, 0.18)';
+                    badge.style.color = '#ff3b30';
+                    badge.style.borderColor = '#ff3b30';
+                    badge.textContent = '❌ ERROR';
+                } else {
+                    badge.style.background = 'rgba(0, 113, 227, 0.15)';
+                    badge.style.color = 'var(--accent-apple)';
+                    badge.style.borderColor = 'var(--accent-apple)';
+                    badge.textContent = '⚡ LIVE ACTIVITY';
+                }
+            }
+
+            if (msgEl) msgEl.textContent = msg;
+
+            if (progressBox && progressFill) {
+                if (progress !== null && progress >= 0) {
+                    progressBox.style.display = 'flex';
+                    progressFill.style.width = `${progress}%`;
+                } else {
+                    progressBox.style.display = 'none';
+                }
+            }
+
+            if (alertBox && alertEl) {
+                if (alertText) {
+                    alertBox.style.display = 'block';
+                    alertEl.textContent = alertText;
+                } else {
+                    alertBox.style.display = 'none';
+                }
+            }
+        }
+
+        function resetStudioProject() {
+            if (confirm("Are you sure you want to start a new project? This will clear your current script, generated voiceovers, scene cards, and timeline clips.")) {
+                const scriptEl = document.getElementById('scriptText');
+                if (scriptEl) scriptEl.value = '';
+                updateWordCount();
+                
+                perBeatImages = {};
+                activeMiniClips = [];
+                lastBreakdownData = null;
+                
+                localStorage.removeItem('active_job_id');
+                localStorage.removeItem('last_active_job_id');
+                
+                const audioCard = document.getElementById('audioCard');
+                const srtCard = document.getElementById('srtCard');
+                const breakdownCard = document.getElementById('breakdownCard');
+                const miniClipsStudioCard = document.getElementById('miniClipsStudioCard');
+                const videoCard = document.getElementById('videoCard');
+                const progressBox = document.getElementById('progressBox');
+                const videoProgressBox = document.getElementById('videoProgressBox');
+                const totalScenesBadge = document.getElementById('totalScenesBadge');
+                const container = document.getElementById('breakdownContainer');
+                const miniClipsGrid = document.getElementById('miniClipsGrid');
+                
+                if (audioCard) audioCard.classList.remove('active');
+                if (srtCard) srtCard.classList.remove('active');
+                if (breakdownCard) breakdownCard.classList.remove('active');
+                if (miniClipsStudioCard) miniClipsStudioCard.style.display = 'none';
+                if (videoCard) videoCard.classList.remove('active');
+                if (progressBox) progressBox.classList.remove('active');
+                if (videoProgressBox) videoProgressBox.classList.remove('active');
+                if (totalScenesBadge) totalScenesBadge.style.display = 'none';
+                if (container) container.innerHTML = '';
+                if (miniClipsGrid) miniClipsGrid.innerHTML = '';
+                
+                const chk1 = document.getElementById('chkStep1');
+                const chk2 = document.getElementById('chkStep2');
+                const chk3 = document.getElementById('chkStep3');
+                if (chk1) chk1.checked = false;
+                if (chk2) chk2.checked = false;
+                if (chk3) chk3.checked = false;
+                
+                updateChecklistStatus();
+                showTopNotification("✨ Studio Reset! Ready to start a new project.", "success");
+            }
+        }
+
         function updateChecklistStatus() {
             const chk1 = document.getElementById('chkStep1');
             const chk2 = document.getElementById('chkStep2');
             const chk3 = document.getElementById('chkStep3');
             const counter = document.getElementById('checklistCounter');
+            const topCounter = document.getElementById('topChecklistBadge');
 
             const totalBeats = (lastBreakdownData && lastBreakdownData.length) ? lastBreakdownData.length : 0;
             const uploadedCount = Object.keys(perBeatImages).length;
@@ -1246,6 +1378,7 @@
             if (chk3 && chk3.checked) completedCount++;
 
             if (counter) counter.textContent = `${completedCount} / 3 Completed`;
+            if (topCounter) topCounter.textContent = `Checklist: ${completedCount} / 3 Completed`;
         }
 
         function toggleBatchPause() {
@@ -1256,6 +1389,7 @@
                 isBatchPaused = true;
                 if (btn) btn.textContent = '▶️ Resume';
                 if (statusDetail) statusDetail.textContent = `⏸️ Paused at Beat #${currentBatchIndex + 1}. Click Resume to continue.`;
+                showTopNotification(`⏸️ Batch task paused at Beat #${currentBatchIndex + 1}.`, 'warning');
             } else {
                 isBatchPaused = false;
                 if (btn) btn.textContent = '⏸️ Pause';
@@ -1294,9 +1428,14 @@
             if (statusEl) {
                 statusEl.style.display = 'block';
                 statusEl.textContent = '⏳ Processing and extracting batch images...';
+                statusEl.style.color = 'var(--text-secondary)';
             }
+            showTopNotification('⏳ Processing and extracting batch images...', 'info');
 
             let fileList = Array.from(files);
+
+            // Filter out system hidden/meta files first
+            fileList = fileList.filter(f => !f.name.startsWith('.') && !f.name.includes('__MACOSX'));
 
             // If single ZIP file uploaded, extract with JSZip
             if (fileList.length === 1 && fileList[0].name.toLowerCase().endsWith('.zip')) {
@@ -1306,7 +1445,11 @@
                     fileList = [];
                     const zipEntries = Object.keys(zip.files).filter(filename => {
                         const lower = filename.toLowerCase();
-                        return !zip.files[filename].dir && (lower.endsWith('.jpg') || lower.endsWith('.jpeg') || lower.endsWith('.png') || lower.endsWith('.webp'));
+                        const clean = filename.split('/').pop();
+                        return !zip.files[filename].dir 
+                            && !filename.includes('__MACOSX')
+                            && !clean.startsWith('.')
+                            && (lower.endsWith('.jpg') || lower.endsWith('.jpeg') || lower.endsWith('.png') || lower.endsWith('.webp'));
                     });
 
                     for (const filename of zipEntries) {
@@ -1316,7 +1459,9 @@
                         fileList.push(imageFile);
                     }
                 } catch (err) {
-                    alert('Error extracting ZIP archive: ' + err.message);
+                    const errMsg = 'Error extracting ZIP archive: ' + err.message;
+                    alert(errMsg);
+                    showTopNotification(errMsg, 'danger', null, errMsg);
                     if (statusEl) statusEl.style.display = 'none';
                     return;
                 }
@@ -1351,9 +1496,30 @@
                 reader.readAsDataURL(file);
             });
 
-            if (statusEl) {
-                statusEl.style.display = 'block';
-                statusEl.textContent = `✓ Successfully assigned ${matchedCount} images sequentially to Beat Cards! (1.jpg -> Beat #1, 2.jpg -> Beat #2...)`;
+            const totalBeats = (lastBreakdownData && lastBreakdownData.length) ? lastBreakdownData.length : 0;
+            const loadedDistinctBeats = Object.keys(perBeatImages).length;
+
+            if (totalBeats > 0 && loadedDistinctBeats < totalBeats) {
+                const missingBeats = [];
+                for (let i = 1; i <= totalBeats; i++) {
+                    if (!perBeatImages[i]) missingBeats.push(i);
+                }
+                const warnMsg = `⚠️ Image Count Mismatch! ${totalBeats} scenes detected, but only ${loadedDistinctBeats} distinct images assigned. Missing Beat(s): #${missingBeats.slice(0, 10).join(', #')}${missingBeats.length > 10 ? '...' : ''}`;
+                if (statusEl) {
+                    statusEl.style.display = 'block';
+                    statusEl.textContent = warnMsg;
+                    statusEl.style.color = '#ff9500';
+                }
+                showTopNotification(warnMsg, 'warning', null, warnMsg);
+                alert(warnMsg);
+            } else {
+                const succMsg = `✓ Successfully assigned ${loadedDistinctBeats} images sequentially to Beat Cards!`;
+                if (statusEl) {
+                    statusEl.style.display = 'block';
+                    statusEl.textContent = succMsg;
+                    statusEl.style.color = '#34c759';
+                }
+                showTopNotification(succMsg, 'success');
             }
 
             const chk1 = document.getElementById('chkStep1');
@@ -1731,6 +1897,8 @@
                 exportBtn.innerHTML = '⏳ Exporting Master Video Timeline...';
             }
 
+            showTopNotification(`🎬 Initiating Master Video Export for ${selectedFilenames.length} clips...`, 'info', 10);
+
             try {
                 const res = await fetch('/api/export-timeline', {
                     method: 'POST',
@@ -1739,35 +1907,81 @@
                 });
 
                 const data = await res.json();
-                if (data.status === 'success') {
-                    const videoElement = document.getElementById('videoElement');
-                    const downloadVideoLink = document.getElementById('downloadVideoLink');
-                    const videoCard = document.getElementById('videoCard');
-                    const qaReportBadge = document.getElementById('qaReportBadge');
-
-                    videoElement.src = data.videoUrl;
-                    downloadVideoLink.href = data.videoUrl;
-                    downloadVideoLink.download = data.videoFilename;
-
-                    if (qaReportBadge) {
-                        qaReportBadge.textContent = data.qaReport;
-                        qaReportBadge.style.display = 'block';
+                if (data.error) {
+                    showTopNotification(`❌ Export Error: ${data.error}`, 'danger', null, data.error);
+                    alert(data.error);
+                    if (exportBtn) {
+                        exportBtn.disabled = false;
+                        exportBtn.innerHTML = '🚀 Export Final Master Video (.MP4)';
                     }
+                    return;
+                }
 
-                    videoCard.classList.add('active');
-                    videoElement.play();
-                    videoCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                } else {
-                    alert(data.error || 'Failed to export timeline video.');
+                if (data.job_id) {
+                    pollExportJobStatus(data.job_id);
                 }
             } catch (e) {
+                showTopNotification(`❌ Export Error: ${e.message}`, 'danger', null, e.message);
                 alert('Error exporting timeline: ' + e.message);
-            } finally {
                 if (exportBtn) {
                     exportBtn.disabled = false;
                     exportBtn.innerHTML = '🚀 Export Final Master Video (.MP4)';
                 }
             }
+        }
+
+        function pollExportJobStatus(jobId) {
+            const exportBtn = document.getElementById('exportTimelineBtn');
+            const pollInterval = setInterval(async () => {
+                try {
+                    const res = await fetch(`/api/job-status?id=${jobId}`);
+                    if (!res.ok) return;
+                    const data = await res.json();
+
+                    showTopNotification(data.status_text || 'Exporting master timeline...', 'info', data.progress || 50);
+
+                    if (data.status === 'completed') {
+                        clearInterval(pollInterval);
+                        if (exportBtn) {
+                            exportBtn.disabled = false;
+                            exportBtn.innerHTML = '🚀 Export Final Master Video (.MP4)';
+                        }
+
+                        if (data.result) {
+                            const videoElement = document.getElementById('videoElement');
+                            const downloadVideoLink = document.getElementById('downloadVideoLink');
+                            const videoCard = document.getElementById('videoCard');
+                            const qaReportBadge = document.getElementById('qaReportBadge');
+
+                            videoElement.src = data.result.videoUrl;
+                            downloadVideoLink.href = data.result.videoUrl;
+                            downloadVideoLink.download = data.result.videoFilename;
+
+                            if (qaReportBadge && data.result.qaReport) {
+                                qaReportBadge.textContent = data.result.qaReport;
+                                qaReportBadge.style.display = 'block';
+                            }
+
+                            videoCard.classList.add('active');
+                            videoElement.play();
+                            videoCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                            showTopNotification(`✅ Master Timeline Exported Successfully! (${data.result.videoFilename})`, 'success', 100);
+                        }
+                    } else if (data.status === 'failed') {
+                        clearInterval(pollInterval);
+                        if (exportBtn) {
+                            exportBtn.disabled = false;
+                            exportBtn.innerHTML = '🚀 Export Final Master Video (.MP4)';
+                        }
+                        const errMsg = data.status_text || 'Master video export failed.';
+                        showTopNotification(`❌ Export Failed: ${errMsg}`, 'danger', null, errMsg);
+                        alert(errMsg);
+                    }
+                } catch (err) {
+                    console.error('Polling export job error:', err);
+                }
+            }, 1000);
         }
 
         function uploadAndRenderVideo() {
