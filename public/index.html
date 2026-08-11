@@ -778,41 +778,240 @@
 </head>
 <body>
 
-    <header>
-        <div class="header-container">
-            <div class="brand">
-                <img src="/static/icon.png" alt="Logo" class="app-logo-img" onerror="this.style.display='none'">
-                <span class="brand-title">Voiceover Studio</span>
-                <span class="brand-badge">Pro</span>
-                <div class="author-tag">
-                    <span class="author-sparkle">✨</span>
-                    <span class="author-by">Created by</span>
-                    <span class="author-name">Vikas Verma</span>
+    <!-- LANDING PAGE VIEW -->
+    <div id="landingView" style="width:100%; min-height:100vh; background:var(--bg-primary);">
+        <!-- Landing Header -->
+        <header style="position:sticky; top:0; z-index:100; backdrop-filter:blur(20px); background:rgba(11,13,23,0.85); border-bottom:1px solid var(--border-subtle);">
+            <div class="header-container" style="max-width:1400px; margin:0 auto; padding:1rem 1.5rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                <div class="brand" style="display:flex; align-items:center; gap:10px;">
+                    <img src="/static/icon.png" alt="Logo" class="app-logo-img" onerror="this.style.display='none'">
+                    <span class="brand-title" style="font-size:1.3rem; font-weight:900; background:linear-gradient(135deg, #0071e3, #34c759); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">Voiceover Studio</span>
+                    <span class="brand-badge" style="font-size:0.75rem; background:rgba(0,113,227,0.15); color:var(--accent-apple); border:1px solid var(--accent-apple); padding:2px 8px; border-radius:12px; font-weight:800;">PRO v2.0</span>
+                </div>
+                
+                <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+                    <a href="#features" style="font-size:0.88rem; font-weight:600; color:var(--text-secondary); text-decoration:none;">Features</a>
+                    <a href="#voice-samples" style="font-size:0.88rem; font-weight:600; color:var(--text-secondary); text-decoration:none;">Voice Samples</a>
+                    
+                    <button class="btn-apple" style="background:linear-gradient(135deg, #0071e3, #34c759); font-weight:800; font-size:0.9rem; padding:10px 20px; box-shadow:0 0 20px rgba(0,113,227,0.4);" onclick="switchView('studio')">
+                        🚀 Launch Studio Workbench →
+                    </button>
                 </div>
             </div>
-            
-            <div class="header-actions" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-                <!-- Project Selector & DB Status -->
-                <div style="display:flex; align-items:center; gap:6px; background:var(--bg-input); border:1px solid var(--accent-apple); border-radius:12px; padding:4px 10px;">
-                    <span style="font-size:0.78rem; font-weight:700; color:var(--text-secondary);">📂 Project:</span>
-                    <select id="projectSelect" style="font-size:0.8rem; font-weight:700; background:transparent; color:var(--accent-apple); border:none; outline:none; cursor:pointer;" onchange="handleProjectSwitch(this.value)">
-                        <option value="default" selected>Default Project (Active)</option>
-                        <option value="new">+ Create New Project...</option>
-                    </select>
-                </div>
-                <button id="headerMuteBtn" class="theme-toggle-btn" style="background: rgba(255, 149, 0, 0.15); color: #ff9500; border-color: rgba(255, 149, 0, 0.35); font-weight: 700;" onclick="toggleStudioMute()">
-                    <span id="headerMuteIcon">🔇</span> <span id="headerMuteText">Muted</span>
-                </button>
-                <button class="theme-toggle-btn" style="background: rgba(255, 59, 48, 0.14); color: #ff3b30; border-color: rgba(255, 59, 48, 0.35); font-weight: 700;" onclick="resetStudioProject()">
-                    🔄 New Project
-                </button>
-                <button class="theme-toggle-btn" onclick="toggleTheme()">
-                    <span id="themeIcon">☀️</span>
-                    <span id="themeText">Light</span>
-                </button>
+        </header>
+
+        <!-- Landing Hero Section -->
+        <section style="max-width:1200px; margin:3.5rem auto 2rem; padding:0 1.5rem; text-align:center; display:flex; flex-direction:column; align-items:center;">
+            <div style="display:inline-flex; align-items:center; gap:8px; background:rgba(0,113,227,0.12); border:1px solid var(--accent-apple); padding:6px 18px; border-radius:30px; margin-bottom:18px; box-shadow:0 0 16px rgba(0,113,227,0.25);">
+                <span style="font-size:0.85rem; font-weight:800; color:var(--accent-apple);">✨ NEXT-GEN YOUTUBE AUTOMATION PIPELINE</span>
             </div>
-        </div>
-    </header>
+
+            <h1 style="font-size:3.2rem; font-weight:900; line-height:1.15; color:var(--text-primary); max-width:900px; margin-bottom:20px; letter-spacing:-0.03em;">
+                Automate <span style="background:linear-gradient(135deg, #0071e3, #34c759, #ff9500); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">500+ Scene</span> YouTube Essays in Minutes
+            </h1>
+
+            <p style="font-size:1.15rem; color:var(--text-secondary); max-width:740px; margin-bottom:32px; line-height:1.6;">
+                The industrial-grade personal production studio for YouTube creators. Render 100-scene video batches safely with zero server crashes, kinetic animated captions, and SQLite cloud state persistence.
+            </p>
+
+            <div style="display:flex; gap:16px; justify-content:center; flex-wrap:wrap; margin-bottom:48px;">
+                <button class="btn-apple" style="background:linear-gradient(135deg, #0071e3, #34c759); font-size:1.1rem; font-weight:900; padding:16px 36px; border-radius:980px; box-shadow:0 10px 30px rgba(0,113,227,0.4);" onclick="switchView('studio')">
+                    🚀 Launch Studio Workbench →
+                </button>
+                <a href="#voice-samples" class="btn-apple btn-apple-secondary" style="font-size:1.05rem; font-weight:700; padding:16px 32px; border-radius:980px; text-decoration:none;">
+                    🎵 Preview Voice Samples
+                </a>
+            </div>
+
+            <!-- Hero Interactive Studio Mockup -->
+            <div style="width:100%; max-width:1050px; background:var(--bg-card); border:1.5px solid var(--accent-apple); border-radius:24px; padding:20px; box-shadow:0 20px 60px rgba(0,113,227,0.3); position:relative; overflow:hidden;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid var(--border-subtle);">
+                    <div style="display:flex; gap:8px;">
+                        <span style="width:12px; height:12px; border-radius:50%; background:#ff3b30;"></span>
+                        <span style="width:12px; height:12px; border-radius:50%; background:#ff9500;"></span>
+                        <span style="width:12px; height:12px; border-radius:50%; background:#34c759;"></span>
+                    </div>
+                    <span style="font-size:0.8rem; font-weight:700; color:var(--accent-apple);">🎬 PRO STUDIO WORKBENCH DEMO</span>
+                    <span style="font-size:0.75rem; color:#34c759; font-weight:800;">🟢 DB Synced</span>
+                </div>
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:14px; text-align:left;">
+                    <div style="background:var(--bg-input); border-radius:12px; padding:12px; border:1px solid var(--border-subtle); font-size:0.78rem; color:var(--text-secondary);">
+                        <div style="font-weight:700; color:var(--text-primary); margin-bottom:6px;">📝 Script & Voice Settings</div>
+                        <p style="margin:0 0 8px 0; line-height:1.3;">"Because in the nightclub business, empty space is a ticking clock..."</p>
+                        <div style="font-size:0.72rem; color:var(--accent-apple); font-weight:700;">Andrew • 100% Word-for-Word</div>
+                    </div>
+                    <div style="background:var(--bg-input); border-radius:12px; padding:12px; border:1px solid var(--accent-apple); font-size:0.78rem; text-align:center;">
+                        <div style="font-weight:800; color:var(--text-primary); margin-bottom:6px;">⚡ 100-Scene Batch Rendering Engine</div>
+                        <div class="progress-bar-animated" style="height:12px; margin-bottom:6px;">
+                            <div class="progress-fill-animated progress-fill-step2" style="width:68%;"></div>
+                        </div>
+                        <span style="font-size:0.72rem; color:var(--accent-apple); font-weight:800;">Batch #1 (Scenes 1 - 100) Active</span>
+                    </div>
+                    <div style="background:var(--bg-input); border-radius:12px; padding:12px; border:1px solid var(--border-subtle); font-size:0.78rem;">
+                        <div style="font-weight:700; color:var(--text-primary); margin-bottom:6px;">📺 Live Monitor & Captions</div>
+                        <div style="background:#000; height:70px; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#ffe500; font-weight:900; font-size:0.82rem; text-shadow:0 0 8px #000;">
+                            BECAUSE IN THE <span style="color:#00ffff; margin-left:4px;">NIGHTCLUB</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Interactive Voice Sample Player Section (USER APPROVED FEATURE) -->
+        <section id="voice-samples" style="max-width:1100px; margin:4rem auto; padding:0 1.5rem;">
+            <div style="background:var(--bg-card); border:1px solid var(--accent-apple); border-radius:24px; padding:32px; box-shadow:0 16px 48px rgba(0,113,227,0.2);">
+                <div style="text-align:center; margin-bottom:24px;">
+                    <span style="font-size:0.8rem; font-weight:800; color:var(--accent-apple); text-transform:uppercase; letter-spacing:0.08em;">🎙️ AI NARRATOR PREVIEW ENGINE</span>
+                    <h2 style="font-size:2rem; font-weight:900; color:var(--text-primary); margin:8px 0;">Interactive Voice Sample Player</h2>
+                    <p style="font-size:0.92rem; color:var(--text-secondary);">Click any voice preset below to hear real YouTube narration audio live on this page.</p>
+                </div>
+
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:14px; margin-bottom:20px;">
+                    <button class="voice-sample-card" onclick="playVoiceSample('andrew')" style="background:var(--bg-input); border:1.5px solid var(--border-subtle); border-radius:16px; padding:16px; text-align:left; cursor:pointer; transition:all 0.3s ease;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                            <span style="font-weight:800; font-size:0.95rem; color:var(--text-primary);">Andrew</span>
+                            <span style="font-size:1.2rem;">▶️</span>
+                        </div>
+                        <div style="font-size:0.78rem; color:var(--accent-apple); font-weight:700;">YouTube Documentary Master</div>
+                        <div style="font-size:0.72rem; color:var(--text-secondary); margin-top:4px;">Warm, energetic tech & business voice.</div>
+                    </button>
+
+                    <button class="voice-sample-card" onclick="playVoiceSample('christopher')" style="background:var(--bg-input); border:1.5px solid var(--border-subtle); border-radius:16px; padding:16px; text-align:left; cursor:pointer; transition:all 0.3s ease;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                            <span style="font-weight:800; font-size:0.95rem; color:var(--text-primary);">Christopher</span>
+                            <span style="font-size:1.2rem;">▶️</span>
+                        </div>
+                        <div style="font-size:0.78rem; color:#5e5ce6; font-weight:700;">Deep Storyteller</div>
+                        <div style="font-size:0.72rem; color:var(--text-secondary); margin-top:4px;">Deep, cinematic tone for mystery & essays.</div>
+                    </button>
+
+                    <button class="voice-sample-card" onclick="playVoiceSample('ava')" style="background:var(--bg-input); border:1.5px solid var(--border-subtle); border-radius:16px; padding:16px; text-align:left; cursor:pointer; transition:all 0.3s ease;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                            <span style="font-weight:800; font-size:0.95rem; color:var(--text-primary);">Ava</span>
+                            <span style="font-size:1.2rem;">▶️</span>
+                        </div>
+                        <div style="font-size:0.78rem; color:#34c759; font-weight:700;">Modern Expressive</div>
+                        <div style="font-size:0.72rem; color:var(--text-secondary); margin-top:4px;">Clear, modern narrator voice.</div>
+                    </button>
+
+                    <button class="voice-sample-card" onclick="playVoiceSample('guy')" style="background:var(--bg-input); border:1.5px solid var(--border-subtle); border-radius:16px; padding:16px; text-align:left; cursor:pointer; transition:all 0.3s ease;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                            <span style="font-weight:800; font-size:0.95rem; color:var(--text-primary);">Guy</span>
+                            <span style="font-size:1.2rem;">▶️</span>
+                        </div>
+                        <div style="font-size:0.78rem; color:#ff9500; font-weight:700;">News Broadcaster</div>
+                        <div style="font-size:0.72rem; color:var(--text-secondary); margin-top:4px;">Authoritative American anchor tone.</div>
+                    </button>
+                </div>
+
+                <audio id="sampleAudioPlayer" controls style="width:100%; border-radius:12px; margin-top:10px; display:none;"></audio>
+                <div id="sampleStatusText" style="text-align:center; font-size:0.8rem; font-weight:700; color:var(--accent-apple);">Select a voice to play sample audio live.</div>
+            </div>
+        </section>
+
+        <!-- Feature Showcase Grid -->
+        <section id="features" style="max-width:1200px; margin:4rem auto; padding:0 1.5rem;">
+            <div style="text-align:center; margin-bottom:36px;">
+                <span style="font-size:0.8rem; font-weight:800; color:var(--accent-apple); text-transform:uppercase; letter-spacing:0.08em;">⚡ PRODUCTION SUPERPOWERS</span>
+                <h2 style="font-size:2.2rem; font-weight:900; color:var(--text-primary); margin:8px 0;">Built for Massive 500+ Scene Projects</h2>
+            </div>
+
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
+                <div style="background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:20px; padding:24px;">
+                    <div style="font-size:2rem; margin-bottom:12px;">⚙️</div>
+                    <h3 style="font-size:1.15rem; font-weight:800; color:var(--text-primary); margin-bottom:8px;">100-Scene Batch Safety Engine</h3>
+                    <p style="font-size:0.85rem; color:var(--text-secondary); line-height:1.5;">Renders mini-clips in safe 100-scene chunks with auto-continuation and 3s CPU cooldown pauses. Never lost data or server crashes.</p>
+                </div>
+
+                <div style="background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:20px; padding:24px;">
+                    <div style="font-size:2rem; margin-bottom:12px;">🗣️</div>
+                    <h3 style="font-size:1.15rem; font-weight:800; color:var(--text-primary); margin-bottom:8px;">Viral Kinetic Subtitles</h3>
+                    <p style="font-size:0.85rem; color:var(--text-secondary); line-height:1.5;">Word-by-word karaoke highlighting presets (Hormozi Yellow Pop, MrBeast Cyan, Minimalist Cinematic, Cyberpunk Glow) rendered natively in FFmpeg.</p>
+                </div>
+
+                <div style="background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:20px; padding:24px;">
+                    <div style="font-size:2rem; margin-bottom:12px;">🎥</div>
+                    <h3 style="font-size:1.15rem; font-weight:800; color:var(--text-primary); margin-bottom:8px;">Cinematic Video Filters</h3>
+                    <p style="font-size:0.85rem; color:var(--text-secondary); line-height:1.5;">Soft dark edge vignette border overlays, Hollywood Teal & Orange color grading, 35mm film grain, and 2.35:1 letterbox bars.</p>
+                </div>
+
+                <div style="background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:20px; padding:24px;">
+                    <div style="font-size:2rem; margin-bottom:12px;">🗄️</div>
+                    <h3 style="font-size:1.15rem; font-weight:800; color:var(--text-primary); margin-bottom:8px;">SQLite Cloud Persistence</h3>
+                    <p style="font-size:0.85rem; color:var(--text-secondary); line-height:1.5;">Integrated `studio.db` database engine saves every scene, audio URL, and clip path instantly. Reopen your project anytime with 0 data loss.</p>
+                </div>
+
+                <div style="background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:20px; padding:24px;">
+                    <div style="font-size:2rem; margin-bottom:12px;">🎙️</div>
+                    <h3 style="font-size:1.15rem; font-weight:800; color:var(--text-primary); margin-bottom:8px;">Natural Speech Pacing</h3>
+                    <p style="font-size:0.85rem; color:var(--text-secondary); line-height:1.5;">Humanized Edge-TTS narrators with custom speech speed sliders, trailing silence trimming, and natural pause padding.</p>
+                </div>
+
+                <div style="background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:20px; padding:24px;">
+                    <div style="font-size:2rem; margin-bottom:12px;">🎞️</div>
+                    <h3 style="font-size:1.15rem; font-weight:800; color:var(--text-primary); margin-bottom:8px;">Multi-Track Video Timeline Editor</h3>
+                    <p style="font-size:0.85rem; color:var(--text-secondary); line-height:1.5;">Inspect, select, and combine rendered mini-clips into full 1080p YouTube videos or 9:16 vertical Shorts instantly.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="creator-footer" style="margin-top:4rem;">
+            <div class="creator-footer-content">
+                <div class="creator-badge-glow">
+                    <span class="creator-name-bold">Voiceover Studio Pro v2.0</span>
+                    <span class="creator-verified">✓ Verified Engine</span>
+                </div>
+                <div style="font-size:0.82rem; color:var(--text-secondary);">
+                    Designed & Created by <strong style="color:var(--text-primary);">Vikas Verma</strong> • Powered by Python & Edge-TTS
+                </div>
+                <div style="font-size:0.75rem; color:#34c759; font-weight:800; margin-top:4px;">
+                    🟢 Engine Status: 100% Operational
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- STUDIO WORKBENCH VIEW -->
+    <div id="studioView">
+        <header>
+            <div class="header-container">
+                <div class="brand">
+                    <img src="/static/icon.png" alt="Logo" class="app-logo-img" onerror="this.style.display='none'">
+                    <span class="brand-title">Voiceover Studio</span>
+                    <span class="brand-badge">Pro</span>
+                    <div class="author-tag">
+                        <span class="author-sparkle">✨</span>
+                        <span class="author-by">Created by</span>
+                        <span class="author-name">Vikas Verma</span>
+                    </div>
+                </div>
+                
+                <div class="header-actions" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                    <button class="theme-toggle-btn" style="background: rgba(0, 113, 227, 0.15); color: var(--accent-apple); border-color: var(--accent-apple); font-weight: 700;" onclick="switchView('landing')">
+                        🏠 Home
+                    </button>
+                    <!-- Project Selector & DB Status -->
+                    <div style="display:flex; align-items:center; gap:6px; background:var(--bg-input); border:1px solid var(--accent-apple); border-radius:12px; padding:4px 10px;">
+                        <span style="font-size:0.78rem; font-weight:700; color:var(--text-secondary);">📂 Project:</span>
+                        <select id="projectSelect" style="font-size:0.8rem; font-weight:700; background:transparent; color:var(--accent-apple); border:none; outline:none; cursor:pointer;" onchange="handleProjectSwitch(this.value)">
+                            <option value="default" selected>Default Project (Active)</option>
+                            <option value="new">+ Create New Project...</option>
+                        </select>
+                    </div>
+                    <button id="headerMuteBtn" class="theme-toggle-btn" style="background: rgba(255, 149, 0, 0.15); color: #ff9500; border-color: rgba(255, 149, 0, 0.35); font-weight: 700;" onclick="toggleStudioMute()">
+                        <span id="headerMuteIcon">🔇</span> <span id="headerMuteText">Muted</span>
+                    </button>
+                    <button class="theme-toggle-btn" style="background: rgba(255, 59, 48, 0.14); color: #ff3b30; border-color: rgba(255, 59, 48, 0.35); font-weight: 700;" onclick="resetStudioProject()">
+                        🔄 New Project
+                    </button>
+                    <button class="theme-toggle-btn" onclick="toggleTheme()">
+                        <span id="themeIcon">☀️</span>
+                        <span id="themeText">Light</span>
+                    </button>
+                </div>
+            </div>
+        </header>
 
     <!-- Top Notification & Studio Activity Command Center Dashboard -->
     <div id="topNotificationDashboard" style="max-width: 1400px; margin: 1.25rem auto 0; padding: 0 1rem; width: 100%;">
@@ -1248,8 +1447,8 @@
                     </div>
                 </div>
             </div>
-        </div>
-    </main>
+    </div>
+    <!-- END STUDIO WORKBENCH VIEW -->
 
     <!-- Mobile Sticky Floating Bar -->
     <div class="mobile-bottom-bar">
@@ -1709,6 +1908,41 @@
             }
         }
 
+        function switchView(viewName) {
+            const landing = document.getElementById('landingView');
+            const studio = document.getElementById('studioView');
+            if (viewName === 'studio') {
+                if (landing) landing.style.display = 'none';
+                if (studio) studio.style.display = 'block';
+                localStorage.setItem('current_studio_view', 'studio');
+            } else {
+                if (landing) landing.style.display = 'block';
+                if (studio) studio.style.display = 'none';
+                localStorage.setItem('current_studio_view', 'landing');
+            }
+        }
+
+        function playVoiceSample(voice) {
+            const player = document.getElementById('sampleAudioPlayer');
+            const statusText = document.getElementById('sampleStatusText');
+            if (!player) return;
+
+            const sampleUrls = {
+                andrew: '/static/samples/andrew_sample.mp3',
+                christopher: '/static/samples/christopher_sample.mp3',
+                ava: '/static/samples/ava_sample.mp3',
+                guy: '/static/samples/guy_sample.mp3'
+            };
+
+            const url = sampleUrls[voice];
+            if (url) {
+                player.src = url;
+                player.style.display = 'block';
+                player.play().catch(e => console.log('Autoplay prevented:', e));
+                if (statusText) statusText.textContent = `▶️ Playing sample: ${voice.toUpperCase()} Narrator`;
+            }
+        }
+
         function resetStudioProject() {
             if (confirm("Are you sure you want to start a new project? This will clear your current script, generated voiceovers, scene cards, and timeline clips.")) {
                 const scriptEl = document.getElementById('scriptText');
@@ -1941,6 +2175,8 @@
         document.addEventListener('DOMContentLoaded', () => {
             setTimeout(drawAnimatedWaveform, 500);
             loadProjectsList();
+            const savedView = localStorage.getItem('current_studio_view') || (window.location.hash === '#studio' ? 'studio' : 'landing');
+            switchView(savedView);
         });
 
         function updateChecklistStatus() {
