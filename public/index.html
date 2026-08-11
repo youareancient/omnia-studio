@@ -1161,6 +1161,7 @@
                     <label style="font-size:0.78rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:6px;">Select AI Art Style Preset:</label>
                     <select id="promptStyleSelect" style="width:100%; font-size:0.85rem; font-weight:700; background:var(--bg-input); color:var(--text-primary); border:1px solid var(--border-subtle); padding:10px 12px; border-radius:12px; outline:none;">
                         <option value="photoreal" selected>📸 Photorealistic 8K Documentary</option>
+                        <option value="horror_auto">👻 Dark Horror & Creepypasta (Auto Character Consistent)</option>
                         <option value="tech_vector">💻 Modern Tech 3D Vector Art</option>
                         <option value="noir_crime">🕵️ Dark Crime & Mystery Noir</option>
                         <option value="cyberpunk">🌆 Cyberpunk Anime Concept Art</option>
@@ -3355,6 +3356,23 @@
             }
         }
 
+        function autoDetectHorrorCharacter(scriptText) {
+            const lower = scriptText ? scriptText.toLowerCase() : '';
+            if (lower.includes('nightclub') || lower.includes('club') || lower.includes('owner') || lower.includes('inventory')) {
+                return '35yo suited nightclub owner in sharp black blazer, slicked dark hair, tense watchful gaze';
+            } else if (lower.includes('investigator') || lower.includes('detective') || lower.includes('police') || lower.includes('case')) {
+                return '38yo weary detective in dark worn trench coat, hollow eyes, messy raven hair';
+            } else if (lower.includes('security') || lower.includes('guard') || lower.includes('watchman') || lower.includes('shift')) {
+                return '45yo tired night security guard in navy uniform with flashlight, silver hair';
+            } else if (lower.includes('hospital') || lower.includes('doctor') || lower.includes('nurse')) {
+                return '32yo intense ER doctor in dark scrubs, silver stethoscope, pale expression';
+            } else if (lower.includes('forest') || lower.includes('woods') || lower.includes('cabin') || lower.includes('hike')) {
+                return '24yo outdoor hiker in yellow waterproof jacket and tactical backpack, intense gaze';
+            } else {
+                return '30yo pale protagonist in dark minimalist jacket, sharp jawline, intense focused gaze';
+            }
+        }
+
         function applyStyleToAllPrompts() {
             const selectEl = document.getElementById('promptStyleSelect');
             const styleKey = selectEl ? selectEl.value : 'photoreal';
@@ -3367,11 +3385,20 @@
                 midjourney_raw: '--ar 16:9 --style raw --v 6.0'
             };
 
-            const suffix = styles[styleKey] || styles['photoreal'];
-
             if (!lastBreakdownData || lastBreakdownData.length === 0) {
                 alert('Please generate Scene Cuts breakdown first to apply visual styles!');
                 return;
+            }
+
+            let suffix = '';
+            let charDetected = '';
+
+            if (styleKey === 'horror_auto') {
+                const scriptText = document.getElementById('scriptText') ? document.getElementById('scriptText').value : '';
+                charDetected = autoDetectHorrorCharacter(scriptText);
+                suffix = `[Character Anchor: ${charDetected}], dark analog horror aesthetic, 16mm grainy film stock, eerie fog, chiaroscuro flashlight shadows --ar 16:9`;
+            } else {
+                suffix = styles[styleKey] || styles['photoreal'];
             }
 
             lastBreakdownData.forEach((sc, idx) => {
@@ -3386,7 +3413,11 @@
                 }
             });
 
-            showTopNotification(`✨ Applied '${styleKey.toUpperCase()}' style tags to all ${lastBreakdownData.length} scene cards!`, 'success');
+            if (styleKey === 'horror_auto') {
+                showTopNotification(`👻 Auto-Detected Horror Character: '${charDetected}' & applied style across all ${lastBreakdownData.length} scene cards!`, 'success');
+            } else {
+                showTopNotification(`✨ Applied '${styleKey.toUpperCase()}' style tags to all ${lastBreakdownData.length} scene cards!`, 'success');
+            }
         }
 
         window.addEventListener('load', () => {
