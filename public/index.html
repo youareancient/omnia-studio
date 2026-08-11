@@ -1121,6 +1121,49 @@
                 </div>
             </section>
 
+            <!-- Voice & Pacing Card -->
+            <section class="apple-card">
+                <div class="card-header">
+                    <span class="card-title">🎙️ Narrator Voice & Pacing</span>
+                    <span style="font-size:0.72rem; font-weight:800; background:rgba(0,113,227,0.15); color:var(--accent-apple); padding:2px 8px; border-radius:10px;">Edge-TTS</span>
+                </div>
+
+                <div class="voice-list">
+                    <div class="voice-item selected" onclick="selectVoice('andrew', this)">
+                        <div class="voice-name">Andrew (YouTube Master)</div>
+                        <div class="voice-desc">Warm, energetic narrator. High retention rate.</div>
+                    </div>
+
+                    <div class="voice-item" onclick="selectVoice('christopher', this)">
+                        <div class="voice-name">Christopher (Deep Storyteller)</div>
+                        <div class="voice-desc">Deep, cinematic tone for crime & mystery.</div>
+                    </div>
+
+                    <div class="voice-item" onclick="selectVoice('ava', this)">
+                        <div class="voice-name">Ava (Modern Expressive)</div>
+                        <div class="voice-desc">Clear, modern narrator for tech & commentary.</div>
+                    </div>
+
+                    <div class="voice-item" onclick="selectVoice('guy', this)">
+                        <div class="voice-name">Guy (News Broadcaster)</div>
+                        <div class="voice-desc">Authoritative American news anchor style.</div>
+                    </div>
+                </div>
+
+                <div class="slider-box" style="margin-top:12px;">
+                    <div class="slider-header">
+                        <span>Speech Pacing</span>
+                        <span id="rateVal" style="color: var(--accent-apple); font-weight: 600;">+1% (Optimal)</span>
+                    </div>
+                    <input type="range" id="rateSlider" min="-10" max="15" value="1" step="1" oninput="updateRateLabel(this.value)">
+                </div>
+
+                <div style="margin-top:10px;">
+                    <label style="font-size: 0.78rem; font-weight: 500; color: var(--text-secondary); display: block; margin-bottom: 6px;">Output File Name</label>
+                    <input type="text" id="filenameInput" placeholder="e.g. data_center_narration.mp3" style="width: 100%; background: var(--bg-input); border: 1px solid var(--border-subtle); padding: 10px 12px; border-radius: 12px; color: var(--text-primary); outline: none; font-size: 0.88rem;">
+                </div>
+            </section>
+
             <!-- Option 6: Script Retention & Scene Pacing Analyzer Card -->
             <section class="apple-card" style="border: 1px solid var(--accent-apple);">
                 <div class="card-header">
@@ -1150,143 +1193,84 @@
                 </div>
             </section>
 
-            <!-- Option 4: AI Image Prompt Styling & Enhancer Card -->
+            <!-- Consolidated Video FX & Style Studio Card -->
             <section class="apple-card">
                 <div class="card-header">
-                    <span class="card-title">🎨 AI Prompt Style Enhancer</span>
-                    <span style="font-size:0.72rem; font-weight:800; background:rgba(255,149,0,0.14); color:#ff9500; padding:2px 8px; border-radius:10px;">Prompt AI</span>
+                    <span class="card-title">🎬 Video FX & Style Studio</span>
+                    <span style="font-size:0.72rem; font-weight:800; background:rgba(175,82,222,0.14); color:#af52de; padding:2px 8px; border-radius:10px;">Pro Controls</span>
                 </div>
 
-                <div style="margin-bottom:12px;">
-                    <label style="font-size:0.78rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:6px;">Select AI Art Style Preset:</label>
-                    <select id="promptStyleSelect" style="width:100%; font-size:0.85rem; font-weight:700; background:var(--bg-input); color:var(--text-primary); border:1px solid var(--border-subtle); padding:10px 12px; border-radius:12px; outline:none;">
-                        <option value="photoreal" selected>📸 Photorealistic 8K Documentary</option>
-                        <option value="horror_auto">👻 Dark Horror & Creepypasta (Auto Character Consistent)</option>
-                        <option value="tech_vector">💻 Modern Tech 3D Vector Art</option>
-                        <option value="noir_crime">🕵️ Dark Crime & Mystery Noir</option>
-                        <option value="cyberpunk">🌆 Cyberpunk Anime Concept Art</option>
-                        <option value="midjourney_raw">🎯 Midjourney Raw (--ar 16:9 --v 6.0)</option>
-                    </select>
-                </div>
-
-                <button class="btn-apple" style="width:100%; font-size:0.82rem; padding:10px; background:linear-gradient(135deg, #ff9500, #ff2d55);" onclick="applyStyleToAllPrompts()">
-                    ✨ Apply Style to All Visual Prompts
-                </button>
-            </section>
-
-            <!-- Transition Effect Selector Card -->
-            <section class="apple-card">
-                <div class="card-header">
-                    <span class="card-title">🎬 Scene Cut Transitions</span>
-                    <span style="font-size:0.72rem; font-weight:800; background:rgba(175,82,222,0.14); color:#af52de; padding:2px 8px; border-radius:10px;">Transitions</span>
-                </div>
-
-                <div style="margin-bottom:6px;">
-                    <label style="font-size:0.78rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:6px;">Master Video Transition:</label>
-                    <select id="transitionStyleSelect" style="width:100%; font-size:0.85rem; font-weight:700; background:var(--bg-input); color:var(--text-primary); border:1px solid var(--border-subtle); padding:10px 12px; border-radius:12px; outline:none;">
-                        <option value="smash_cut" selected>⚡ Smash Cut / Hard Cut (Documentary)</option>
-                        <option value="crossfade">🌊 Smooth Crossfade Dissolve (0.5s)</option>
-                        <option value="fade_black">🌑 Fade to Black (0.4s)</option>
-                        <option value="flash_white">💥 Flash White (0.3s)</option>
-                    </select>
-                </div>
-            </section>
-
-            <!-- Voice & Pacing Card -->
-            <section class="apple-card">
-                <div class="card-header">
-                    <span class="card-title">Voice & Pacing</span>
-                </div>
-
-                <div class="voice-list">
-                    <div class="voice-item selected" onclick="selectVoice('andrew', this)">
-                        <div class="voice-name">Andrew (YouTube Master)</div>
-                        <div class="voice-desc">Warm, energetic narrator. High retention rate.</div>
-                    </div>
-
-                    <div class="voice-item" onclick="selectVoice('christopher', this)">
-                        <div class="voice-name">Christopher (Deep Storyteller)</div>
-                        <div class="voice-desc">Deep, cinematic tone for crime & mystery.</div>
-                    </div>
-
-                    <div class="voice-item" onclick="selectVoice('ava', this)">
-                        <div class="voice-name">Ava (Modern Expressive)</div>
-                        <div class="voice-desc">Clear, modern narrator for tech & commentary.</div>
-                    </div>
-
-                    <div class="voice-item" onclick="selectVoice('guy', this)">
-                        <div class="voice-name">Guy (News Broadcaster)</div>
-                        <div class="voice-desc">Authoritative American news anchor style.</div>
-                    </div>
-                </div>
-
-                <div class="slider-box">
-                    <div class="slider-header">
-                        <span>Speech Pacing</span>
-                        <span id="rateVal" style="color: var(--accent-apple); font-weight: 600;">+1% (Optimal)</span>
-                    </div>
-                    <input type="range" id="rateSlider" min="-10" max="15" value="1" step="1" oninput="updateRateLabel(this.value)">
-                </div>
-
-                <div style="margin-bottom: 0.5rem;">
-                    <label style="font-size: 0.78rem; font-weight: 500; color: var(--text-secondary); display: block; margin-bottom: 6px;">Output File Name</label>
-                    <input type="text" id="filenameInput" placeholder="e.g. data_center_narration.mp3" style="width: 100%; background: var(--bg-input); border: 1px solid var(--border-subtle); padding: 10px 12px; border-radius: 12px; color: var(--text-primary); outline: none; font-size: 0.88rem;">
-                </div>
-            </section>
-
-            <!-- Subtitle Style & Kinetic Animation Selector Card -->
-            <section class="apple-card">
-                <div class="card-header">
-                    <span class="card-title">🗣️ Subtitle Style & Animations</span>
-                    <span style="font-size:0.72rem; font-weight:800; background:rgba(52,199,89,0.14); color:#34c759; padding:2px 8px; border-radius:10px;">Pro Captions</span>
-                </div>
-
-                <div style="margin-bottom:12px;">
-                    <label style="font-size:0.78rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:6px;">Caption Preset:</label>
-                    <select id="subtitlePresetSelect" style="width:100%; font-size:0.85rem; font-weight:700; background:var(--bg-input); color:var(--accent-apple); border:1px solid var(--accent-apple); padding:10px 12px; border-radius:12px; outline:none;" onchange="updateSubtitlePreview()">
-                        <option value="hormozi" selected>⚡ Viral Hormozi (Yellow Word Pop)</option>
-                        <option value="mrbeast">🔥 MrBeast Kinetic (Neon Cyan/Green)</option>
-                        <option value="cinematic">🎬 Minimalist Cinematic (Smooth Fade)</option>
-                        <option value="cyberpunk">🌆 Cyberpunk Neon (Magenta Glow)</option>
-                    </select>
-                </div>
-
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-                    <div>
-                        <label style="font-size:0.75rem; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">Font Style:</label>
-                        <select id="subtitleFontSelect" style="width:100%; font-size:0.78rem; background:var(--bg-input); color:var(--text-primary); border:1px solid var(--border-subtle); padding:6px 8px; border-radius:8px;">
-                            <option value="impact">Impact / Heavy</option>
-                            <option value="montserrat" selected>Montserrat ExtraBold</option>
-                            <option value="inter">Inter Clean</option>
+                <div style="display:flex; flex-direction:column; gap:14px;">
+                    <!-- 1. AI Image Prompt Styling -->
+                    <div style="background:var(--bg-input); padding:12px; border-radius:12px; border:1px solid var(--border-subtle);">
+                        <div style="font-size:0.8rem; font-weight:800; color:var(--text-primary); margin-bottom:6px; display:flex; align-items:center; gap:6px;">
+                            <span>🎨 AI Prompt Style Enhancer</span>
+                        </div>
+                        <select id="promptStyleSelect" style="width:100%; font-size:0.82rem; font-weight:700; background:var(--bg-card); color:var(--text-primary); border:1px solid var(--border-subtle); padding:8px 10px; border-radius:10px; outline:none; margin-bottom:8px;">
+                            <option value="photoreal" selected>📸 Photorealistic 8K Documentary</option>
+                            <option value="horror_auto">👻 Dark Horror & Creepypasta (Auto Character Consistent)</option>
+                            <option value="tech_vector">💻 Modern Tech 3D Vector Art</option>
+                            <option value="noir_crime">🕵️ Dark Crime & Mystery Noir</option>
+                            <option value="cyberpunk">🌆 Cyberpunk Anime Concept Art</option>
+                            <option value="midjourney_raw">🎯 Midjourney Raw (--ar 16:9 --v 6.0)</option>
                         </select>
+                        <button class="btn-apple" style="width:100%; font-size:0.78rem; padding:8px; background:linear-gradient(135deg, #ff9500, #ff2d55);" onclick="applyStyleToAllPrompts()">
+                            ✨ Apply Style to All Visual Prompts
+                        </button>
                     </div>
-                    <div>
-                        <label style="font-size:0.75rem; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">Position:</label>
-                        <select id="subtitlePosSelect" style="width:100%; font-size:0.78rem; background:var(--bg-input); color:var(--text-primary); border:1px solid var(--border-subtle); padding:6px 8px; border-radius:8px;">
-                            <option value="bottom" selected>Bottom Third</option>
-                            <option value="middle">Center Screen</option>
-                            <option value="top">Top Third</option>
+
+                    <!-- 2. Subtitles Style -->
+                    <div style="background:var(--bg-input); padding:12px; border-radius:12px; border:1px solid var(--border-subtle);">
+                        <div style="font-size:0.8rem; font-weight:800; color:var(--text-primary); margin-bottom:6px;">🗣️ Subtitles & Captions</div>
+                        <select id="subtitlePresetSelect" style="width:100%; font-size:0.82rem; font-weight:700; background:var(--bg-card); color:var(--accent-apple); border:1px solid var(--accent-apple); padding:8px 10px; border-radius:10px; outline:none; margin-bottom:8px;" onchange="updateSubtitlePreview()">
+                            <option value="hormozi" selected>⚡ Viral Hormozi (Yellow Word Pop)</option>
+                            <option value="mrbeast">🔥 MrBeast Kinetic (Neon Cyan/Green)</option>
+                            <option value="cinematic">🎬 Minimalist Cinematic (Smooth Fade)</option>
+                            <option value="cyberpunk">🌆 Cyberpunk Neon (Magenta Glow)</option>
                         </select>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+                            <div>
+                                <label style="font-size:0.7rem; color:var(--text-secondary);">Font:</label>
+                                <select id="subtitleFontSelect" style="width:100%; font-size:0.75rem; background:var(--bg-card); color:var(--text-primary); border:1px solid var(--border-subtle); padding:4px 6px; border-radius:6px;">
+                                    <option value="montserrat" selected>Montserrat Bold</option>
+                                    <option value="impact">Impact Heavy</option>
+                                    <option value="inter">Inter Clean</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size:0.7rem; color:var(--text-secondary);">Position:</label>
+                                <select id="subtitlePosSelect" style="width:100%; font-size:0.75rem; background:var(--bg-card); color:var(--text-primary); border:1px solid var(--border-subtle); padding:4px 6px; border-radius:6px;">
+                                    <option value="bottom" selected>Bottom Third</option>
+                                    <option value="middle">Center Screen</option>
+                                    <option value="top">Top Third</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </section>
 
-            <!-- Cinematic Video Filters & Border Overlays Card -->
-            <section class="apple-card">
-                <div class="card-header">
-                    <span class="card-title">🎥 Cinematic Video Filters</span>
-                    <span style="font-size:0.72rem; font-weight:800; background:rgba(255,149,0,0.14); color:#ff9500; padding:2px 8px; border-radius:10px;">FX Engine</span>
-                </div>
-
-                <div style="margin-bottom:12px;">
-                    <label style="font-size:0.78rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:6px;">Video Border & Filter Preset:</label>
-                    <select id="videoFilterSelect" style="width:100%; font-size:0.85rem; font-weight:700; background:var(--bg-input); color:var(--text-primary); border:1px solid var(--border-subtle); padding:10px 12px; border-radius:12px; outline:none;">
-                        <option value="vignette" selected>🌑 Soft Inward Vignette (Dark Edge Border)</option>
-                        <option value="teal_orange">🎨 Hollywood Teal & Orange LUT</option>
-                        <option value="film_grain">📼 35mm Vintage Film Grain</option>
-                        <option value="letterbox">🎞️ 2.35:1 Cinematic Letterbox Bars</option>
-                        <option value="none">None (Clean Original)</option>
-                    </select>
+                    <!-- 3. Video Filters & Transitions -->
+                    <div style="background:var(--bg-input); padding:12px; border-radius:12px; border:1px solid var(--border-subtle);">
+                        <div style="font-size:0.8rem; font-weight:800; color:var(--text-primary); margin-bottom:6px;">🎥 Video Filters & Transitions</div>
+                        <div style="margin-bottom:8px;">
+                            <label style="font-size:0.72rem; color:var(--text-secondary); display:block; margin-bottom:4px;">Color Filter & Vignette:</label>
+                            <select id="videoFilterSelect" style="width:100%; font-size:0.8rem; font-weight:700; background:var(--bg-card); color:var(--text-primary); border:1px solid var(--border-subtle); padding:6px 8px; border-radius:8px; outline:none;">
+                                <option value="vignette" selected>🌑 Soft Inward Vignette (Dark Border)</option>
+                                <option value="teal_orange">🎨 Hollywood Teal & Orange LUT</option>
+                                <option value="film_grain">📼 35mm Vintage Film Grain</option>
+                                <option value="letterbox">🎞️ 2.35:1 Cinematic Letterbox Bars</option>
+                                <option value="none">None (Clean Original)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size:0.72rem; color:var(--text-secondary); display:block; margin-bottom:4px;">Scene Cut Transition:</label>
+                            <select id="transitionStyleSelect" style="width:100%; font-size:0.8rem; font-weight:700; background:var(--bg-card); color:var(--text-primary); border:1px solid var(--border-subtle); padding:6px 8px; border-radius:8px; outline:none;">
+                                <option value="smash_cut" selected>⚡ Smash Cut / Hard Cut (Documentary)</option>
+                                <option value="crossfade">🌊 Smooth Crossfade Dissolve (0.5s)</option>
+                                <option value="fade_black">🌑 Fade to Black (0.4s)</option>
+                                <option value="flash_white">💥 Flash White (0.3s)</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
             </section>
 
