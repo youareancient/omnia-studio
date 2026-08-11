@@ -648,73 +648,117 @@
             color: var(--text-secondary);
         }
 
-        /* Ultra-Rich Animated Glowing Progress Bars */
+        /* Ultra-Rich Animated Glowing Progress Bars & Futuristic Step Cards */
+        .step-card {
+            background: var(--bg-input);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 14px 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.35s ease;
+        }
+
+        .step-card.step-card-active {
+            border-color: var(--accent-apple);
+            box-shadow: 0 0 20px rgba(0, 113, 227, 0.35), inset 0 0 12px rgba(0, 113, 227, 0.15);
+            background: linear-gradient(180deg, rgba(0, 113, 227, 0.08) 0%, var(--bg-input) 100%);
+        }
+
+        .step-card.step-card-complete {
+            border-color: #34c759;
+            box-shadow: 0 0 16px rgba(52, 199, 89, 0.25);
+        }
+
         .progress-bar-animated {
-            height: 14px;
-            background: rgba(255, 255, 255, 0.06);
+            height: 16px;
+            background: rgba(0, 0, 0, 0.45);
             border-radius: 20px;
             overflow: hidden;
-            border: 1px solid var(--border-subtle);
-            box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.8), 0 0 8px rgba(0, 0, 0, 0.5);
             position: relative;
         }
 
         .progress-fill-animated {
             height: 100%;
             border-radius: 20px;
-            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: width 0.45s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
-            background-size: 30px 30px;
+            background-size: 36px 36px;
+        }
+
+        /* Glowing leading edge light pulse on the progress bar fill */
+        .progress-fill-animated::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: 14px;
+            background: #fff;
+            border-radius: 50%;
+            filter: blur(3px);
+            opacity: 0.85;
+            animation: pulseTip 1s infinite alternate;
         }
 
         .progress-fill-step1 {
             background-image: linear-gradient(
                 135deg,
-                rgba(255, 255, 255, 0.25) 25%,
+                rgba(255, 255, 255, 0.3) 25%,
                 transparent 25%,
                 transparent 50%,
-                rgba(255, 255, 255, 0.25) 50%,
-                rgba(255, 255, 255, 0.25) 75%,
+                rgba(255, 255, 255, 0.3) 50%,
+                rgba(255, 255, 255, 0.3) 75%,
                 transparent 75%,
                 transparent
             ), linear-gradient(90deg, #2997ff, #34c759);
-            animation: moveStripes 1.2s linear infinite;
-            box-shadow: 0 0 12px rgba(52, 199, 89, 0.45);
+            animation: moveStripes 1s linear infinite;
+            box-shadow: 0 0 14px rgba(52, 199, 89, 0.6);
         }
 
         .progress-fill-step2 {
             background-image: linear-gradient(
                 135deg,
-                rgba(255, 255, 255, 0.25) 25%,
+                rgba(255, 255, 255, 0.3) 25%,
                 transparent 25%,
                 transparent 50%,
-                rgba(255, 255, 255, 0.25) 50%,
-                rgba(255, 255, 255, 0.25) 75%,
+                rgba(255, 255, 255, 0.3) 50%,
+                rgba(255, 255, 255, 0.3) 75%,
                 transparent 75%,
                 transparent
-            ), linear-gradient(90deg, #0071e3, #30b0c7);
-            animation: moveStripes 1.2s linear infinite;
-            box-shadow: 0 0 12px rgba(0, 113, 227, 0.45);
+            ), linear-gradient(90deg, #0071e3, #5e5ce6, #30b0c7);
+            animation: moveStripes 1s linear infinite;
+            box-shadow: 0 0 14px rgba(0, 113, 227, 0.6);
         }
 
         .progress-fill-step3 {
             background-image: linear-gradient(
                 135deg,
-                rgba(255, 255, 255, 0.25) 25%,
+                rgba(255, 255, 255, 0.3) 25%,
                 transparent 25%,
                 transparent 50%,
-                rgba(255, 255, 255, 0.25) 50%,
-                rgba(255, 255, 255, 0.25) 75%,
+                rgba(255, 255, 255, 0.3) 50%,
+                rgba(255, 255, 255, 0.3) 75%,
                 transparent 75%,
                 transparent
-            ), linear-gradient(90deg, #ff9500, #ff2d55);
-            animation: moveStripes 1.2s linear infinite;
-            box-shadow: 0 0 14px rgba(255, 149, 0, 0.5);
+            ), linear-gradient(90deg, #ff9500, #ff2d55, #af52de);
+            animation: moveStripes 1s linear infinite;
+            box-shadow: 0 0 16px rgba(255, 149, 0, 0.65);
         }
 
         @keyframes moveStripes {
             0% { background-position: 0 0; }
-            100% { background-position: 30px 0; }
+            100% { background-position: 36px 0; }
+        }
+
+        @keyframes pulseTip {
+            0% { opacity: 0.5; transform: scale(0.9); }
+            100% { opacity: 1; transform: scale(1.2); }
         }
     </style>
 </head>
@@ -785,9 +829,9 @@
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin-top: 2px;">
                 
                 <!-- Step 1 Progress Bar: Images Assigned -->
-                <div style="background: var(--bg-input); border: 1px solid var(--border-subtle); border-radius: 14px; padding: 12px 16px; display: flex; flex-direction: column; gap: 8px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.82rem; font-weight: 700; color: var(--text-primary);">
-                        <span>🖼️ Step 1: Images Assigned</span>
+                <div id="stepCard1" class="step-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.84rem; font-weight: 700; color: var(--text-primary);">
+                        <span style="display:flex; align-items:center; gap:6px;">🖼️ Step 1: Images Assigned <span id="step1Badge" style="font-size:0.72rem; font-weight:700; color:var(--text-secondary);"></span></span>
                         <span id="step1ProgressText" style="color: var(--accent-apple); font-weight: 800;">0 / 0 (0%)</span>
                     </div>
                     <div class="progress-bar-animated">
@@ -796,9 +840,9 @@
                 </div>
 
                 <!-- Step 2 Progress Bar: Voiceovers Synthesized -->
-                <div style="background: var(--bg-input); border: 1px solid var(--border-subtle); border-radius: 14px; padding: 12px 16px; display: flex; flex-direction: column; gap: 8px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.82rem; font-weight: 700; color: var(--text-primary);">
-                        <span>🎙️ Step 2: Voiceovers Synthesized</span>
+                <div id="stepCard2" class="step-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.84rem; font-weight: 700; color: var(--text-primary);">
+                        <span style="display:flex; align-items:center; gap:6px;">🎙️ Step 2: Voiceovers Synthesized <span id="step2Badge" style="font-size:0.72rem; font-weight:700; color:var(--text-secondary);"></span></span>
                         <span id="step2ProgressText" style="color: var(--accent-apple); font-weight: 800;">0 / 0 (0%)</span>
                     </div>
                     <div class="progress-bar-animated">
@@ -807,9 +851,9 @@
                 </div>
 
                 <!-- Step 3 Progress Bar: Mini-Clips Rendered -->
-                <div style="background: var(--bg-input); border: 1px solid var(--border-subtle); border-radius: 14px; padding: 12px 16px; display: flex; flex-direction: column; gap: 8px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.82rem; font-weight: 700; color: var(--text-primary);">
-                        <span>🎬 Step 3: Mini-Clips Rendered</span>
+                <div id="stepCard3" class="step-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.84rem; font-weight: 700; color: var(--text-primary);">
+                        <span style="display:flex; align-items:center; gap:6px;">🎬 Step 3: Mini-Clips Rendered <span id="step3Badge" style="font-size:0.72rem; font-weight:700; color:var(--text-secondary);"></span></span>
                         <span id="step3ProgressText" style="color: var(--accent-apple); font-weight: 800;">0 / 0 (0%)</span>
                     </div>
                     <div class="progress-bar-animated">
@@ -965,9 +1009,37 @@
                     </div>
                     <div id="batchUploadStatus" style="display:none; font-size:0.75rem; font-weight:700; color:#34c759; margin-bottom:10px;"></div>
 
+                    <!-- Step 3 Multi-Batch Safety Rendering Toolbar -->
+                    <div style="margin-bottom:14px; padding:12px 14px; background:var(--bg-input); border:1px solid var(--accent-apple); border-radius:12px; display:flex; flex-direction:column; gap:10px; box-shadow:0 4px 16px rgba(0,113,227,0.12);">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                            <span style="font-size:0.84rem; font-weight:800; color:var(--text-primary); display:flex; align-items:center; gap:6px;">
+                                ⚙️ Step 3 Safe Batch Configuration:
+                            </span>
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <label style="font-size:0.78rem; font-weight:700; color:var(--text-secondary);">Batch Size:</label>
+                                <select id="miniClipBatchSize" style="font-size:0.8rem; font-weight:700; background:var(--bg-card); color:var(--text-primary); border:1px solid var(--accent-apple); padding:4px 10px; border-radius:8px;" onchange="updateBatchInfo()">
+                                    <option value="100" selected>100 Scenes / Batch (Recommended)</option>
+                                    <option value="50">50 Scenes / Batch (Low CPU)</option>
+                                    <option value="150">150 Scenes / Batch</option>
+                                    <option value="200">200 Scenes / Batch</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; padding:8px 12px; background:var(--bg-card-secondary); border-radius:8px; border:1px solid var(--border-subtle);">
+                            <span id="batchRangeInfoText" style="font-size:0.78rem; font-weight:700; color:var(--accent-apple);">
+                                🎬 Ready to render Batch #1 (Scenes 1 - 100)
+                            </span>
+                            <label style="display:flex; align-items:center; gap:6px; font-size:0.78rem; font-weight:700; color:var(--text-primary); cursor:pointer;">
+                                <input type="checkbox" id="chkAutoContinueNextBatch" checked style="accent-color:#34c759; width:15px; height:15px;">
+                                Auto-Continue Next Batch (with 3s CPU Cooldown)
+                            </label>
+                        </div>
+                    </div>
+
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; flex-wrap:wrap;">
                         <button id="btnAutoAllVoiceovers" class="btn-apple" style="font-size:0.85rem; min-height:44px; padding:8px 14px; background:linear-gradient(135deg, #0071e3, #34c759);" onclick="autoGenerateAllBeatVoiceovers()">🎙️ Step 2: Auto-Generate All Beat Voiceovers</button>
-                        <button id="btnAutoAllMiniClips" class="btn-apple" style="font-size:0.85rem; min-height:44px; padding:8px 14px; background:linear-gradient(135deg, #FF9500, #FF2D55);" onclick="autoRenderAllSceneMiniClips()">🎬 Step 3: Auto-Render All Scene Mini-Clips</button>
+                        <button id="btnAutoAllMiniClips" class="btn-apple" style="font-size:0.85rem; min-height:44px; padding:8px 14px; background:linear-gradient(135deg, #FF9500, #FF2D55);" onclick="autoRenderBatchMiniClips()">🎬 Step 3: Render Current Batch Mini-Clips</button>
                     </div>
 
                     <div id="autoProgressContainer" style="display:none; margin-top:12px; padding:10px 14px; background:var(--bg-input); border-radius:10px; border:1px solid var(--border-subtle);">
@@ -1339,6 +1411,7 @@
                             lastBreakdownData = data.result.scenes;
                             localStorage.setItem('last_active_job_id', jobId);
                             perBeatImages = {};
+                            perBeatAudio = {};
 
                             const totalCount = data.result.scenes ? data.result.scenes.length : 0;
                             const badgeEl = document.getElementById('totalScenesBadge');
@@ -1444,6 +1517,7 @@
         }
 
         let perBeatImages = {};
+        let perBeatAudio = {};
         let activeMiniClips = [];
         let isBatchPaused = false;
         let currentBatchTask = null; // 'voiceovers' or 'miniclips'
@@ -1509,6 +1583,7 @@
                 updateWordCount();
                 
                 perBeatImages = {};
+                perBeatAudio = {};
                 activeMiniClips = [];
                 lastBreakdownData = null;
                 
@@ -1562,9 +1637,10 @@
             let countAudio = 0;
             if (totalBeats > 0) {
                 for (let i = 0; i < totalBeats; i++) {
-                    const beatNum = lastBreakdownData[i].scene;
+                    const beatNum = lastBreakdownData[i] ? (lastBreakdownData[i].scene || (i + 1)) : (i + 1);
                     const audioEl = document.getElementById(`beatAudioPlayer_${beatNum}`);
-                    if (audioEl && audioEl.src && !audioEl.src.endsWith('#') && audioEl.src !== window.location.href) {
+                    const hasAudioSrc = audioEl && audioEl.getAttribute('src') && audioEl.getAttribute('src').trim() !== '' && audioEl.getAttribute('src') !== '#';
+                    if (perBeatAudio[beatNum] || hasAudioSrc) {
                         countAudio++;
                     }
                 }
@@ -1616,6 +1692,33 @@
 
             if (step3Text) step3Text.textContent = `${countClips} / ${totalBeats} (${step3Pct}%)`;
             if (step3Fill) step3Fill.style.width = `${step3Pct}%`;
+
+            // Active & Completion Visual Card Effects
+            const card1 = document.getElementById('stepCard1');
+            const card2 = document.getElementById('stepCard2');
+            const card3 = document.getElementById('stepCard3');
+            const b1 = document.getElementById('step1Badge');
+            const b2 = document.getElementById('step2Badge');
+            const b3 = document.getElementById('step3Badge');
+
+            if (card1) {
+                card1.classList.toggle('step-card-complete', step1Pct === 100);
+                card1.classList.toggle('step-card-active', step1Pct > 0 && step1Pct < 100);
+                if (b1) b1.textContent = step1Pct === 100 ? '✓ Complete' : (step1Pct > 0 ? '⚡ Active' : '');
+            }
+            if (card2) {
+                card2.classList.toggle('step-card-complete', step2Pct === 100);
+                card2.classList.toggle('step-card-active', step2Pct > 0 && step2Pct < 100);
+                if (b2) b2.textContent = step2Pct === 100 ? '✓ Complete' : (step2Pct > 0 ? '⚡ Active' : '');
+            }
+            if (card3) {
+                card3.classList.toggle('step-card-complete', step3Pct === 100);
+                card3.classList.toggle('step-card-active', step3Pct > 0 && step3Pct < 100);
+                if (b3) b3.textContent = step3Pct === 100 ? '✓ Complete' : (step3Pct > 0 ? '⚡ Active' : '');
+            }
+
+            updateBatchInfo();
+        }
         }
 
         function toggleBatchPause() {
@@ -1871,6 +1974,7 @@
 
                     const data = await res.json();
                     if (data.status === 'success') {
+                        perBeatAudio[beatNum] = data.audioUrl;
                         const audioBox = document.getElementById(`beatAudioBox_${beatNum}`);
                         const audioPlayer = document.getElementById(`beatAudioPlayer_${beatNum}`);
                         if (audioBox && audioPlayer) {
@@ -2048,7 +2152,9 @@
 
                 // Check if beat audio is already generated
                 const existingAudio = document.getElementById(`beatAudioPlayer_${beatNum}`);
-                if (existingAudio && existingAudio.src && !existingAudio.src.endsWith('#') && existingAudio.src !== window.location.href) {
+                const hasExistingAudio = perBeatAudio[beatNum] || (existingAudio && existingAudio.getAttribute('src') && existingAudio.getAttribute('src').trim() !== '' && existingAudio.getAttribute('src') !== '#');
+                if (hasExistingAudio) {
+                    if (existingAudio && existingAudio.src) perBeatAudio[beatNum] = existingAudio.src;
                     console.log(`Skipping already generated voiceover for Beat #${beatNum}`);
                 } else {
                     const ok = await generateBeatAudio(beatNum, false, 3);
@@ -2057,6 +2163,7 @@
                     }
                     await new Promise(r => setTimeout(r, 150));
                 }
+                updateChecklistStatus();
             }
 
             const chk2 = document.getElementById('chkStep2');
@@ -2070,7 +2177,53 @@
             showTopNotification(finishMsg, 'success', 100);
         }
 
-        async function autoRenderAllSceneMiniClips(isResuming = false) {
+        function updateBatchInfo() {
+            const rangeTextEl = document.getElementById('batchRangeInfoText');
+            const masterBtn = document.getElementById('btnAutoAllMiniClips');
+            if (!rangeTextEl) return;
+
+            const total = (lastBreakdownData && lastBreakdownData.length) ? lastBreakdownData.length : 0;
+            if (total === 0) {
+                rangeTextEl.textContent = '🎬 Load script breakdown first to initialize batch rendering.';
+                return;
+            }
+
+            const batchSize = parseInt(document.getElementById('miniClipBatchSize')?.value || '100');
+            const countClips = activeMiniClips ? activeMiniClips.length : 0;
+
+            // Find first unrendered beat index
+            let startIndex = 0;
+            for (let i = 0; i < total; i++) {
+                const beatNum = lastBreakdownData[i] ? (lastBreakdownData[i].scene || (i + 1)) : (i + 1);
+                const hasClip = activeMiniClips.some(c => c.sceneIndex === beatNum);
+                if (!hasClip) {
+                    startIndex = i;
+                    break;
+                }
+                if (i === total - 1) {
+                    startIndex = total;
+                }
+            }
+
+            if (startIndex >= total) {
+                rangeTextEl.textContent = `🎉 All ${total}/${total} Scene Mini-Clips Completed Cleanly!`;
+                if (masterBtn && !currentBatchTask) {
+                    masterBtn.textContent = '✓ All Scene Mini-Clips Completed';
+                }
+                return;
+            }
+
+            const currentBatchNum = Math.floor(startIndex / batchSize) + 1;
+            const totalBatches = Math.ceil(total / batchSize);
+            const endIndex = Math.min(startIndex + batchSize, total);
+
+            rangeTextEl.textContent = `🎬 Ready for Batch #${currentBatchNum} of ${totalBatches} (Scenes ${startIndex + 1} - ${endIndex}) • ${countClips}/${total} Rendered`;
+            if (masterBtn && !currentBatchTask) {
+                masterBtn.textContent = `🎬 Step 3: Render Batch #${currentBatchNum} (Scenes ${startIndex + 1} - ${endIndex})`;
+            }
+        }
+
+        async function autoRenderBatchMiniClips(isAutoContinuing = false) {
             if (!lastBreakdownData || !lastBreakdownData.length) {
                 alert('Please click Scene Cuts first to generate your beat cards!');
                 return;
@@ -2078,7 +2231,7 @@
 
             const uploadedBeats = Object.keys(perBeatImages);
             if (!uploadedBeats.length) {
-                alert('Please upload an image for at least one Beat Card before running 1-Click Auto-Render!');
+                alert('Please upload an image for at least one Beat Card before running Step 3 Auto-Render!');
                 return;
             }
 
@@ -2091,18 +2244,44 @@
 
             currentBatchTask = 'miniclips';
 
-            if (!isResuming) {
+            if (!isAutoContinuing) {
                 isBatchPaused = false;
-                currentBatchIndex = 0;
                 if (pauseBtn) pauseBtn.textContent = '⏸️ Pause';
             }
 
             if (masterBtn) { masterBtn.disabled = true; }
-            if (autoStatus) { autoStatus.style.display = 'inline'; autoStatus.textContent = '⏳ Auto-Rendering Mini-Clips...'; }
+            if (autoStatus) { autoStatus.style.display = 'inline'; autoStatus.textContent = '⏳ Rendering Mini-Clips Batch...'; }
             if (autoBarBox) { autoBarBox.style.display = 'block'; }
 
             const total = lastBreakdownData.length;
-            for (let i = currentBatchIndex; i < total; i++) {
+            const batchSize = parseInt(document.getElementById('miniClipBatchSize')?.value || '100');
+
+            // Determine starting beat index for this batch
+            let startIndex = 0;
+            for (let i = 0; i < total; i++) {
+                const beatNum = lastBreakdownData[i] ? (lastBreakdownData[i].scene || (i + 1)) : (i + 1);
+                const hasClip = activeMiniClips.some(c => c.sceneIndex === beatNum);
+                if (!hasClip) {
+                    startIndex = i;
+                    break;
+                }
+                if (i === total - 1) {
+                    startIndex = total;
+                }
+            }
+
+            if (startIndex >= total) {
+                showTopNotification(`🎉 All ${total} scene mini-clips are already rendered!`, 'success', 100);
+                if (masterBtn) { masterBtn.disabled = false; masterBtn.textContent = '✓ All Scene Mini-Clips Completed'; }
+                currentBatchTask = null;
+                return;
+            }
+
+            const endIndex = Math.min(startIndex + batchSize, total);
+            const currentBatchNum = Math.floor(startIndex / batchSize) + 1;
+            const totalBatches = Math.ceil(total / batchSize);
+
+            for (let i = startIndex; i < endIndex; i++) {
                 if (isBatchPaused) {
                     currentBatchIndex = i;
                     if (masterBtn) { masterBtn.disabled = false; }
@@ -2110,19 +2289,19 @@
                 }
 
                 currentBatchIndex = i;
-                const beatNum = lastBreakdownData[i].scene;
-                if (perBeatImages[beatNum]) {
-                    const pct = Math.round(((i + 1) / total) * 100);
-                    if (autoFill) autoFill.style.width = `${pct}%`;
-                    
-                    const statusMsg = `🎬 Auto-Rendering Mini-Clip ${i + 1}/${total} (Beat #${beatNum})...`;
-                    if (autoStatus) autoStatus.textContent = statusMsg;
-                    if (statusDetail) statusDetail.textContent = statusMsg;
-                    showTopNotification(statusMsg, 'info', pct);
+                const beatNum = lastBreakdownData[i].scene || (i + 1);
+                const pct = Math.round(((i + 1) / total) * 100);
+                if (autoFill) autoFill.style.width = `${pct}%`;
+                
+                const statusMsg = `🎬 Rendering Batch ${currentBatchNum}/${totalBatches}: Clip ${i + 1}/${total} (Beat #${beatNum})...`;
+                if (autoStatus) autoStatus.textContent = statusMsg;
+                if (statusDetail) statusDetail.textContent = statusMsg;
+                showTopNotification(statusMsg, 'info', pct);
 
+                if (perBeatImages[beatNum]) {
                     // Check if mini-clip is already rendered
-                    const existingVideo = document.getElementById(`beatVideo_${beatNum}`);
-                    if (existingVideo && existingVideo.src && !existingVideo.src.endsWith('#') && existingVideo.src !== window.location.href) {
+                    const hasClip = activeMiniClips.some(c => c.sceneIndex === beatNum);
+                    if (hasClip) {
                         console.log(`Skipping already rendered mini-clip for Beat #${beatNum}`);
                     } else {
                         const ok = await generateBeatClip(beatNum, false, 3);
@@ -2132,17 +2311,43 @@
                         await new Promise(r => setTimeout(r, 150));
                     }
                 }
+                updateChecklistStatus();
             }
 
-            const chk3 = document.getElementById('chkStep3');
-            if (chk3) chk3.checked = true;
-            updateChecklistStatus();
+            const autoContinue = document.getElementById('chkAutoContinueNextBatch')?.checked;
+            
+            if (endIndex < total && autoContinue && !isBatchPaused) {
+                const cooldownMsg = `⏳ Batch #${currentBatchNum} Completed (${endIndex}/${total} Clips). CPU Cooldown 3s before Batch #${currentBatchNum + 1}...`;
+                if (autoStatus) autoStatus.textContent = cooldownMsg;
+                if (statusDetail) statusDetail.textContent = cooldownMsg;
+                showTopNotification(cooldownMsg, 'warning', Math.round((endIndex / total) * 100));
 
-            const finishMsg = `✓ All Scene Mini-Clips Auto-Rendered & Loaded into Timeline Studio!`;
-            if (autoStatus) autoStatus.textContent = finishMsg;
-            if (statusDetail) statusDetail.textContent = finishMsg;
-            if (masterBtn) { masterBtn.disabled = false; }
-            showTopNotification(finishMsg, 'success', 100);
+                await new Promise(r => setTimeout(r, 3000));
+
+                if (!isBatchPaused) {
+                    await autoRenderBatchMiniClips(true);
+                    return;
+                }
+            }
+
+            if (endIndex >= total || activeMiniClips.length >= total) {
+                const chk3 = document.getElementById('chkStep3');
+                if (chk3) chk3.checked = true;
+                updateChecklistStatus();
+
+                const finishMsg = `✓ All ${total} Scene Mini-Clips Rendered across Batches & Loaded into Timeline Studio!`;
+                if (autoStatus) autoStatus.textContent = finishMsg;
+                if (statusDetail) statusDetail.textContent = finishMsg;
+                if (masterBtn) { masterBtn.disabled = false; }
+                showTopNotification(finishMsg, 'success', 100);
+            } else {
+                const batchDoneMsg = `✓ Batch #${currentBatchNum}/${totalBatches} Completed! (${endIndex}/${total} Clips Rendered). Click to start Batch #${currentBatchNum + 1}.`;
+                if (autoStatus) autoStatus.textContent = batchDoneMsg;
+                if (statusDetail) statusDetail.textContent = batchDoneMsg;
+                if (masterBtn) { masterBtn.disabled = false; }
+                showTopNotification(batchDoneMsg, 'success', Math.round((endIndex / total) * 100));
+            }
+            currentBatchTask = null;
         }
 
         function renderMiniClipsGrid(clips) {
