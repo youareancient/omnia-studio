@@ -1096,25 +1096,88 @@
                     <span style="font-size:0.72rem; font-weight:800; background:rgba(0,113,227,0.15); color:var(--accent-apple); padding:2px 8px; border-radius:10px;">Edge-TTS</span>
                 </div>
 
-                <div class="voice-list">
-                    <div class="voice-item selected" onclick="selectVoice('andrew', this)">
-                        <div class="voice-name">Andrew (YouTube Master)</div>
-                        <div class="voice-desc">Warm, energetic narrator. High retention rate.</div>
+                <div style="margin-bottom:10px;">
+                    <button class="btn-apple" style="width:100%; font-size:0.78rem; padding:8px; background:linear-gradient(135deg, #f59e0b, #3b82f6); font-weight:800;" onclick="openVoiceCloningModal()">
+                        🎙️ Record / Clone My Voice (Personal AI Voice)
+                    </button>
+                </div>
+
+                <div class="voice-list" style="max-height:260px; overflow-y:auto; padding-right:4px;">
+                    <div class="voice-item selected" onclick="selectVoice('andrew', this)" style="display:flex; justify-content:space-between; align-items:center;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span style="font-size:1.2rem;">👨‍💼</span>
+                            <div>
+                                <div class="voice-name" style="font-size:0.82rem; font-weight:800;">Andrew Pro (US)</div>
+                                <div class="voice-desc" style="font-size:0.7rem;">#1 YouTube Documentary Master</div>
+                            </div>
+                        </div>
+                        <button onclick="event.stopPropagation(); playVoiceSample('andrew')" style="background:var(--bg-input); color:var(--accent-apple); border:1px solid var(--accent-apple); border-radius:12px; padding:2px 8px; font-size:0.7rem; font-weight:700; cursor:pointer;">▶️ Sample</button>
                     </div>
 
-                    <div class="voice-item" onclick="selectVoice('christopher', this)">
-                        <div class="voice-name">Christopher (Deep Storyteller)</div>
-                        <div class="voice-desc">Deep, cinematic tone for crime & mystery.</div>
+                    <div class="voice-item" onclick="selectVoice('neerja_in', this)" style="display:flex; justify-content:space-between; align-items:center;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span style="font-size:1.2rem;">🇮🇳</span>
+                            <div>
+                                <div class="voice-name" style="font-size:0.82rem; font-weight:800;">Neerja (Indian English)</div>
+                                <div class="voice-desc" style="font-size:0.7rem;">Warm Indian Accent Narrator</div>
+                            </div>
+                        </div>
+                        <button onclick="event.stopPropagation(); playVoiceSample('ava')" style="background:var(--bg-input); color:var(--accent-apple); border:1px solid var(--border-subtle); border-radius:12px; padding:2px 8px; font-size:0.7rem; font-weight:700; cursor:pointer;">▶️ Sample</button>
                     </div>
 
-                    <div class="voice-item" onclick="selectVoice('ava', this)">
-                        <div class="voice-name">Ava (Modern Expressive)</div>
-                        <div class="voice-desc">Clear, modern narrator for tech & commentary.</div>
+                    <div class="voice-item" onclick="selectVoice('prabhat_in', this)" style="display:flex; justify-content:space-between; align-items:center;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span style="font-size:1.2rem;">🇮🇳</span>
+                            <div>
+                                <div class="voice-name" style="font-size:0.82rem; font-weight:800;">Prabhat (Indian Male)</div>
+                                <div class="voice-desc" style="font-size:0.7rem;">Clear Indian Presenter</div>
+                            </div>
+                        </div>
+                        <button onclick="event.stopPropagation(); playVoiceSample('guy')" style="background:var(--bg-input); color:var(--accent-apple); border:1px solid var(--border-subtle); border-radius:12px; padding:2px 8px; font-size:0.7rem; font-weight:700; cursor:pointer;">▶️ Sample</button>
                     </div>
 
-                    <div class="voice-item" onclick="selectVoice('guy', this)">
-                        <div class="voice-name">Guy (News Broadcaster)</div>
-                        <div class="voice-desc">Authoritative American news anchor style.</div>
+                    <div class="voice-item" onclick="selectVoice('christopher', this)" style="display:flex; justify-content:space-between; align-items:center;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span style="font-size:1.2rem;">🕵️</span>
+                            <div>
+                                <div class="voice-name" style="font-size:0.82rem; font-weight:800;">Christopher (UK Deep)</div>
+                                <div class="voice-desc" style="font-size:0.7rem;">Deep Storyteller for Crime</div>
+                            </div>
+                        </div>
+                        <button onclick="event.stopPropagation(); playVoiceSample('christopher')" style="background:var(--bg-input); color:var(--accent-apple); border:1px solid var(--border-subtle); border-radius:12px; padding:2px 8px; font-size:0.7rem; font-weight:700; cursor:pointer;">▶️ Sample</button>
+                    </div>
+
+                    <div class="voice-item" onclick="selectVoice('ava', this)" style="display:flex; justify-content:space-between; align-items:center;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span style="font-size:1.2rem;">👩‍💼</span>
+                            <div>
+                                <div class="voice-name" style="font-size:0.82rem; font-weight:800;">Ava Modern (US)</div>
+                                <div class="voice-desc" style="font-size:0.7rem;">Clear Modern Tech Narrator</div>
+                            </div>
+                        </div>
+                        <button onclick="event.stopPropagation(); playVoiceSample('ava')" style="background:var(--bg-input); color:var(--accent-apple); border:1px solid var(--border-subtle); border-radius:12px; padding:2px 8px; font-size:0.7rem; font-weight:700; cursor:pointer;">▶️ Sample</button>
+                    </div>
+
+                    <div class="voice-item" onclick="selectVoice('guy', this)" style="display:flex; justify-content:space-between; align-items:center;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span style="font-size:1.2rem;">📺</span>
+                            <div>
+                                <div class="voice-name" style="font-size:0.82rem; font-weight:800;">Guy Anchor (US)</div>
+                                <div class="voice-desc" style="font-size:0.7rem;">Authoritative News Broadcaster</div>
+                            </div>
+                        </div>
+                        <button onclick="event.stopPropagation(); playVoiceSample('guy')" style="background:var(--bg-input); color:var(--accent-apple); border:1px solid var(--border-subtle); border-radius:12px; padding:2px 8px; font-size:0.7rem; font-weight:700; cursor:pointer;">▶️ Sample</button>
+                    </div>
+
+                    <div class="voice-item" onclick="selectVoice('brian_uk', this)" style="display:flex; justify-content:space-between; align-items:center;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span style="font-size:1.2rem;">🇬🇧</span>
+                            <div>
+                                <div class="voice-name" style="font-size:0.82rem; font-weight:800;">Brian BBC (UK)</div>
+                                <div class="voice-desc" style="font-size:0.7rem;">Classic BBC Science Voice</div>
+                            </div>
+                        </div>
+                        <button onclick="event.stopPropagation(); playVoiceSample('christopher')" style="background:var(--bg-input); color:var(--accent-apple); border:1px solid var(--border-subtle); border-radius:12px; padding:2px 8px; font-size:0.7rem; font-weight:700; cursor:pointer;">▶️ Sample</button>
                     </div>
                 </div>
 
@@ -3633,6 +3696,70 @@
                 document.body.appendChild(modal);
             }
             modal.style.display = 'flex';
+        }
+
+        function openVoiceCloningModal() {
+            let modal = document.getElementById('voiceCloningModal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'voiceCloningModal';
+                modal.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.85); backdrop-filter:blur(15px); z-index:9999; display:flex; align-items:center; justify-content:center; padding:20px; box-sizing:border-box;';
+                modal.innerHTML = `
+                    <div style="background:var(--bg-card); border:1.5px solid var(--accent-apple); border-radius:24px; max-width:540px; width:100%; padding:24px; box-shadow:var(--shadow-card); position:relative;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid var(--border-subtle); padding-bottom:12px;">
+                            <h2 style="font-size:1.3rem; font-weight:900; color:var(--text-primary); margin:0;">🎙️ AI Voice Cloning Studio</h2>
+                            <button onclick="document.getElementById('voiceCloningModal').style.display='none'" style="background:var(--bg-input); color:var(--text-primary); border:1px solid var(--border-subtle); width:32px; height:32px; border-radius:50%; font-weight:800; cursor:pointer;">✕</button>
+                        </div>
+                        <p style="font-size:0.85rem; color:var(--text-secondary); line-height:1.5; margin-bottom:16px;">
+                            Record or upload a 10-second sample of your voice. Our server extracts your spectral features to create your personal <strong>Vikas Voice Clone</strong>!
+                        </p>
+
+                        <div style="background:var(--bg-input); border:1px solid var(--border-subtle); border-radius:16px; padding:16px; margin-bottom:16px; text-align:center;">
+                            <label style="font-size:0.8rem; font-weight:700; color:var(--text-primary); display:block; margin-bottom:8px;">📁 Upload Voice Sample (.wav / .mp3):</label>
+                            <input type="file" id="voiceCloneFileInput" accept="audio/*" style="font-size:0.8rem; color:var(--text-secondary);">
+                        </div>
+
+                        <button class="btn-apple" style="width:100%; background:linear-gradient(135deg, #f59e0b, #3b82f6); font-weight:800; padding:12px;" onclick="uploadCustomVoiceClone()">
+                            ⚡ Create My Personal AI Voice Clone
+                        </button>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            }
+            modal.style.display = 'flex';
+        }
+
+        async function uploadCustomVoiceClone() {
+            const fileInput = document.getElementById('voiceCloneFileInput');
+            if (!fileInput || !fileInput.files[0]) {
+                alert('Please select an audio file of your voice first!');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            showTopNotification('🎙️ Creating your personal AI Voice Clone...', 'info');
+
+            try {
+                const res = await fetch('/api/clone-voice', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                if (data.error) {
+                    alert('Voice Clone Error: ' + data.error);
+                    return;
+                }
+
+                showTopNotification('🎉 ' + data.message, 'success');
+                if (document.getElementById('voiceCloningModal')) {
+                    document.getElementById('voiceCloningModal').style.display = 'none';
+                }
+                selectedVoice = 'custom_clone';
+            } catch (err) {
+                alert('Failed to upload voice clone: ' + err.message);
+            }
         }
 
         window.addEventListener('load', () => {

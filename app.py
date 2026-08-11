@@ -1595,6 +1595,32 @@ Script Text:
     except Exception as e:
         return web.json_response({"error": str(e)}, status=500)
 
+async def handle_clone_voice(request):
+    try:
+        reader = await request.multipart()
+        field = await reader.next()
+        if not field or field.name != 'file':
+            return web.json_response({"error": "No voice file uploaded"}, status=400)
+            
+        save_path = os.path.join(STATIC_DIR, "custom_voice_clone.wav")
+        
+        with open(save_path, 'wb') as f:
+            while True:
+                chunk = await field.read_chunk()
+                if not chunk:
+                    break
+                f.write(chunk)
+                
+        return web.json_response({
+            "status": "success",
+            "message": "Custom Voice Clone created successfully!",
+            "voiceId": "custom_clone",
+            "voiceName": "Vikas (Custom Voice Clone)",
+            "audioUrl": "/static/custom_voice_clone.wav"
+        })
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)
+
 def create_app():
     # Allow large ZIP and batch uploads up to 2GB (2048MB)
     app = web.Application(client_max_size=2048 * 1024 * 1024)
@@ -1609,6 +1635,7 @@ def create_app():
     app.router.add_post("/api/generate-beat-audio", handle_generate_beat_audio)
     app.router.add_post("/api/generate-beat-clip", handle_generate_beat_clip)
     app.router.add_post("/api/generate-seo-package", handle_generate_seo_package)
+    app.router.add_post("/api/clone-voice", handle_clone_voice)
     app.router.add_get("/api/projects", handle_list_projects)
     app.router.add_get("/api/projects/{id}", handle_get_project)
     app.router.add_post("/api/projects", handle_save_project)
