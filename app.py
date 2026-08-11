@@ -1621,6 +1621,19 @@ async def handle_clone_voice(request):
     except Exception as e:
         return web.json_response({"error": str(e)}, status=500)
 
+async def handle_verify_passcode(request):
+    try:
+        data = await request.json()
+        passcode = data.get("passcode", "").strip()
+        master_pwd = os.environ.get("STUDIO_PASSWORD", "vikas2026").strip()
+        
+        if passcode == master_pwd:
+            return web.json_response({"unlocked": True, "status": "success"})
+        else:
+            return web.json_response({"unlocked": False, "error": "Incorrect Passcode"}, status=401)
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)
+
 def create_app():
     # Allow large ZIP and batch uploads up to 2GB (2048MB)
     app = web.Application(client_max_size=2048 * 1024 * 1024)
@@ -1636,6 +1649,7 @@ def create_app():
     app.router.add_post("/api/generate-beat-clip", handle_generate_beat_clip)
     app.router.add_post("/api/generate-seo-package", handle_generate_seo_package)
     app.router.add_post("/api/clone-voice", handle_clone_voice)
+    app.router.add_post("/api/verify-passcode", handle_verify_passcode)
     app.router.add_get("/api/projects", handle_list_projects)
     app.router.add_get("/api/projects/{id}", handle_get_project)
     app.router.add_post("/api/projects", handle_save_project)
