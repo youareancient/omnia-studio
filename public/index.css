@@ -85,6 +85,14 @@ h1, h2, h3, .brand-title {
     z-index: 1;
 }
 
+body.in-landing-mode #landingView {
+    display: block !important;
+}
+
+body.in-landing-mode #studioView {
+    display: none !important;
+}
+
 body.in-studio-mode #landingView {
     display: none !important;
 }
