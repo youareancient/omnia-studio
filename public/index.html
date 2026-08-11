@@ -1207,12 +1207,16 @@
                             <span>🎨 AI Prompt Style Enhancer</span>
                         </div>
                         <select id="promptStyleSelect" style="width:100%; font-size:0.82rem; font-weight:700; background:var(--bg-card); color:var(--text-primary); border:1px solid var(--border-subtle); padding:8px 10px; border-radius:10px; outline:none; margin-bottom:8px;">
-                            <option value="photoreal" selected>📸 Photorealistic 8K Documentary</option>
-                            <option value="horror_auto">👻 Dark Horror & Creepypasta (Auto Character Consistent)</option>
-                            <option value="tech_vector">💻 Modern Tech 3D Vector Art</option>
-                            <option value="noir_crime">🕵️ Dark Crime & Mystery Noir</option>
-                            <option value="cyberpunk">🌆 Cyberpunk Anime Concept Art</option>
-                            <option value="midjourney_raw">🎯 Midjourney Raw (--ar 16:9 --v 6.0)</option>
+                            <option value="vox_2d" selected>🎨 2D Vox Editorial Vector (YouTube Documentary)</option>
+                            <option value="kurzgesagt">🪐 Kurzgesagt Flat Vector (Educational Space)</option>
+                            <option value="claymation">🕵️ 3D Claymation & Stop-Motion (Tactile Studio)</option>
+                            <option value="photoreal">📸 35mm Hollywood Cinematic Film (Photorealistic)</option>
+                            <option value="horror_auto">👻 Dark Analog Horror (Auto Character Consistent)</option>
+                            <option value="engraving">📜 19th C. Vintage Copperplate Engraving (History)</option>
+                            <option value="cyberpunk">🌆 Cyberpunk Anime & Webtoon (Glowing Neon)</option>
+                            <option value="tech_vector">💻 Modern Tech 3D Isometric Render (Business/Tech)</option>
+                            <option value="oil_painting">🖌️ Renaissance Oil Painting (Impasto Canvas)</option>
+                            <option value="midjourney_raw">🎯 Midjourney Raw Widescreen (--ar 16:9 --v 6.0)</option>
                         </select>
                         <button class="btn-apple" style="width:100%; font-size:0.78rem; padding:8px; background:linear-gradient(135deg, #ff9500, #ff2d55);" onclick="applyStyleToAllPrompts()">
                             ✨ Apply Style to All Visual Prompts
@@ -3359,13 +3363,17 @@
 
         function applyStyleToAllPrompts() {
             const selectEl = document.getElementById('promptStyleSelect');
-            const styleKey = selectEl ? selectEl.value : 'photoreal';
+            const styleKey = selectEl ? selectEl.value : 'vox_2d';
 
             const styles = {
-                photoreal: 'photorealistic 8K, highly detailed documentary photography, cinematic lighting, hyperdetailed --ar 16:9',
-                tech_vector: 'modern tech 3D vector illustration, isometric clean render, vibrant corporate colors --ar 16:9',
-                noir_crime: 'dark crime noir illustration, dramatic shadows, moody atmospheric lighting, cinematic color grading --ar 16:9',
-                cyberpunk: 'cyberpunk anime concept art, neon glowing lights, detailed digital art --ar 16:9',
+                vox_2d: '2D Vox editorial vector illustration, Vox documentary art style, clean crisp black outlines, flat elegant shading, 60-30-10 color balance on warm cream canvas --ar 16:9',
+                kurzgesagt: 'Kurzgesagt art style, flat vector illustration, vibrant neon colors, clean geometric shapes, high contrast educational graphics --ar 16:9',
+                claymation: '3D claymation stop-motion animation style, tactile plasticine clay figures, dramatic chiaroscuro studio lighting, detailed clay texture --ar 16:9',
+                photoreal: '35mm film photograph, shallow depth of field, anamorphic lens flare, cinematic color grading, photorealistic movie still --ar 16:9',
+                engraving: '19th century vintage copperplate engraving, etched ink cross-hatching, antique parchment paper texture, classic historical illustration --ar 16:9',
+                cyberpunk: 'cyberpunk anime webtoon illustration, cell-shaded animation, vibrant glowing neon lights, futuristic dark cityscape --ar 16:9',
+                tech_vector: 'modern tech 3D isometric vector render, clean plastic surfaces, vibrant corporate tech palette, 8K resolution --ar 16:9',
+                oil_painting: 'masterpiece Renaissance oil painting, rich impasto brushstrokes, dramatic chiaroscuro Rembrandt lighting, classic canvas texture --ar 16:9',
                 midjourney_raw: '--ar 16:9 --style raw --v 6.0'
             };
 
