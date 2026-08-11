@@ -1,43 +1,44 @@
-/* YOUTUBE VOICEOVER STUDIO PRO - DESIGN SYSTEM & LAYOUT ENGINE */
+/* OMNIA STUDIO PRO - MIDNIGHT SLATE & AMBER DESIGN SYSTEM (LINEAR / RAYCAST STYLE) */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@600;700;800;900&family=Outfit:wght@700;800;900&display=swap');
 
 :root {
-    /* Color Palette Tokens */
-    --bg-primary: #0a0c16;
-    --bg-card: #131726;
-    --bg-card-secondary: #1a1f33;
-    --bg-input: #0f1322;
-    --border-subtle: rgba(255, 255, 255, 0.1);
-    --border-glow: rgba(0, 113, 227, 0.4);
+    /* Linear / Raycast Style Palette Tokens */
+    --bg-primary: #0d0e12;
+    --bg-card: #161822;
+    --bg-card-secondary: #1e2230;
+    --bg-input: #12141d;
+    --border-subtle: rgba(255, 255, 255, 0.08);
+    --border-glow: rgba(245, 158, 11, 0.4);
     
     /* Text Tokens */
-    --text-primary: #f5f5f7;
-    --text-secondary: #a1a1b6;
-    --text-muted: #6e6e82;
+    --text-primary: #f3f4f6;
+    --text-secondary: #9ca3af;
+    --text-muted: #6b7280;
 
-    /* Brand Accents */
-    --accent-apple: #0071e3;
-    --accent-green: #34c759;
-    --accent-amber: #ff9500;
-    --accent-purple: #af52de;
-    --accent-pink: #ff2d55;
+    /* Hand-Crafted Brand Accents */
+    --accent-apple: #f59e0b;  /* Warm Golden Amber */
+    --accent-blue: #3b82f6;   /* Ice Blue */
+    --accent-green: #10b981;  /* Emerald Green */
+    --accent-amber: #f59e0b;  /* Amber Glow */
+    --accent-purple: #8b5cf6; /* Royal Violet */
+    --accent-pink: #ec4899;   /* Coral Pink */
 
     /* Shadows & Effects */
-    --shadow-card: 0 16px 40px rgba(0, 0, 0, 0.4);
-    --shadow-glow: 0 0 30px rgba(0, 113, 227, 0.35);
-    --glass-bg: rgba(19, 23, 38, 0.85);
-    --glass-border: 1px solid rgba(255, 255, 255, 0.12);
+    --shadow-card: 0 16px 36px rgba(0, 0, 0, 0.55);
+    --shadow-glow: 0 0 28px rgba(245, 158, 11, 0.25);
+    --glass-bg: rgba(22, 24, 34, 0.88);
+    --glass-border: 1px solid rgba(255, 255, 255, 0.09);
 }
 
 [data-theme="light"] {
-    --bg-primary: #f4f6f9;
+    --bg-primary: #f8fafc;
     --bg-card: #ffffff;
-    --bg-card-secondary: #f0f3f8;
-    --bg-input: #e4e8f0;
-    --border-subtle: rgba(0, 0, 0, 0.1);
-    --text-primary: #1d1d1f;
-    --text-secondary: #6e6e73;
-    --shadow-card: 0 12px 32px rgba(0, 0, 0, 0.08);
+    --bg-card-secondary: #f1f5f9;
+    --bg-input: #e2e8f0;
+    --border-subtle: rgba(0, 0, 0, 0.08);
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --shadow-card: 0 12px 32px rgba(0, 0, 0, 0.06);
 }
 
 * {
@@ -128,7 +129,7 @@ input, select, textarea, button, audio, video, iframe {
     align-items: center;
     justify-content: center;
     gap: 8px;
-    background: linear-gradient(135deg, var(--accent-apple), #005bb5);
+    background: linear-gradient(135deg, #f59e0b, #d97706);
     color: #ffffff;
     font-family: 'Montserrat', sans-serif;
     font-weight: 800;
@@ -138,13 +139,13 @@ input, select, textarea, button, audio, video, iframe {
     padding: 12px 22px;
     cursor: pointer;
     transition: all 0.25s ease;
-    box-shadow: 0 6px 20px rgba(0, 113, 227, 0.3);
+    box-shadow: 0 6px 20px rgba(245, 158, 11, 0.3);
     outline: none;
 }
 
 .btn-apple:hover {
     transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 10px 28px rgba(0, 113, 227, 0.5);
+    box-shadow: 0 10px 28px rgba(245, 158, 11, 0.45);
 }
 
 .btn-apple:active {
@@ -180,8 +181,8 @@ input, select, textarea, button, audio, video, iframe {
 
 .step-card.step-card-active {
     border-color: var(--accent-apple);
-    box-shadow: 0 0 20px rgba(0, 113, 227, 0.35), inset 0 0 12px rgba(0, 113, 227, 0.15);
-    background: linear-gradient(180deg, rgba(0, 113, 227, 0.08) 0%, var(--bg-input) 100%);
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.3), inset 0 0 12px rgba(245, 158, 11, 0.12);
+    background: linear-gradient(180deg, rgba(245, 158, 11, 0.08) 0%, var(--bg-input) 100%);
 }
 
 .progress-bar-animated {
