@@ -1,4 +1,4 @@
-/* YOUTUBE VOICEOVER STUDIO PRO - DESIGN SYSTEM */
+/* YOUTUBE VOICEOVER STUDIO PRO - DESIGN SYSTEM & LAYOUT ENGINE */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@600;700;800;900&family=Outfit:wght@700;800;900&display=swap');
 
 :root {
@@ -41,9 +41,15 @@
 }
 
 * {
-    box-sizing: border-box;
+    box-sizing: border-box !important;
     margin: 0;
     padding: 0;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow-x: hidden !important;
 }
 
 body {
@@ -51,13 +57,49 @@ body {
     background-color: var(--bg-primary);
     color: var(--text-primary);
     line-height: 1.5;
-    overflow-x: hidden;
     min-height: 100vh;
 }
 
 h1, h2, h3, .brand-title {
     font-family: 'Outfit', 'Montserrat', sans-serif;
     letter-spacing: -0.02em;
+}
+
+/* Strict Layout Constraints */
+.main-wrapper {
+    max-width: 1600px;
+    margin: 0 auto;
+    width: 100%;
+    padding: 1.25rem;
+    box-sizing: border-box;
+    overflow-x: hidden;
+}
+
+.workbench-grid {
+    display: grid;
+    grid-template-columns: minmax(300px, 340px) minmax(400px, 1fr) minmax(320px, 360px);
+    gap: 1.25rem;
+    align-items: start;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+@media (max-width: 1280px) {
+    .workbench-grid {
+        grid-template-columns: 340px 1fr;
+    }
+}
+
+@media (max-width: 850px) {
+    .workbench-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Input & Select Safeguards against Overflow */
+input, select, textarea, button, audio, video, iframe {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
 }
 
 /* Glassmorphic Cards & Elevate Animations */
@@ -70,6 +112,9 @@ h1, h2, h3, .brand-title {
     padding: 1.25rem;
     box-shadow: var(--shadow-card);
     transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease, border-color 0.3s ease;
+    margin-bottom: 1.25rem;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .apple-card:hover {
@@ -171,4 +216,27 @@ h1, h2, h3, .brand-title {
 }
 ::-webkit-scrollbar-thumb:hover {
     background: var(--accent-apple);
+}
+
+/* Single-Line Master Footer Styling */
+.master-footer-single-line {
+    width: 100%;
+    background: var(--bg-card);
+    border-top: 1px solid var(--border-subtle);
+    padding: 1.25rem 1rem;
+    text-align: center;
+    box-sizing: border-box;
+    margin-top: 3rem;
+}
+
+.master-footer-content {
+    font-family: 'Outfit', 'Montserrat', sans-serif;
+    font-size: 0.92rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
 }
