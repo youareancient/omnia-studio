@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Voiceover Studio Pro</title>
+    <title>YouTube Voiceover Studio Pro - Industrial AI Video Automation Suite</title>
+    <meta name="description" content="The ultimate personal YouTube automation suite. Render 500+ scene videos in safe 100-scene batches with kinetic subtitles, video filters, and SQLite database persistence.">
     
     <!-- PWA & Mobile App Meta Tags -->
     <link rel="manifest" href="/static/manifest.json">
@@ -13,12 +14,10 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#000000">
-    <meta name="apple-mobile-web-app-title" content="Voiceover Studio">
+    <meta name="theme-color" content="#0a0c16">
+    <meta name="apple-mobile-web-app-title" content="Voiceover Studio Pro">
     
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/index.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     
     <style>
@@ -1122,6 +1121,76 @@
                 </div>
             </section>
 
+            <!-- Option 6: Script Retention & Scene Pacing Analyzer Card -->
+            <section class="apple-card" style="border: 1px solid var(--accent-apple);">
+                <div class="card-header">
+                    <span class="card-title">📊 Retention & Pacing Analyzer</span>
+                    <span style="font-size:0.72rem; font-weight:800; background:rgba(0,113,227,0.15); color:var(--accent-apple); padding:2px 8px; border-radius:10px;">RETENTION METER</span>
+                </div>
+
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-input); padding:8px 12px; border-radius:10px; border:1px solid var(--border-subtle);">
+                        <span style="font-size:0.78rem; font-weight:600; color:var(--text-secondary);">Estimated Video Duration:</span>
+                        <span id="statVideoDuration" style="font-size:0.85rem; font-weight:800; color:var(--text-primary);">0m 0s</span>
+                    </div>
+
+                    <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-input); padding:8px 12px; border-radius:10px; border:1px solid var(--border-subtle);">
+                        <span style="font-size:0.78rem; font-weight:600; color:var(--text-secondary);">Speech Pacing Speed:</span>
+                        <span id="statWPM" style="font-size:0.85rem; font-weight:800; color:var(--accent-apple);">155 WPM (Optimal)</span>
+                    </div>
+
+                    <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-input); padding:8px 12px; border-radius:10px; border:1px solid var(--border-subtle);">
+                        <span style="font-size:0.78rem; font-weight:600; color:var(--text-secondary);">Scene Cut Frequency:</span>
+                        <span id="statCutFrequency" style="font-size:0.85rem; font-weight:800; color:#34c759;">1 cut / 3.2s</span>
+                    </div>
+
+                    <div id="retentionScoreBadge" style="background:rgba(52,199,89,0.14); border:1px solid rgba(52,199,89,0.4); padding:8px 12px; border-radius:10px; text-align:center; font-size:0.78rem; font-weight:800; color:#34c759;">
+                        ⚡ 98% High YouTube Retention Score (Optimal Cut Frequency)
+                    </div>
+                </div>
+            </section>
+
+            <!-- Option 4: AI Image Prompt Styling & Enhancer Card -->
+            <section class="apple-card">
+                <div class="card-header">
+                    <span class="card-title">🎨 AI Prompt Style Enhancer</span>
+                    <span style="font-size:0.72rem; font-weight:800; background:rgba(255,149,0,0.14); color:#ff9500; padding:2px 8px; border-radius:10px;">Prompt AI</span>
+                </div>
+
+                <div style="margin-bottom:12px;">
+                    <label style="font-size:0.78rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:6px;">Select AI Art Style Preset:</label>
+                    <select id="promptStyleSelect" style="width:100%; font-size:0.85rem; font-weight:700; background:var(--bg-input); color:var(--text-primary); border:1px solid var(--border-subtle); padding:10px 12px; border-radius:12px; outline:none;">
+                        <option value="photoreal" selected>📸 Photorealistic 8K Documentary</option>
+                        <option value="tech_vector">💻 Modern Tech 3D Vector Art</option>
+                        <option value="noir_crime">🕵️ Dark Crime & Mystery Noir</option>
+                        <option value="cyberpunk">🌆 Cyberpunk Anime Concept Art</option>
+                        <option value="midjourney_raw">🎯 Midjourney Raw (--ar 16:9 --v 6.0)</option>
+                    </select>
+                </div>
+
+                <button class="btn-apple" style="width:100%; font-size:0.82rem; padding:10px; background:linear-gradient(135deg, #ff9500, #ff2d55);" onclick="applyStyleToAllPrompts()">
+                    ✨ Apply Style to All Visual Prompts
+                </button>
+            </section>
+
+            <!-- Transition Effect Selector Card -->
+            <section class="apple-card">
+                <div class="card-header">
+                    <span class="card-title">🎬 Scene Cut Transitions</span>
+                    <span style="font-size:0.72rem; font-weight:800; background:rgba(175,82,222,0.14); color:#af52de; padding:2px 8px; border-radius:10px;">Transitions</span>
+                </div>
+
+                <div style="margin-bottom:6px;">
+                    <label style="font-size:0.78rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:6px;">Master Video Transition:</label>
+                    <select id="transitionStyleSelect" style="width:100%; font-size:0.85rem; font-weight:700; background:var(--bg-input); color:var(--text-primary); border:1px solid var(--border-subtle); padding:10px 12px; border-radius:12px; outline:none;">
+                        <option value="smash_cut" selected>⚡ Smash Cut / Hard Cut (Documentary)</option>
+                        <option value="crossfade">🌊 Smooth Crossfade Dissolve (0.5s)</option>
+                        <option value="fade_black">🌑 Fade to Black (0.4s)</option>
+                        <option value="flash_white">💥 Flash White (0.3s)</option>
+                    </select>
+                </div>
+            </section>
+
             <!-- Voice & Pacing Card -->
             <section class="apple-card">
                 <div class="card-header">
@@ -1488,6 +1557,7 @@
             const minutes = Math.ceil(words / 150);
             if (wordCountEl) wordCountEl.textContent = `${words.toLocaleString()} Words`;
             if (estTimeEl) estTimeEl.textContent = `~${minutes} min audio`;
+            calculateScriptRetentionStats();
         }
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -3240,11 +3310,91 @@
             }
         }
 
+        function calculateScriptRetentionStats() {
+            const scriptEl = document.getElementById('scriptText');
+            const text = scriptEl ? scriptEl.value.trim() : '';
+            const words = text ? text.split(/\s+/).filter(w => w.length > 0).length : 0;
+
+            const sliderVal = document.getElementById('rateSlider') ? parseInt(document.getElementById('rateSlider').value || 1) : 1;
+            const wpm = Math.round(150 * (1 + sliderVal / 100));
+
+            const totalAudioMinutes = words > 0 ? (words / wpm) : 0;
+            const minutes = Math.floor(totalAudioMinutes);
+            const seconds = Math.round((totalAudioMinutes - minutes) * 60);
+
+            const durationEl = document.getElementById('statVideoDuration');
+            if (durationEl) durationEl.textContent = `${minutes}m ${seconds}s`;
+
+            const wpmEl = document.getElementById('statWPM');
+            if (wpmEl) wpmEl.textContent = `${wpm} WPM (${sliderVal >= 0 ? '+' : ''}${sliderVal}%)`;
+
+            const totalScenes = (lastBreakdownData && lastBreakdownData.length) ? lastBreakdownData.length : Math.max(1, Math.ceil(words / 15));
+            const cutFreq = totalScenes > 0 ? ((totalAudioMinutes * 60) / totalScenes).toFixed(1) : '3.2';
+
+            const cutEl = document.getElementById('statCutFrequency');
+            if (cutEl) cutEl.textContent = `1 cut / ${cutFreq}s`;
+
+            const scoreBadge = document.getElementById('retentionScoreBadge');
+            if (scoreBadge) {
+                if (cutFreq <= 4.0) {
+                    scoreBadge.style.background = 'rgba(52, 199, 89, 0.14)';
+                    scoreBadge.style.borderColor = 'rgba(52, 199, 89, 0.4)';
+                    scoreBadge.style.color = '#34c759';
+                    scoreBadge.textContent = '⚡ 98% High YouTube Retention Score (Optimal Cut Frequency)';
+                } else if (cutFreq <= 7.0) {
+                    scoreBadge.style.background = 'rgba(255, 149, 0, 0.14)';
+                    scoreBadge.style.borderColor = 'rgba(255, 149, 0, 0.4)';
+                    scoreBadge.style.color = '#ff9500';
+                    scoreBadge.textContent = '⚠️ 82% Moderate Retention Rate (Consider more scene cuts)';
+                } else {
+                    scoreBadge.style.background = 'rgba(255, 59, 48, 0.14)';
+                    scoreBadge.style.borderColor = 'rgba(255, 59, 48, 0.4)';
+                    scoreBadge.style.color = '#ff3b30';
+                    scoreBadge.textContent = '🔴 Slow Cut Frequency (Risk of viewer drop-off)';
+                }
+            }
+        }
+
+        function applyStyleToAllPrompts() {
+            const selectEl = document.getElementById('promptStyleSelect');
+            const styleKey = selectEl ? selectEl.value : 'photoreal';
+
+            const styles = {
+                photoreal: 'photorealistic 8K, highly detailed documentary photography, cinematic lighting, hyperdetailed --ar 16:9',
+                tech_vector: 'modern tech 3D vector illustration, isometric clean render, vibrant corporate colors --ar 16:9',
+                noir_crime: 'dark crime noir illustration, dramatic shadows, moody atmospheric lighting, cinematic color grading --ar 16:9',
+                cyberpunk: 'cyberpunk anime concept art, neon glowing lights, detailed digital art --ar 16:9',
+                midjourney_raw: '--ar 16:9 --style raw --v 6.0'
+            };
+
+            const suffix = styles[styleKey] || styles['photoreal'];
+
+            if (!lastBreakdownData || lastBreakdownData.length === 0) {
+                alert('Please generate Scene Cuts breakdown first to apply visual styles!');
+                return;
+            }
+
+            lastBreakdownData.forEach((sc, idx) => {
+                const promptInput = document.getElementById(`promptText_${sc.scene}`);
+                if (promptInput) {
+                    let currentVal = promptInput.value.trim();
+                    Object.values(styles).forEach(s => {
+                        currentVal = currentVal.replace(s, '').replace(/,\s*,/g, ',').trim();
+                    });
+                    const newVal = `${currentVal}, ${suffix}`;
+                    promptInput.value = newVal;
+                }
+            });
+
+            showTopNotification(`✨ Applied '${styleKey.toUpperCase()}' style tags to all ${lastBreakdownData.length} scene cards!`, 'success');
+        }
+
         window.addEventListener('load', () => {
             const savedJobId = localStorage.getItem('active_job_id');
             if (savedJobId) {
                 startPollingJob(savedJobId);
             }
+            calculateScriptRetentionStats();
         });
     </script>
 
