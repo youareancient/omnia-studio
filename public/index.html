@@ -3774,6 +3774,7 @@
                 if (landingView) landingView.style.setProperty('display', 'none', 'important');
                 if (studioView) studioView.style.setProperty('display', 'block', 'important');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
+                setTimeout(() => { window.dispatchEvent(new Event('resize')); }, 50);
             } else {
                 document.body.classList.remove('in-studio-mode');
                 document.body.classList.add('in-landing-mode');
@@ -3799,17 +3800,5 @@
             updateFilterTransitionPreview();
         });
     </script>
-
-    <footer class="creator-footer">
-        <div class="creator-footer-content">
-            <div class="creator-badge-glow">
-                <span class="creator-icon">🚀</span>
-                <span class="creator-label" style="font-size:0.85rem; font-weight:600; color:var(--text-secondary);">Architect & Creator</span>
-                <span class="creator-name-bold">Vikas Verma</span>
-                <span class="creator-verified">✓ Verified Author</span>
-            </div>
-            <p class="creator-tagline">Crafted with Precision for YouTube Economics & High-Retention Video Production</p>
-        </div>
-    </footer>
 </body>
 </html>
