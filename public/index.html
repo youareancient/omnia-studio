@@ -776,29 +776,6 @@
     </style>
 </head>
 <body>
-    <!-- STUDIO SECURITY MASTER PASSCODE LOCK MODAL -->
-    <div id="studioLockModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.88); backdrop-filter:blur(20px); z-index:99999; align-items:center; justify-content:center; padding:20px; box-sizing:border-box;">
-        <div style="background:var(--bg-card); border:1.5px solid var(--accent-apple); border-radius:24px; max-width:440px; width:100%; padding:28px; box-shadow:var(--shadow-card); text-align:center;">
-            <div style="font-size:2.5rem; margin-bottom:10px;">🔐</div>
-            <h2 style="font-size:1.4rem; font-weight:900; color:var(--text-primary); margin-bottom:6px;">Studio Security Lock</h2>
-            <p style="font-size:0.84rem; color:var(--text-secondary); margin-bottom:20px;">Enter your Master Passcode to unlock project workbench & production tools.</p>
-            
-            <input type="password" id="studioPasscodeInput" placeholder="Enter Master Passcode..." style="width:100%; background:var(--bg-input); border:1.5px solid var(--border-subtle); padding:12px; border-radius:12px; color:var(--text-primary); outline:none; font-size:1rem; text-align:center; font-weight:800; margin-bottom:14px;" onkeyup="if(event.key==='Enter') unlockStudioWorkbench()">
-            
-            <div id="lockAlertMsg" style="display:none; font-size:0.8rem; color:#ff2d55; font-weight:800; margin-bottom:12px;">❌ Incorrect Passcode!</div>
-
-            <div style="display:flex; gap:10px;">
-                <button class="btn-apple btn-apple-secondary" style="flex:1; padding:12px;" onclick="document.getElementById('studioLockModal').style.display='none'">
-                    Cancel
-                </button>
-                <button class="btn-apple" style="flex:1.5; background:linear-gradient(135deg, #f59e0b, #d97706); font-weight:900; padding:12px;" onclick="unlockStudioWorkbench()">
-                    🔓 Unlock Workbench
-                </button>
-            </div>
-            <div style="font-size:0.72rem; color:var(--text-muted); margin-top:12px;">Default Passcode: <strong>vikas2026</strong></div>
-        </div>
-    </div>
-
     <!-- LANDING PAGE VIEW -->
     <div id="landingView" style="width:100%; min-height:100vh; background:var(--bg-primary);">
         <!-- Landing Header -->
@@ -3785,22 +3762,6 @@
         }
 
         function switchView(viewName) {
-            if (viewName === 'studio') {
-                const unlocked = sessionStorage.getItem('studio_unlocked') === 'true';
-                if (!unlocked) {
-                    const lockModal = document.getElementById('studioLockModal');
-                    if (lockModal) {
-                        lockModal.style.display = 'flex';
-                        const input = document.getElementById('studioPasscodeInput');
-                        if (input) {
-                            input.value = '';
-                            input.focus();
-                        }
-                    }
-                    return;
-                }
-            }
-
             const landingView = document.getElementById('landingView');
             const studioView = document.getElementById('studioView');
 
@@ -3816,38 +3777,6 @@
                 if (studioView) studioView.style.setProperty('display', 'none', 'important');
                 if (landingView) landingView.style.setProperty('display', 'block', 'important');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
-            }
-        }
-
-        async function unlockStudioWorkbench() {
-            const input = document.getElementById('studioPasscodeInput');
-            const alertMsg = document.getElementById('lockAlertMsg');
-            const passcode = input ? input.value.trim() : '';
-
-            if (!passcode) return;
-
-            try {
-                const res = await fetch('/api/verify-passcode', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ passcode: passcode })
-                });
-
-                const data = await res.json();
-                if (data.unlocked) {
-                    sessionStorage.setItem('studio_unlocked', 'true');
-                    if (document.getElementById('studioLockModal')) {
-                        document.getElementById('studioLockModal').style.display = 'none';
-                    }
-                    if (alertMsg) alertMsg.style.display = 'none';
-                    showTopNotification('🔓 Studio Workbench Unlocked Successfully!', 'success');
-                    switchView('studio');
-                } else {
-                    if (alertMsg) alertMsg.style.display = 'block';
-                    if (input) input.style.border = '1.5px solid #ff2d55';
-                }
-            } catch (err) {
-                alert('Verification error: ' + err.message);
             }
         }
 
