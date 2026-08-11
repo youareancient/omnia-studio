@@ -776,16 +776,6 @@
     </style>
 </head>
 <body>
-    <!-- FUTURISTIC BRAND SPLASH LOADING SCREEN -->
-    <div id="brandSplashScreen" style="position:fixed; top:0; left:0; width:100vw; height:100vh; background:#0d0e12; z-index:999999; display:flex; flex-direction:column; align-items:center; justify-content:center; transition:opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1);">
-        <img src="/static/icon.png" alt="Logo" style="width:84px; height:84px; margin-bottom:18px; border-radius:20px; background:transparent !important; border:none; outline:none; filter:drop-shadow(0 0 20px rgba(245,158,11,0.6)); animation:pulseTip 1.5s infinite alternate ease-in-out;">
-        <h1 style="font-size:2rem; font-weight:900; background:linear-gradient(135deg, #f59e0b, #3b82f6, #10b981); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-bottom:6px; letter-spacing:-0.03em;">Omnia Studio Pro</h1>
-        <div style="font-size:0.85rem; color:var(--text-secondary); font-weight:700; margin-bottom:24px;">Initializing Industrial AI Video Engine...</div>
-        <div style="width:260px; height:6px; background:rgba(255,255,255,0.1); border-radius:10px; overflow:hidden; border:1px solid rgba(255,255,255,0.12);">
-            <div id="splashProgressFill" style="height:100%; width:0%; background:linear-gradient(90deg, #f59e0b, #3b82f6, #10b981); transition:width 1.2s cubic-bezier(0.4, 0, 0.2, 1);"></div>
-        </div>
-    </div>
-
     <!-- STUDIO SECURITY MASTER PASSCODE LOCK MODAL -->
     <div id="studioLockModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.88); backdrop-filter:blur(20px); z-index:99999; align-items:center; justify-content:center; padding:20px; box-sizing:border-box;">
         <div style="background:var(--bg-card); border:1.5px solid var(--accent-apple); border-radius:24px; max-width:440px; width:100%; padding:28px; box-shadow:var(--shadow-card); text-align:center;">
@@ -3861,31 +3851,7 @@
             }
         }
 
-        let splashDismissed = false;
-        function initBrandSplash() {
-            if (splashDismissed) return;
-            splashDismissed = true;
-
-            const fill = document.getElementById('splashProgressFill');
-            const splash = document.getElementById('brandSplashScreen');
-            if (fill) fill.style.width = '100%';
-
-            setTimeout(() => {
-                if (splash) {
-                    splash.style.opacity = '0';
-                    splash.style.pointerEvents = 'none';
-                    setTimeout(() => {
-                        splash.style.setProperty('display', 'none', 'important');
-                    }, 500);
-                }
-            }, 600);
-        }
-
-        document.addEventListener('DOMContentLoaded', initBrandSplash);
-        setTimeout(initBrandSplash, 1000);
-
         window.addEventListener('load', () => {
-            initBrandSplash();
             // Explicitly force Landing Page view on load
             switchView('landing');
             const savedJobId = localStorage.getItem('active_job_id');
