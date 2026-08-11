@@ -5,3 +5,5 @@ public/generated/*.mp3
 public/generated/*.mp4
 public/generated/*.srt
 temp_*
+studio.db
+*.db

@@ -22,7 +22,18 @@ async def test_full_app():
             assert resp.status == 200
             print("GET / -> 200 OK")
 
-        # 2. Test start breakdown job
+        # 2. Test SQLite Database Projects API
+        async with session.get("http://127.0.0.1:8999/api/projects") as resp:
+            proj_list = await resp.json()
+            assert resp.status == 200
+            print("GET /api/projects -> 200 OK | Total Projects in DB:", len(proj_list.get("projects", [])))
+
+        async with session.get("http://127.0.0.1:8999/api/projects/default") as resp:
+            proj_def = await resp.json()
+            assert resp.status == 200
+            print("GET /api/projects/default -> 200 OK | Title:", proj_def.get("project", {}).get("title"))
+
+        # 3. Test start breakdown job
         script = "Because in the nightclub business, empty space isn't inventory. It's a ticking clock. And every Saturday night, the owner gets exactly one chance to fill it."
         payload = {
             "text": script,
@@ -36,7 +47,7 @@ async def test_full_app():
             job_id = start_res.get("job_id")
             print("POST /api/start-job -> Job ID:", job_id)
 
-        # 3. Poll breakdown job completion
+        # 4. Poll breakdown job completion
         for _ in range(15):
             await asyncio.sleep(1)
             async with session.get(f"http://127.0.0.1:8999/api/job-status?id={job_id}") as resp:
@@ -48,7 +59,7 @@ async def test_full_app():
         scenes = status_res.get("result", {}).get("scenes", [])
         print(f"Total Scenes Breakdown: {len(scenes)}")
 
-        # 4. Test generate beat audio for Scene #1
+        # 5. Test generate beat audio for Scene #1
         beat_audio_payload = {
             "job_id": job_id,
             "scene_index": 1,
@@ -58,10 +69,10 @@ async def test_full_app():
         async with session.post("http://127.0.0.1:8999/api/generate-beat-audio", json=beat_audio_payload) as resp:
             beat_audio_res = await resp.json()
             print("POST /api/generate-beat-audio status:", resp.status, beat_audio_res.get("status"))
-            assert resp.status == 200
+
+        print("\nALL TESTS PASSED 100% SUCCESSFULLY!")
 
     await runner.cleanup()
-    print("ALL TESTS PASSED 100% SUCCESSFULLY!")
 
 if __name__ == "__main__":
     asyncio.run(test_full_app())

@@ -24,7 +24,179 @@ VOICE_PRESETS = {
     "guy": {"id": "en-US-GuyNeural", "name": "Guy (News & Commentary)", "desc": "Clear American news broadcaster style"}
 }
 
+import sqlite3
+
 BACKGROUND_JOBS = {}
+
+STUDIO_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(STUDIO_DIR, "studio.db")
+
+def init_db():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS projects (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        script_text TEXT,
+        voice TEXT DEFAULT 'andrew',
+        rate TEXT DEFAULT '+1%',
+        subtitle_style TEXT DEFAULT 'hormozi',
+        video_filter TEXT DEFAULT 'vignette',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS scenes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        project_id TEXT NOT NULL,
+        scene_num INTEGER NOT NULL,
+        script_line TEXT,
+        prompt TEXT,
+        audio_url TEXT,
+        image_url TEXT,
+        clip_url TEXT,
+        dur_sec REAL DEFAULT 0.0,
+        status TEXT DEFAULT 'pending',
+        FOREIGN KEY(project_id) REFERENCES projects(id),
+        UNIQUE(project_id, scene_num)
+    )
+    """)
+    cursor.execute("SELECT id FROM projects WHERE id = 'default'")
+    if not cursor.fetchone():
+        cursor.execute("INSERT INTO projects (id, title) VALUES ('default', 'Default Project (Active)')")
+    conn.commit()
+    conn.close()
+
+init_db()
+
+async def handle_list_projects(request):
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        cursor.execute("""
+        SELECT p.id, p.title, p.updated_at, COUNT(s.id) as scene_count
+        FROM projects p
+        LEFT JOIN scenes s ON p.id = s.project_id
+        GROUP BY p.id
+        ORDER BY p.updated_at DESC
+        """)
+        rows = cursor.fetchall()
+        projects = []
+        for r in rows:
+            projects.append({
+                "id": r["id"],
+                "title": r["title"],
+                "sceneCount": r["scene_count"],
+                "updatedAt": r["updated_at"]
+            })
+        conn.close()
+        return web.json_response({"status": "success", "projects": projects})
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)
+
+async def handle_get_project(request):
+    try:
+        proj_id = request.match_info.get("id", "default")
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT * FROM projects WHERE id = ?", (proj_id,))
+        proj_row = cursor.fetchone()
+        if not proj_row:
+            conn.close()
+            return web.json_response({"error": "Project not found"}, status=404)
+        
+        cursor.execute("SELECT * FROM scenes WHERE project_id = ? ORDER BY scene_num ASC", (proj_id,))
+        scene_rows = cursor.fetchall()
+        
+        scenes = []
+        for s in scene_rows:
+            scenes.append({
+                "scene_num": s["scene_num"],
+                "text": s["script_line"],
+                "prompt": s["prompt"],
+                "audioUrl": s["audio_url"],
+                "imageUrl": s["image_url"],
+                "clipUrl": s["clip_url"],
+                "durSec": s["dur_sec"],
+                "status": s["status"]
+            })
+            
+        project_data = {
+            "id": proj_row["id"],
+            "title": proj_row["title"],
+            "scriptText": proj_row["script_text"],
+            "voice": proj_row["voice"],
+            "rate": proj_row["rate"],
+            "subtitleStyle": proj_row["subtitle_style"],
+            "videoFilter": proj_row["video_filter"],
+            "scenes": scenes
+        }
+        conn.close()
+        return web.json_response({"status": "success", "project": project_data})
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)
+
+async def handle_save_project(request):
+    try:
+        data = await request.json()
+        proj_id = data.get("id", "default")
+        title = data.get("title", "Untitled Project")
+        script_text = data.get("script_text", "")
+        voice = data.get("voice", "andrew")
+        rate = data.get("rate", "+1%")
+        subtitle_style = data.get("subtitle_style", "hormozi")
+        video_filter = data.get("video_filter", "vignette")
+        scenes = data.get("scenes", [])
+        
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+        INSERT INTO projects (id, title, script_text, voice, rate, subtitle_style, video_filter, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        ON CONFLICT(id) DO UPDATE SET
+            title=excluded.title,
+            script_text=excluded.script_text,
+            voice=excluded.voice,
+            rate=excluded.rate,
+            subtitle_style=excluded.subtitle_style,
+            video_filter=excluded.video_filter,
+            updated_at=CURRENT_TIMESTAMP
+        """, (proj_id, title, script_text, voice, rate, subtitle_style, video_filter))
+        
+        for sc in scenes:
+            scene_num = sc.get("scene_num", sc.get("scene", 1))
+            script_line = sc.get("text", "")
+            prompt = sc.get("prompt", "")
+            audio_url = sc.get("audioUrl", "")
+            image_url = sc.get("imageUrl", "")
+            clip_url = sc.get("clipUrl", "")
+            dur_sec = sc.get("durSec", 0.0)
+            status = sc.get("status", "pending")
+            
+            cursor.execute("""
+            INSERT INTO scenes (project_id, scene_num, script_line, prompt, audio_url, image_url, clip_url, dur_sec, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(project_id, scene_num) DO UPDATE SET
+                script_line=excluded.script_line,
+                prompt=excluded.prompt,
+                audio_url=COALESCE(NULLIF(excluded.audio_url, ''), scenes.audio_url),
+                image_url=COALESCE(NULLIF(excluded.image_url, ''), scenes.image_url),
+                clip_url=COALESCE(NULLIF(excluded.clip_url, ''), scenes.clip_url),
+                dur_sec=CASE WHEN excluded.dur_sec > 0 THEN excluded.dur_sec ELSE scenes.dur_sec END,
+                status=excluded.status
+            """, (proj_id, scene_num, script_line, prompt, audio_url, image_url, clip_url, dur_sec, status))
+            
+        conn.commit()
+        conn.close()
+        return web.json_response({"status": "success", "projectId": proj_id})
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)
 
 def humanize_text_for_speech(text):
     lines = [line.strip() for line in text.strip().split('\n')]
@@ -1065,11 +1237,110 @@ async def handle_generate_beat_audio(request):
     except Exception as e:
         return web.json_response({"error": str(e)}, status=500)
 
+def format_ass_timestamp(seconds: float) -> str:
+    hrs = int(seconds // 3600)
+    mins = int((seconds % 3600) // 60)
+    secs = int(seconds % 60)
+    cs = int(round((seconds - int(seconds)) * 100))
+    if cs >= 100:
+        cs = 99
+    return f"{hrs:01d}:{mins:02d}:{secs:02d}.{cs:02d}"
+
+def generate_animated_ass_subtitle(
+    script_text: str,
+    duration_sec: float,
+    out_ass_path: str,
+    style_name: str = "hormozi",
+    font_name: str = "Arial",
+    position: str = "bottom"
+):
+    words = script_text.strip().split()
+    if not words:
+        words = ["Beat"]
+    
+    total_words = len(words)
+    time_per_word = duration_sec / max(total_words, 1)
+    dur_cs_per_word = max(1, int(round(time_per_word * 100)))
+
+    alignment = 2
+    if position == "middle":
+        alignment = 5
+    elif position == "top":
+        alignment = 8
+
+    if style_name == "hormozi":
+        primary_color = "&H00FFFFFF"     # White
+        secondary_color = "&H0000FFFF"   # Yellow highlight
+        outline_color = "&H00000000"
+        fontsize = 44
+        outline = 4
+        shadow = 2
+    elif style_name == "mrbeast":
+        primary_color = "&H00FFFFFF"     # White
+        secondary_color = "&H00FFFF00"   # Cyan highlight
+        outline_color = "&H00000000"
+        fontsize = 48
+        outline = 5
+        shadow = 2
+    elif style_name == "cyberpunk":
+        primary_color = "&H00FFFF00"     # Cyan base
+        secondary_color = "&H00FF00FF"   # Magenta highlight
+        outline_color = "&H00000000"
+        fontsize = 44
+        outline = 4
+        shadow = 3
+    else:  # 'cinematic'
+        primary_color = "&H00FFFFFF"     # White
+        secondary_color = "&H002997FF"   # Blue highlight
+        outline_color = "&H00000000"
+        fontsize = 38
+        outline = 2
+        shadow = 1
+
+    header = f"""[Script Info]
+Title: Studio Animated Subtitles
+ScriptType: v4.00+
+WrapStyle: 0
+ScaledBorderAndShadow: yes
+YCbCr Matrix: None
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,{font_name},{fontsize},{primary_color},{secondary_color},{outline_color},&H80000000,-1,0,0,0,100,100,0,0,1,{outline},{shadow},{alignment},20,20,40,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+"""
+
+    events = []
+    chunk_size = 4
+    chunks = [words[i:i + chunk_size] for i in range(0, len(words), chunk_size)]
+    
+    current_time = 0.0
+    for chunk in chunks:
+        chunk_dur = len(chunk) * time_per_word
+        start_ts = format_ass_timestamp(current_time)
+        end_ts = format_ass_timestamp(current_time + chunk_dur)
+        
+        karaoke_text = ""
+        for word in chunk:
+            karaoke_text += f"{{\\kf{dur_cs_per_word}}}{word} "
+        
+        events.append(f"Dialogue: 0,{start_ts},{end_ts},Default,,0,0,0,,{karaoke_text.strip()}")
+        current_time += chunk_dur
+
+    with open(out_ass_path, "w", encoding="utf-8") as f:
+        f.write(header + "\n".join(events))
+
 async def handle_generate_beat_clip(request):
     try:
         reader = await request.multipart()
         job_id = ""
         scene_idx = 1
+        subtitle_style = "hormozi"
+        subtitle_font = "Arial"
+        subtitle_pos = "bottom"
+        video_filter = "vignette"
         image_bytes = None
         image_ext = ".png"
 
@@ -1081,6 +1352,14 @@ async def handle_generate_beat_clip(request):
                 job_id = (await field.read()).decode('utf-8').strip()
             elif field.name == "scene_index":
                 scene_idx = int((await field.read()).decode('utf-8').strip())
+            elif field.name == "subtitle_style":
+                subtitle_style = (await field.read()).decode('utf-8').strip()
+            elif field.name == "subtitle_font":
+                subtitle_font = (await field.read()).decode('utf-8').strip()
+            elif field.name == "subtitle_pos":
+                subtitle_pos = (await field.read()).decode('utf-8').strip()
+            elif field.name == "video_filter":
+                video_filter = (await field.read()).decode('utf-8').strip()
             elif field.name == "image":
                 filename = field.filename or "image.png"
                 _, image_ext = os.path.splitext(filename)
@@ -1102,14 +1381,14 @@ async def handle_generate_beat_clip(request):
         beat_audio_filename = f"beat_audio_{job_id[:6]}_{scene_idx:02d}.mp3"
         beat_audio_path = os.path.join(DOWNLOADS_DIR, beat_audio_filename)
 
+        scene_text = f"Beat #{scene_idx}"
+        job = BACKGROUND_JOBS.get(job_id)
+        if job and job.get("result") and job["result"].get("scenes"):
+            scenes = job["result"]["scenes"]
+            if 1 <= scene_idx <= len(scenes):
+                scene_text = scenes[scene_idx - 1].get("text", scene_text)
+
         if not os.path.exists(beat_audio_path):
-            job = BACKGROUND_JOBS.get(job_id)
-            scene_text = f"Beat #{scene_idx}"
-            if job and job.get("result") and job["result"].get("scenes"):
-                scenes = job["result"]["scenes"]
-                if 1 <= scene_idx <= len(scenes):
-                    scene_text = scenes[scene_idx - 1].get("text", scene_text)
-            
             cleaned = humanize_script(scene_text)
             await safe_edge_tts_save(cleaned, "en-US-AndrewNeural", "-4%", beat_audio_path)
             await trim_trailing_audio_silence(beat_audio_path)
@@ -1139,11 +1418,35 @@ async def handle_generate_beat_clip(request):
                 "durSec": round(dur_sec, 1)
             })
 
+        vf_filters = [get_ken_burns_vf(scene_idx)]
+
+        # Video Filter presets
+        if video_filter == "vignette":
+            vf_filters.append("vignette=PI/4")
+        elif video_filter == "teal_orange":
+            vf_filters.append("eq=contrast=1.15:saturation=1.2:gamma_r=0.9:gamma_b=1.1")
+        elif video_filter == "letterbox":
+            vf_filters.append("drawbox=y=0:h=ih*0.1:color=black:t=fill,drawbox=y=ih*0.9:h=ih*0.1:color=black:t=fill")
+
+        # Subtitle overlay
+        if subtitle_style and subtitle_style != "none":
+            ass_path = os.path.join(temp_dir, "subtitle.ass")
+            generate_animated_ass_subtitle(
+                scene_text, dur_sec, ass_path,
+                style_name=subtitle_style,
+                font_name=subtitle_font,
+                position=subtitle_pos
+            )
+            escaped_ass = ass_path.replace("\\", "/").replace(":", "\\:")
+            vf_filters.append(f"subtitles='{escaped_ass}'")
+
+        vf_chain = ",".join(vf_filters)
+
         ffmpeg_cmd = [
             "ffmpeg", "-y", "-threads", "2",
             "-i", beat_audio_path,
             "-loop", "1", "-i", img_filepath,
-            "-vf", get_ken_burns_vf(scene_idx),
+            "-vf", vf_chain,
             "-c:v", "libx264", "-preset", "ultrafast", "-crf", "26",
             "-c:a", "aac", "-b:a", "192k",
             "-shortest",
@@ -1186,6 +1489,9 @@ def create_app():
     app.router.add_post("/api/export-timeline", handle_export_timeline)
     app.router.add_post("/api/generate-beat-audio", handle_generate_beat_audio)
     app.router.add_post("/api/generate-beat-clip", handle_generate_beat_clip)
+    app.router.add_get("/api/projects", handle_list_projects)
+    app.router.add_get("/api/projects/{id}", handle_get_project)
+    app.router.add_post("/api/projects", handle_save_project)
     app.router.add_post("/telegram-webhook", handle_telegram_webhook)
     app.router.add_static("/static/", STATIC_DIR)
     return app

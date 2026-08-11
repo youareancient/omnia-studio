@@ -164,17 +164,31 @@
         }
 
         main {
-            max-width: 1400px;
+            max-width: 1680px;
             margin: 1.25rem auto;
             padding: 0 1rem;
             flex: 1;
             width: 100%;
             display: grid;
-            grid-template-columns: 1fr 380px;
-            gap: 1.5rem;
+            grid-template-columns: 360px 1fr 380px;
+            gap: 1.25rem;
+            align-items: start;
         }
 
-        @media (max-width: 960px) {
+        .workbench-col {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        @media (max-width: 1380px) {
+            main {
+                grid-template-columns: 320px 1fr 340px;
+                gap: 1rem;
+            }
+        }
+
+        @media (max-width: 1024px) {
             main {
                 grid-template-columns: 1fr;
                 margin: 0.75rem auto;
@@ -777,7 +791,15 @@
                 </div>
             </div>
             
-            <div class="header-actions">
+            <div class="header-actions" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                <!-- Project Selector & DB Status -->
+                <div style="display:flex; align-items:center; gap:6px; background:var(--bg-input); border:1px solid var(--accent-apple); border-radius:12px; padding:4px 10px;">
+                    <span style="font-size:0.78rem; font-weight:700; color:var(--text-secondary);">📂 Project:</span>
+                    <select id="projectSelect" style="font-size:0.8rem; font-weight:700; background:transparent; color:var(--accent-apple); border:none; outline:none; cursor:pointer;" onchange="handleProjectSwitch(this.value)">
+                        <option value="default" selected>Default Project (Active)</option>
+                        <option value="new">+ Create New Project...</option>
+                    </select>
+                </div>
                 <button id="headerMuteBtn" class="theme-toggle-btn" style="background: rgba(255, 149, 0, 0.15); color: #ff9500; border-color: rgba(255, 149, 0, 0.35); font-weight: 700;" onclick="toggleStudioMute()">
                     <span id="headerMuteIcon">🔇</span> <span id="headerMuteText">Muted</span>
                 </button>
@@ -867,102 +889,152 @@
     </div>
 
     <main>
-        <!-- Script Editor -->
-        <section class="apple-card">
-            <div class="card-header">
-                <span class="card-title">Script Editor</span>
-                <span class="accuracy-tag">✓ 100% Word-for-Word</span>
-            </div>
-
-            <textarea id="scriptText" placeholder="Paste your script here... (e.g. Okay, so you want to own a data center...)" oninput="updateWordCount()" onchange="updateWordCount()" onkeyup="updateWordCount()" onpaste="setTimeout(updateWordCount, 10)"></textarea>
-
-            <div class="meta-row">
-                <div class="meta-stats">
-                    <span id="wordCount">0 Words</span>
-                    <span>•</span>
-                    <span id="estTime">~0 min audio</span>
-                </div>
-                <span style="color: var(--accent-apple); font-weight: 500;">📱 Background Processing Active</span>
-            </div>
-
-            <!-- Desktop Action Grid: 3 Buttons directly under script box -->
-            <div class="action-btn-grid" id="desktopActionGrid" style="margin-top:16px;">
-                <button class="btn-apple" onclick="generateStream('audio')">
-                    🎵 Voiceover
-                </button>
-                <button class="btn-apple btn-apple-secondary" onclick="generateStream('srt')">
-                    📝 .SRT
-                </button>
-                <button class="btn-apple btn-apple-secondary" onclick="generateStream('breakdown')">
-                    🎬 Scene Cuts
-                </button>
-            </div>
-
-            <!-- Real-Time Background Progress Indicator -->
-            <div class="progress-container" id="progressBox" style="margin-top:14px;">
-                <div class="progress-header">
-                    <span id="progressTitle">Processing...</span>
-                    <span id="progressPercent" style="color: var(--accent-apple);">0%</span>
-                </div>
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progressBarFill"></div>
-                </div>
-                <div class="progress-sub" id="progressStatus">Cloud background job active...</div>
-            </div>
-        </section>
-
-        <!-- Voice & Settings -->
-        <section class="apple-card">
-            <div class="card-header">
-                <span class="card-title">Voice & Pacing</span>
-            </div>
-
-            <div class="voice-list">
-                <div class="voice-item selected" onclick="selectVoice('andrew', this)">
-                    <div class="voice-name">Andrew (YouTube Master)</div>
-                    <div class="voice-desc">Warm, energetic documentary narrator. High retention rate for tech & finance.</div>
+        <!-- LEFT COLUMN: Inputs, Voice Settings, Subtitle & Video Filter Controls -->
+        <div class="workbench-col">
+            
+            <!-- Script Editor Card -->
+            <section class="apple-card">
+                <div class="card-header">
+                    <span class="card-title">Script Editor</span>
+                    <span class="accuracy-tag">✓ 100% Word-for-Word</span>
                 </div>
 
-                <div class="voice-item" onclick="selectVoice('christopher', this)">
-                    <div class="voice-name">Christopher (Deep Storyteller)</div>
-                    <div class="voice-desc">Deep, cinematic tone ideal for crime, mystery & deep business essays.</div>
+                <textarea id="scriptText" placeholder="Paste your script here... (e.g. Okay, so you want to own a data center...)" oninput="updateWordCount()" onchange="updateWordCount()" onkeyup="updateWordCount()" onpaste="setTimeout(updateWordCount, 10)"></textarea>
+
+                <div class="meta-row">
+                    <div class="meta-stats">
+                        <span id="wordCount">0 Words</span>
+                        <span>•</span>
+                        <span id="estTime">~0 min audio</span>
+                    </div>
+                    <span style="color: var(--accent-apple); font-weight: 500;">📱 Background Active</span>
                 </div>
 
-                <div class="voice-item" onclick="selectVoice('ava', this)">
-                    <div class="voice-name">Ava (Modern Expressive)</div>
-                    <div class="voice-desc">Clear, modern, expressive narrator voice for tech & commentary.</div>
+                <div class="action-btn-grid" id="desktopActionGrid" style="margin-top:16px;">
+                    <button class="btn-apple" onclick="generateStream('audio')">
+                        🎵 Voiceover
+                    </button>
+                    <button class="btn-apple btn-apple-secondary" onclick="generateStream('srt')">
+                        📝 .SRT
+                    </button>
+                    <button class="btn-apple btn-apple-secondary" onclick="generateStream('breakdown')">
+                        🎬 Scene Cuts
+                    </button>
+                </div>
+            </section>
+
+            <!-- Voice & Pacing Card -->
+            <section class="apple-card">
+                <div class="card-header">
+                    <span class="card-title">Voice & Pacing</span>
                 </div>
 
-                <div class="voice-item" onclick="selectVoice('guy', this)">
-                    <div class="voice-name">Guy (News Broadcaster)</div>
-                    <div class="voice-desc">Authoritative American news anchor style.</div>
+                <div class="voice-list">
+                    <div class="voice-item selected" onclick="selectVoice('andrew', this)">
+                        <div class="voice-name">Andrew (YouTube Master)</div>
+                        <div class="voice-desc">Warm, energetic narrator. High retention rate.</div>
+                    </div>
+
+                    <div class="voice-item" onclick="selectVoice('christopher', this)">
+                        <div class="voice-name">Christopher (Deep Storyteller)</div>
+                        <div class="voice-desc">Deep, cinematic tone for crime & mystery.</div>
+                    </div>
+
+                    <div class="voice-item" onclick="selectVoice('ava', this)">
+                        <div class="voice-name">Ava (Modern Expressive)</div>
+                        <div class="voice-desc">Clear, modern narrator for tech & commentary.</div>
+                    </div>
+
+                    <div class="voice-item" onclick="selectVoice('guy', this)">
+                        <div class="voice-name">Guy (News Broadcaster)</div>
+                        <div class="voice-desc">Authoritative American news anchor style.</div>
+                    </div>
                 </div>
-            </div>
 
-            <div class="slider-box">
-                <div class="slider-header">
-                    <span>Speech Pacing</span>
-                    <span id="rateVal" style="color: var(--accent-apple); font-weight: 600;">+1% (Optimal)</span>
+                <div class="slider-box">
+                    <div class="slider-header">
+                        <span>Speech Pacing</span>
+                        <span id="rateVal" style="color: var(--accent-apple); font-weight: 600;">+1% (Optimal)</span>
+                    </div>
+                    <input type="range" id="rateSlider" min="-10" max="15" value="1" step="1" oninput="updateRateLabel(this.value)">
                 </div>
-                <input type="range" id="rateSlider" min="-10" max="15" value="1" step="1" oninput="updateRateLabel(this.value)">
-            </div>
 
-            <div style="margin-bottom: 1.1rem;">
-                <label style="font-size: 0.78rem; font-weight: 500; color: var(--text-secondary); display: block; margin-bottom: 6px;">Output File Name</label>
-                <input type="text" id="filenameInput" placeholder="e.g. data_center_narration.mp3" style="width: 100%; background: var(--bg-input); border: 1px solid var(--border-subtle); padding: 10px 12px; border-radius: 12px; color: var(--text-primary); outline: none; font-size: 0.88rem;">
-            </div>
+                <div style="margin-bottom: 0.5rem;">
+                    <label style="font-size: 0.78rem; font-weight: 500; color: var(--text-secondary); display: block; margin-bottom: 6px;">Output File Name</label>
+                    <input type="text" id="filenameInput" placeholder="e.g. data_center_narration.mp3" style="width: 100%; background: var(--bg-input); border: 1px solid var(--border-subtle); padding: 10px 12px; border-radius: 12px; color: var(--text-primary); outline: none; font-size: 0.88rem;">
+                </div>
+            </section>
 
-        </section>
+            <!-- Subtitle Style & Kinetic Animation Selector Card -->
+            <section class="apple-card">
+                <div class="card-header">
+                    <span class="card-title">🗣️ Subtitle Style & Animations</span>
+                    <span style="font-size:0.72rem; font-weight:800; background:rgba(52,199,89,0.14); color:#34c759; padding:2px 8px; border-radius:10px;">Pro Captions</span>
+                </div>
 
-            <!-- Breakdown Output Card (Primary Workspace Grid Gallery) -->
-            <div class="output-card" id="breakdownCard" style="margin-top: 24px; padding: 24px; background: var(--bg-card); border-radius: 20px; border: 1px solid var(--accent-apple); box-shadow: 0 12px 40px rgba(0, 113, 227, 0.25);">
+                <div style="margin-bottom:12px;">
+                    <label style="font-size:0.78rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:6px;">Caption Preset:</label>
+                    <select id="subtitlePresetSelect" style="width:100%; font-size:0.85rem; font-weight:700; background:var(--bg-input); color:var(--accent-apple); border:1px solid var(--accent-apple); padding:10px 12px; border-radius:12px; outline:none;" onchange="updateSubtitlePreview()">
+                        <option value="hormozi" selected>⚡ Viral Hormozi (Yellow Word Pop)</option>
+                        <option value="mrbeast">🔥 MrBeast Kinetic (Neon Cyan/Green)</option>
+                        <option value="cinematic">🎬 Minimalist Cinematic (Smooth Fade)</option>
+                        <option value="cyberpunk">🌆 Cyberpunk Neon (Magenta Glow)</option>
+                    </select>
+                </div>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                    <div>
+                        <label style="font-size:0.75rem; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">Font Style:</label>
+                        <select id="subtitleFontSelect" style="width:100%; font-size:0.78rem; background:var(--bg-input); color:var(--text-primary); border:1px solid var(--border-subtle); padding:6px 8px; border-radius:8px;">
+                            <option value="impact">Impact / Heavy</option>
+                            <option value="montserrat" selected>Montserrat ExtraBold</option>
+                            <option value="inter">Inter Clean</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size:0.75rem; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">Position:</label>
+                        <select id="subtitlePosSelect" style="width:100%; font-size:0.78rem; background:var(--bg-input); color:var(--text-primary); border:1px solid var(--border-subtle); padding:6px 8px; border-radius:8px;">
+                            <option value="bottom" selected>Bottom Third</option>
+                            <option value="middle">Center Screen</option>
+                            <option value="top">Top Third</option>
+                        </select>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Cinematic Video Filters & Border Overlays Card -->
+            <section class="apple-card">
+                <div class="card-header">
+                    <span class="card-title">🎥 Cinematic Video Filters</span>
+                    <span style="font-size:0.72rem; font-weight:800; background:rgba(255,149,0,0.14); color:#ff9500; padding:2px 8px; border-radius:10px;">FX Engine</span>
+                </div>
+
+                <div style="margin-bottom:12px;">
+                    <label style="font-size:0.78rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:6px;">Video Border & Filter Preset:</label>
+                    <select id="videoFilterSelect" style="width:100%; font-size:0.85rem; font-weight:700; background:var(--bg-input); color:var(--text-primary); border:1px solid var(--border-subtle); padding:10px 12px; border-radius:12px; outline:none;">
+                        <option value="vignette" selected>🌑 Soft Inward Vignette (Dark Edge Border)</option>
+                        <option value="teal_orange">🎨 Hollywood Teal & Orange LUT</option>
+                        <option value="film_grain">📼 35mm Vintage Film Grain</option>
+                        <option value="letterbox">🎞️ 2.35:1 Cinematic Letterbox Bars</option>
+                        <option value="none">None (Clean Original)</option>
+                    </select>
+                </div>
+            </section>
+
+        </div>
+
+        <!-- CENTER COLUMN: Automation Workbench & Scene Cards Gallery Grid -->
+        <div class="workbench-col">
+            <!-- Breakdown Output Card & Scene Cards Workbench -->
+            <div class="output-card active" id="breakdownCard" style="padding: 22px; background: var(--bg-card); border-radius: 20px; border: 1px solid var(--accent-apple); box-shadow: 0 12px 40px rgba(0, 113, 227, 0.25);">
+                
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
                     <div>
                         <div style="font-size: 1.15rem; font-weight: 800; color: var(--text-primary); display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-                            <span>🎬 16:9 Scene Cuts & Visual Prompts Grid Gallery</span>
-                            <span id="totalScenesBadge" style="display:none; font-size:0.85rem; font-weight:800; background:rgba(0,113,227,0.15); color:var(--accent-apple); padding:4px 12px; border-radius:12px; border:1px solid var(--accent-apple); box-shadow:0 2px 8px rgba(0,113,227,0.2);">Total Scenes: <strong id="totalScenesBoldText" style="font-size:1rem; font-weight:900; color:var(--accent-apple);">0 Scenes</strong></span>
+                            <span>🎬 16:9 Scene Cuts & Visual Prompts Gallery</span>
+                            <span id="totalScenesBadge" style="display:none; font-size:0.85rem; font-weight:800; background:rgba(0,113,227,0.15); color:var(--accent-apple); padding:4px 12px; border-radius:12px; border:1px solid var(--accent-apple);">Total Scenes: <strong id="totalScenesBoldText" style="font-size:1rem; font-weight:900; color:var(--accent-apple);">0 Scenes</strong></span>
                         </div>
-                        <div style="font-size: 0.8rem; color: var(--text-secondary);">Browse, copy prompts, and upload beat images in a responsive scene grid layout.</div>
+                        <div style="font-size: 0.8rem; color: var(--text-secondary);">Browse, search prompts, and upload beat images in your scene workbench.</div>
                     </div>
                     <div style="display:flex; gap:8px; flex-wrap:wrap;">
                         <button class="btn-apple btn-apple-secondary" style="min-height:36px; padding:6px 14px; font-size:0.8rem; width:auto;" onclick="copyAllPromptsOnly()">📋 Copy Prompts Only</button>
@@ -983,7 +1055,7 @@
                             <span>Automation Progress Checklist</span>
                             <span id="checklistCounter" style="font-size:0.75rem; font-weight:700; color:var(--accent-apple);">0 / 3 Completed</span>
                         </div>
-                        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:8px;">
+                        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:8px;">
                             <label id="chkLabelStep1" style="display:flex; align-items:center; gap:8px; font-size:0.82rem; font-weight:600; color:var(--text-primary); cursor:default;">
                                 <input type="checkbox" id="chkStep1" disabled style="width:16px; height:16px; accent-color:#34c759; cursor:default;">
                                 <span>Step 1: Images Assigned</span>
@@ -1051,33 +1123,82 @@
                     </div>
                 </div>
 
-                <div id="breakdownContainer" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap:16px; margin-top:16px;"></div>
+                <!-- Scene Search & Status Filter Pills Bar -->
+                <div style="margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                    <div style="flex:1; min-width:220px;">
+                        <input type="text" id="sceneSearchInput" placeholder="🔎 Search script text or scene #..." style="width:100%; font-size:0.82rem; background:var(--bg-input); border:1px solid var(--border-subtle); padding:8px 12px; border-radius:10px; color:var(--text-primary); outline:none;" oninput="filterSceneCards(this.value)">
+                    </div>
+                    <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                        <button class="btn-apple btn-apple-secondary" style="min-height:30px; padding:4px 10px; font-size:0.75rem; width:auto;" onclick="filterSceneCardsByStatus('all')">All</button>
+                        <button class="btn-apple btn-apple-secondary" style="min-height:30px; padding:4px 10px; font-size:0.75rem; width:auto;" onclick="filterSceneCardsByStatus('missing_img')">🖼️ Missing Img</button>
+                        <button class="btn-apple btn-apple-secondary" style="min-height:30px; padding:4px 10px; font-size:0.75rem; width:auto;" onclick="filterSceneCardsByStatus('audio_ready')">🎙️ Audio Done</button>
+                        <button class="btn-apple btn-apple-secondary" style="min-height:30px; padding:4px 10px; font-size:0.75rem; width:auto;" onclick="filterSceneCardsByStatus('clip_ready')">🎬 Clip Rendered</button>
+                    </div>
+                </div>
+
+                <div id="breakdownContainer" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap:16px; margin-top:10px;"></div>
 
             </div>
-        </section>
+        </div>
 
-        <!-- Sidebar Output Column -->
-        <section style="display:flex; flex-direction:column; gap:1rem;">
-            <!-- Audio Output Card -->
-            <div class="output-card" id="audioCard">
+        <!-- RIGHT COLUMN: Live Studio Monitor & Real-Time Outputs -->
+        <div class="workbench-col">
+            <!-- Live Studio Monitor Card -->
+            <section class="apple-card" style="border: 1px solid var(--accent-apple);">
+                <div class="card-header">
+                    <span class="card-title" style="display:flex; align-items:center; gap:6px;">📺 Live Studio Monitor</span>
+                    <span style="font-size:0.72rem; font-weight:800; background:rgba(0,113,227,0.15); color:var(--accent-apple); padding:2px 8px; border-radius:10px;">LIVE</span>
+                </div>
+
+                <div style="position:relative; width:100%; aspect-ratio:16/9; background:#000; border-radius:12px; overflow:hidden; border:1px solid var(--border-subtle); margin-bottom:10px; display:flex; align-items:center; justify-content:center;">
+                    <video id="studioLiveMonitor" controls style="width:100%; height:100%; object-fit:contain; display:none;"></video>
+                    <div id="monitorPlaceholder" style="text-align:center; padding:20px; color:var(--text-secondary);">
+                        <div style="font-size:2rem; margin-bottom:6px;">🎬</div>
+                        <div style="font-size:0.82rem; font-weight:700; color:var(--text-primary);">Studio Monitor Ready</div>
+                        <div style="font-size:0.72rem; margin-top:4px;">Play any voiceover or mini-clip to preview live.</div>
+                    </div>
+                </div>
+
+                <!-- Live Audio Waveform Canvas Visualizer -->
+                <div style="background:var(--bg-input); border-radius:10px; padding:8px 10px; border:1px solid var(--border-subtle);">
+                    <div style="font-size:0.72rem; font-weight:700; color:var(--text-secondary); margin-bottom:4px; display:flex; justify-content:space-between;">
+                        <span>🌊 Audio Waveform Monitor</span>
+                        <span id="waveformStatusText" style="color:var(--accent-apple);">Standby</span>
+                    </div>
+                    <canvas id="waveformCanvas" width="320" height="40" style="width:100%; height:40px; background:rgba(0,0,0,0.4); border-radius:6px; display:block;"></canvas>
+                </div>
+            </section>
+
+            <!-- Real-Time Cloud Progress Indicator Box -->
+            <div class="progress-container" id="progressBox" style="margin-top:0;">
+                <div class="progress-header">
+                    <span id="progressTitle">Processing...</span>
+                    <span id="progressPercent" style="color: var(--accent-apple);">0%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressBarFill"></div>
+                </div>
+                <div class="progress-sub" id="progressStatus">Cloud background job active...</div>
+            </div>
+
+            <!-- Output Downloads Section -->
+            <div class="output-card" id="audioCard" style="margin-top:0;">
                 <div style="font-size: 0.88rem; font-weight: 600; color: var(--text-primary);">🎙️ Voiceover MP3 Ready</div>
                 <audio id="audioElement" controls></audio>
                 <a href="#" id="downloadAudioLink" class="btn-download-single" download>Download Voiceover MP3</a>
             </div>
 
-            <!-- SRT Subtitle Output Card -->
-            <div class="output-card" id="srtCard">
+            <div class="output-card" id="srtCard" style="margin-top:0;">
                 <div style="font-size: 0.88rem; font-weight: 600; color: var(--text-primary);">📝 .SRT Subtitle File Ready</div>
                 <p style="font-size: 0.78rem; color: var(--text-secondary); margin: 6px 0 10px 0;">Word-level subtitle file generated for CapCut & Premiere Pro.</p>
                 <a href="#" id="downloadSrtLink" class="btn-download-single btn-apple-secondary" download>Download Subtitles (.SRT)</a>
             </div>
-        </section>
+        </div>
 
-        <!-- Full Width Workspace Section for Mini-Clips Studio & Master Video Output -->
+        <!-- FULL-WIDTH BOTTOM ROW: Master Timeline Studio & Video Exporter -->
         <div style="grid-column: 1 / -1; width: 100%;">
-
             <!-- Mini-Clips Grid Gallery Studio & Interactive Timeline Editor -->
-            <div class="output-card" id="miniClipsStudioCard" style="grid-column: 1 / -1; margin-top: 24px; padding: 24px; background: var(--bg-card); border-radius: 20px; border: 1px solid var(--accent-apple); box-shadow: 0 12px 40px rgba(0, 113, 227, 0.2); display:none;">
+            <div class="output-card" id="miniClipsStudioCard" style="grid-column: 1 / -1; margin-top: 12px; padding: 24px; background: var(--bg-card); border-radius: 20px; border: 1px solid var(--accent-apple); box-shadow: 0 12px 40px rgba(0, 113, 227, 0.2); display:none;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
                     <div>
                         <div style="font-size: 1.2rem; font-weight: 800; color: var(--text-primary);">🎞️ Per-Scene Mini-Clips Grid Gallery</div>
@@ -1098,24 +1219,36 @@
                         <span>🎬 Interactive Video Editor Timeline</span>
                         <span id="selectedClipsCounter" style="font-size:0.8rem; font-weight:700; color:var(--accent-apple);">0 Clips Selected</span>
                     </div>
-                    <div id="timelineSequenceStrip" style="display:flex; gap:8px; overflow-x:auto; padding:10px 0; margin-bottom:16px; border-bottom:1px solid var(--border-subtle);"></div>
-                    <button id="exportTimelineBtn" class="btn-apple" style="background:linear-gradient(135deg, #34c759, #0071e3); min-height:50px; font-size:1.05rem; font-weight:800; width:100%; box-shadow:0 6px 24px rgba(52, 199, 89, 0.35);" onclick="exportTimelineMasterVideo()">🚀 Export Final Master Video (.MP4)</button>
-                </div>
-            </div>
+                    <div id="timelineSequenceStrip" style="display:flex; gap:10px; overflow-x:auto; padding:12px; background:var(--bg-input); border:1px solid var(--border-subtle); border-radius:12px; min-height:80px; align-items:center;">
+                        <span style="font-size:0.8rem; color:var(--text-secondary);">No clips added to timeline yet...</span>
+                    </div>
 
-            <!-- Full Width Cinematic Video Output Card -->
-            <div class="output-card" id="videoCard" style="grid-column: 1 / -1; margin-top: 24px; padding: 24px; background: var(--bg-card); border-radius: 20px; border: 1px solid var(--accent-apple); box-shadow: 0 12px 40px rgba(0, 113, 227, 0.25);">
-                <div style="font-size: 1.15rem; font-weight: 800; color: var(--text-primary); margin-bottom: 12px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
-                    <span>🎬 1080p HD Video Preview (Cinematic 16:9 Player)</span>
-                    <span style="font-size:0.75rem; font-weight:600; color:var(--accent-apple); background:rgba(41,151,255,0.12); padding:4px 10px; border-radius:12px;">Full 1920x1080 HD</span>
+                    <div style="margin-top:16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                        <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                            <div>
+                                <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); display:block;">Format:</label>
+                                <select id="exportFormatSelect" style="font-size:0.8rem; font-weight:700; background:var(--bg-input); color:var(--text-primary); border:1px solid var(--border-subtle); padding:6px 10px; border-radius:8px;">
+                                    <option value="16:9" selected>16:9 YouTube Landscape</option>
+                                    <option value="9:16">9:16 Shorts / Reels</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); display:block;">Resolution:</label>
+                                <select id="exportResSelect" style="font-size:0.8rem; font-weight:700; background:var(--bg-input); color:var(--text-primary); border:1px solid var(--border-subtle); padding:6px 10px; border-radius:8px;">
+                                    <option value="1080p" selected>1080p Full HD</option>
+                                    <option value="4k">4K Ultra HD</option>
+                                    <option value="720p">720p Fast</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button class="btn-apple" style="background:linear-gradient(135deg, #FF9500, #FF2D55); font-weight:800; font-size:0.95rem; padding:12px 24px;" onclick="exportSelectedClipsZIP()">
+                            📦 Export Selected Clips (.ZIP)
+                        </button>
+                    </div>
                 </div>
-                <div id="qaReportBadge" style="display:none; margin-bottom:14px; font-size:0.88rem; font-weight:700; color:#34c759; background:rgba(52, 199, 89, 0.12); padding:12px 16px; border-radius:12px; border:1px solid rgba(52, 199, 89, 0.3);"></div>
-                <div style="position:relative; width:100%; border-radius:14px; overflow:hidden; box-shadow:0 8px 30px rgba(0,0,0,0.5); background:#000; margin-bottom:16px;">
-                    <video id="videoElement" controls style="width:100%; max-height:580px; aspect-ratio:16/9; display:block; outline:none; object-fit:contain;"></video>
-                </div>
-                <a href="#" id="downloadVideoLink" class="btn-apple" style="background:linear-gradient(135deg, #34c759, #0071e3); min-height:50px; font-size:1rem; font-weight:700; width:100%; box-shadow:0 6px 24px rgba(52, 199, 89, 0.35);" download>⏬ Download 1080p Explainer Video (.MP4)</a>
             </div>
-        </section>
+        </div>
     </main>
 
     <!-- Mobile Sticky Floating Bar -->
@@ -1624,6 +1757,192 @@
             }
         }
 
+        async function loadProjectsList() {
+            try {
+                const res = await fetch('/api/projects');
+                if (!res.ok) return;
+                const data = await res.json();
+                if (data.status === 'success' && data.projects) {
+                    const select = document.getElementById('projectSelect');
+                    if (!select) return;
+                    let html = '';
+                    data.projects.forEach(p => {
+                        const countText = p.sceneCount ? ` (${p.sceneCount} scenes)` : '';
+                        html += `<option value="${p.id}">${p.title}${countText}</option>`;
+                    });
+                    html += `<option value="new">+ Create New Project...</option>`;
+                    select.innerHTML = html;
+                }
+            } catch (e) {
+                console.warn('Failed to fetch projects list from DB:', e);
+            }
+        }
+
+        async function handleProjectSwitch(val) {
+            if (val === 'new') {
+                const name = prompt("Enter a title for your new video project:", "YouTube Essay #" + (Math.floor(Math.random()*900)+100));
+                if (name) {
+                    const projId = "proj_" + Date.now();
+                    resetStudioProject();
+                    await saveCurrentProjectToDB(projId, name);
+                    await loadProjectsList();
+                    document.getElementById('projectSelect').value = projId;
+                    showTopNotification(`📂 Created & saved new project "${name}" in Database!`, 'success');
+                } else {
+                    document.getElementById('projectSelect').value = 'default';
+                }
+            } else {
+                await loadSelectedProjectFromDB(val);
+            }
+        }
+
+        async function saveCurrentProjectToDB(projId = null, projTitle = null) {
+            try {
+                const selectVal = document.getElementById('projectSelect')?.value;
+                const activeId = projId || (selectVal && selectVal !== 'new' ? selectVal : 'default');
+                const title = projTitle || document.getElementById('projectSelect')?.options[document.getElementById('projectSelect')?.selectedIndex]?.text || 'Active Project';
+
+                const scriptText = document.getElementById('scriptText')?.value || '';
+                const subStyle = document.getElementById('subtitlePresetSelect')?.value || 'hormozi';
+                const vidFilter = document.getElementById('videoFilterSelect')?.value || 'vignette';
+
+                const scenes = (lastBreakdownData || []).map(sc => {
+                    const beatNum = sc.scene;
+                    const audioUrl = perBeatAudio[beatNum] || '';
+                    const clipObj = activeMiniClips.find(c => c.sceneIndex === beatNum);
+                    const clipUrl = clipObj ? clipObj.url : '';
+                    return {
+                        scene_num: beatNum,
+                        text: sc.text,
+                        prompt: sc.prompt,
+                        audioUrl: audioUrl,
+                        clipUrl: clipUrl,
+                        status: clipUrl ? 'clip_ready' : (audioUrl ? 'audio_ready' : 'pending')
+                    };
+                });
+
+                await fetch('/api/projects', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id: activeId,
+                        title: title,
+                        script_text: scriptText,
+                        voice: selectedVoice,
+                        subtitle_style: subStyle,
+                        video_filter: vidFilter,
+                        scenes: scenes
+                    })
+                });
+            } catch (e) {
+                console.warn('Failed to sync project to DB:', e);
+            }
+        }
+
+        async function loadSelectedProjectFromDB(projId) {
+            try {
+                const res = await fetch(`/api/projects/${projId}`);
+                if (!res.ok) return;
+                const data = await res.json();
+                if (data.status === 'success' && data.project) {
+                    const p = data.project;
+                    if (p.scriptText) {
+                        document.getElementById('scriptText').value = p.scriptText;
+                        updateWordCount();
+                    }
+                    if (p.subtitleStyle && document.getElementById('subtitlePresetSelect')) {
+                        document.getElementById('subtitlePresetSelect').value = p.subtitleStyle;
+                    }
+                    if (p.videoFilter && document.getElementById('videoFilterSelect')) {
+                        document.getElementById('videoFilterSelect').value = p.videoFilter;
+                    }
+                    showTopNotification(`🟢 Project "${p.title}" loaded from Database!`, 'success');
+                }
+            } catch (e) {
+                console.warn('Failed to load project from DB:', e);
+            }
+        }
+
+        function filterSceneCards(query) {
+            const cards = document.querySelectorAll('.breakdown-card');
+            const q = (query || '').toLowerCase().trim();
+            cards.forEach(card => {
+                const text = card.textContent.toLowerCase();
+                if (!q || text.includes(q)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        function filterSceneCardsByStatus(status) {
+            const cards = document.querySelectorAll('.breakdown-card');
+            cards.forEach(card => {
+                const beatNum = card.dataset.sceneNum || card.getAttribute('data-scene-num');
+                if (status === 'all') {
+                    card.style.display = 'block';
+                } else if (status === 'missing_img') {
+                    card.style.display = (!perBeatImages[beatNum]) ? 'block' : 'none';
+                } else if (status === 'audio_ready') {
+                    card.style.display = (perBeatAudio[beatNum]) ? 'block' : 'none';
+                } else if (status === 'clip_ready') {
+                    const hasClip = activeMiniClips.some(c => c.sceneIndex == beatNum);
+                    card.style.display = hasClip ? 'block' : 'none';
+                }
+            });
+        }
+
+        function updateSubtitlePreview() {
+            const preset = document.getElementById('subtitlePresetSelect')?.value;
+            console.log('Selected Subtitle Preset:', preset);
+        }
+
+        // Live Audio Waveform Canvas Visualizer
+        function drawAnimatedWaveform() {
+            const canvas = document.getElementById('waveformCanvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+            let time = Date.now() * 0.005;
+
+            function render() {
+                ctx.clearRect(0, 0, width, height);
+                ctx.fillStyle = 'rgba(0, 113, 227, 0.12)';
+                ctx.fillRect(0, 0, width, height);
+
+                ctx.beginPath();
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = '#0071e3';
+
+                const points = 35;
+                const sliceWidth = width / points;
+                let x = 0;
+
+                for (let i = 0; i <= points; i++) {
+                    const v = Math.sin(i * 0.35 + time) * 10 + Math.cos(i * 0.6 - time) * 5;
+                    const y = height / 2 + v;
+
+                    if (i === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                    x += sliceWidth;
+                }
+                ctx.stroke();
+                time += 0.04;
+                requestAnimationFrame(render);
+            }
+            render();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(drawAnimatedWaveform, 500);
+            loadProjectsList();
+        });
+
         function updateChecklistStatus() {
             const chk1 = document.getElementById('chkStep1');
             const chk2 = document.getElementById('chkStep2');
@@ -2038,10 +2357,19 @@
             let success = false;
             for (let attempt = 1; attempt <= maxRetries; attempt++) {
                 try {
+                    const subStyle = document.getElementById('subtitlePresetSelect')?.value || 'hormozi';
+                    const subFont = document.getElementById('subtitleFontSelect')?.value || 'montserrat';
+                    const subPos = document.getElementById('subtitlePosSelect')?.value || 'bottom';
+                    const vidFilter = document.getElementById('videoFilterSelect')?.value || 'vignette';
+
                     const formData = new FormData();
                     formData.append('job_id', activeJobId);
                     formData.append('scene_index', beatNum);
                     formData.append('image', perBeatImages[beatNum]);
+                    formData.append('subtitle_style', subStyle);
+                    formData.append('subtitle_font', subFont);
+                    formData.append('subtitle_pos', subPos);
+                    formData.append('video_filter', vidFilter);
 
                     const res = await fetchWithTimeout('/api/generate-beat-clip', {
                         method: 'POST',
