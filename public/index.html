@@ -574,6 +574,9 @@
             </div>
             
             <div class="header-actions">
+                <button id="headerMuteBtn" class="theme-toggle-btn" style="background: rgba(255, 149, 0, 0.15); color: #ff9500; border-color: rgba(255, 149, 0, 0.35); font-weight: 700;" onclick="toggleStudioMute()">
+                    <span id="headerMuteIcon">🔇</span> <span id="headerMuteText">Muted</span>
+                </button>
                 <button class="theme-toggle-btn" style="background: rgba(255, 59, 48, 0.14); color: #ff3b30; border-color: rgba(255, 59, 48, 0.35); font-weight: 700;" onclick="resetStudioProject()">
                     🔄 New Project
                 </button>
@@ -595,6 +598,9 @@
                 </div>
                 <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                     <span id="topChecklistBadge" style="font-size: 0.75rem; font-weight: 700; background: var(--bg-input); color: var(--accent-apple); padding: 4px 10px; border-radius: 10px; border: 1px solid var(--accent-apple);">Checklist: 0 / 3</span>
+                    <button id="topMuteBtn" class="theme-toggle-btn" style="font-size: 0.75rem; padding: 4px 10px;" onclick="toggleStudioMute()">
+                        <span id="topMuteIcon">🔇</span> <span id="topMuteText">Muted</span>
+                    </button>
                     <button class="theme-toggle-btn" style="background: rgba(255, 59, 48, 0.12); color: #ff3b30; border-color: rgba(255, 59, 48, 0.3); font-size: 0.75rem; padding: 4px 10px;" onclick="resetStudioProject()">
                         🔄 Reset Studio
                     </button>
@@ -1527,7 +1533,53 @@
             updateChecklistStatus();
         }
 
-        async function generateBeatAudio(beatNum) {
+        let isStudioMuted = localStorage.getItem('studio_muted') === 'true';
+
+        function updateMuteUI() {
+            const iconStr = isStudioMuted ? '🔇' : '🔊';
+            const textStr = isStudioMuted ? 'Muted' : 'Sound On';
+            
+            const hIcon = document.getElementById('headerMuteIcon');
+            const hText = document.getElementById('headerMuteText');
+            const tIcon = document.getElementById('topMuteIcon');
+            const tText = document.getElementById('topMuteText');
+            const hBtn = document.getElementById('headerMuteBtn');
+
+            if (hIcon) hIcon.textContent = iconStr;
+            if (hText) hText.textContent = textStr;
+            if (tIcon) tIcon.textContent = iconStr;
+            if (tText) tText.textContent = textStr;
+            
+            if (hBtn) {
+                if (isStudioMuted) {
+                    hBtn.style.background = 'rgba(255, 149, 0, 0.15)';
+                    hBtn.style.color = '#ff9500';
+                    hBtn.style.borderColor = 'rgba(255, 149, 0, 0.35)';
+                } else {
+                    hBtn.style.background = 'var(--toggle-bg)';
+                    hBtn.style.color = 'var(--text-primary)';
+                    hBtn.style.borderColor = 'var(--border-subtle)';
+                }
+            }
+
+            const allAudios = document.querySelectorAll('audio');
+            const allVideos = document.querySelectorAll('video');
+            allAudios.forEach(a => a.muted = isStudioMuted);
+            allVideos.forEach(v => v.muted = isStudioMuted);
+        }
+
+        function toggleStudioMute() {
+            isStudioMuted = !isStudioMuted;
+            localStorage.setItem('studio_muted', isStudioMuted);
+            updateMuteUI();
+            showTopNotification(isStudioMuted ? "🔇 Studio audio muted." : "🔊 Studio audio enabled.", "info");
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            updateMuteUI();
+        });
+
+        async function generateBeatAudio(beatNum, autoPlay = true) {
             const btn = document.getElementById(`btnBeatAudio_${beatNum}`);
             const progressBox = document.getElementById(`cardProgress_${beatNum}`);
             const statusText = document.getElementById(`cardStatus_${beatNum}`);
@@ -1579,8 +1631,11 @@
                     const audioPlayer = document.getElementById(`beatAudioPlayer_${beatNum}`);
                     if (audioBox && audioPlayer) {
                         audioPlayer.src = data.audioUrl;
+                        audioPlayer.muted = isStudioMuted;
                         audioBox.style.display = 'block';
-                        audioPlayer.play();
+                        if (autoPlay && !isStudioMuted) {
+                            audioPlayer.play().catch(e => console.log('Autoplay prevented:', e));
+                        }
                     }
                     updateChecklistStatus();
                 } else {
@@ -1599,7 +1654,7 @@
             }
         }
 
-        async function generateBeatClip(beatNum) {
+        async function generateBeatClip(beatNum, autoPlay = true) {
             const btn = document.getElementById(`btnBeatClip_${beatNum}`);
             const progressBox = document.getElementById(`cardProgress_${beatNum}`);
             const statusText = document.getElementById(`cardStatus_${beatNum}`);
@@ -1652,8 +1707,11 @@
                     const videoEl = document.getElementById(`beatVideo_${beatNum}`);
                     if (playerBox && videoEl) {
                         videoEl.src = data.clipUrl;
+                        videoEl.muted = isStudioMuted;
                         playerBox.style.display = 'block';
-                        videoEl.play();
+                        if (autoPlay && !isStudioMuted) {
+                            videoEl.play().catch(e => console.log('Autoplay prevented:', e));
+                        }
                     }
 
                     // Update active mini-clips list for timeline studio
@@ -1736,7 +1794,8 @@
                 if (existingAudio && existingAudio.src && !existingAudio.src.endsWith('#') && existingAudio.src !== window.location.href) {
                     console.log(`Skipping already generated voiceover for Beat #${beatNum}`);
                 } else {
-                    await generateBeatAudio(beatNum);
+                    // Pass autoPlay = false so batch processing runs 100% silently!
+                    await generateBeatAudio(beatNum, false);
                     // Short rate-limit protection pause
                     await new Promise(r => setTimeout(r, 250));
                 }
@@ -1806,7 +1865,8 @@
                     if (existingVideo && existingVideo.src && !existingVideo.src.endsWith('#') && existingVideo.src !== window.location.href) {
                         console.log(`Skipping already rendered mini-clip for Beat #${beatNum}`);
                     } else {
-                        await generateBeatClip(beatNum);
+                        // Pass autoPlay = false so batch rendering runs 100% silently!
+                        await generateBeatClip(beatNum, false);
                         // Short rate-limit protection pause
                         await new Promise(r => setTimeout(r, 250));
                     }
