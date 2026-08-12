@@ -411,6 +411,58 @@
             border: 0;
         }
 
+        /* 7-STEP WIZARD PILL BUTTONS */
+        .btn-step-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-2);
+            padding: 8px 14px;
+            border-radius: var(--radius-full);
+            background: var(--bg-input);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+            font-size: var(--text-xs);
+            font-weight: var(--fw-bold);
+            cursor: pointer;
+            transition: all var(--duration-fast) var(--ease-out);
+            white-space: nowrap;
+        }
+
+        .btn-step-pill:hover {
+            border-color: var(--accent-primary-glow);
+            color: var(--text-primary);
+        }
+
+        .btn-step-pill.active {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--accent-primary);
+            border-color: var(--accent-primary);
+            box-shadow: var(--shadow-glow-sm);
+        }
+
+        .btn-step-pill .step-num {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--bg-surface);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.72rem;
+            font-weight: 800;
+        }
+
+        .btn-step-pill.active .step-num {
+            background: var(--accent-primary);
+            color: var(--text-inverse);
+        }
+
+        .wiz-arrow {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
         /* ==========================================================================
            EXISTING COMPONENT REWRITES WITH DESIGN SYSTEM TOKENS
            ========================================================================== */
@@ -1396,6 +1448,53 @@
                 </div>
             </div>
         </header>
+
+    <!-- 7-STEP INTERLINKED GUIDED WORKFLOW WIZARD HEADER -->
+    <div id="wizardStepBar" style="max-width: 1600px; margin: 1.25rem auto 0; padding: 0 1rem; width: 100%;">
+        <div style="background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-2xl); padding: 12px 18px; box-shadow: var(--shadow-md); display: flex; align-items: center; justify-content: space-between; gap: 8px; overflow-x: auto;">
+            
+            <button id="wizStepBtn1" class="btn-step-pill active" onclick="goToStep(1)">
+                <span class="step-num">1</span>
+                <span class="step-label">Script & Pacing</span>
+            </button>
+            <span class="wiz-arrow">➔</span>
+
+            <button id="wizStepBtn2" class="btn-step-pill" onclick="goToStep(2)">
+                <span class="step-num">2</span>
+                <span class="step-label">Narrator Voice</span>
+            </button>
+            <span class="wiz-arrow">➔</span>
+
+            <button id="wizStepBtn3" class="btn-step-pill" onclick="goToStep(3)">
+                <span class="step-num">3</span>
+                <span class="step-label">Scene Cuts</span>
+            </button>
+            <span class="wiz-arrow">➔</span>
+
+            <button id="wizStepBtn4" class="btn-step-pill" onclick="goToStep(4)">
+                <span class="step-num">4</span>
+                <span class="step-label">FLUX Images</span>
+            </button>
+            <span class="wiz-arrow">➔</span>
+
+            <button id="wizStepBtn5" class="btn-step-pill" onclick="goToStep(5)">
+                <span class="step-num">5</span>
+                <span class="step-label">Subtitles & FX</span>
+            </button>
+            <span class="wiz-arrow">➔</span>
+
+            <button id="wizStepBtn6" class="btn-step-pill" onclick="goToStep(6)">
+                <span class="step-num">6</span>
+                <span class="step-label">Batch Clips</span>
+            </button>
+            <span class="wiz-arrow">➔</span>
+
+            <button id="wizStepBtn7" class="btn-step-pill" onclick="goToStep(7)">
+                <span class="step-num">7</span>
+                <span class="step-label">SEO & Export</span>
+            </button>
+        </div>
+    </div>
 
     <!-- Top Notification & Studio Activity Command Center Dashboard -->
     <div id="topNotificationDashboard" style="max-width: 1600px; margin: 1.25rem auto 0; padding: 0 1rem; width: 100%;">
@@ -4186,6 +4285,120 @@
                 selectedVoice = 'custom_clone';
             } catch (err) {
                 alert('Failed to upload voice clone: ' + err.message);
+            }
+        }
+
+        let currentActiveStep = 1;
+
+        function goToStep(stepNum) {
+            currentActiveStep = stepNum;
+            for (let i = 1; i <= 7; i++) {
+                const btn = document.getElementById(`wizStepBtn${i}`);
+                if (btn) {
+                    if (i === stepNum) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                }
+            }
+            
+            const msgEl = document.getElementById('topNotificationMsg');
+            const stepNames = {
+                1: "Step 1: Paste Script & Review Duration & Pacing Retention Meter",
+                2: "Step 2: Select Narrator Voice & Speech Pacing Speed",
+                3: "Step 3: Generate Scene Cuts & Choose Art Style Prompts",
+                4: "Step 4: Generate FLUX AI Scene Images & Synthesize Audio",
+                5: "Step 5: Select Viral Kinetic Subtitles & Video Filters",
+                6: "Step 6: Render Mini-Clips in Safe 100-Scene Batches & Build Timeline",
+                7: "Step 7: Generate YouTube SEO Package & Export Final Video"
+            };
+            if (msgEl && stepNames[stepNum]) {
+                msgEl.textContent = stepNames[stepNum];
+            }
+            if (typeof showTopNotification === 'function') {
+                showTopNotification(`📍 Jumped to ${stepNames[stepNum]}`, 'info');
+            }
+        }
+
+        async function generateFluxImagesForAllScenes() {
+            if (!lastBreakdownData || lastBreakdownData.length === 0) {
+                alert('Please generate Scene Cuts first in Step 3!');
+                return;
+            }
+            
+            showTopNotification('⚡ Generating FLUX AI Images for all scenes...', 'info');
+            const projId = (document.getElementById('projectSelect') ? document.getElementById('projectSelect').value : 'default') || 'default';
+            
+            let completedCount = 0;
+            const total = lastBreakdownData.length;
+            
+            for (let i = 0; i < total; i++) {
+                const scene = lastBreakdownData[i];
+                const sceneNum = scene.scene;
+                const promptInput = document.getElementById(`promptText_${sceneNum}`);
+                const prompt = promptInput ? promptInput.value.trim() : (scene.prompt || 'cinematic film still');
+                
+                try {
+                    const res = await fetch('/api/generate-flux-image', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            prompt: prompt,
+                            scene_num: sceneNum,
+                            project_id: projId
+                        })
+                    });
+                    const data = await res.json();
+                    if (data.status === 'success' && data.imageUrl) {
+                        scene.image_url = data.imageUrl;
+                        const previewImg = document.getElementById(`sceneImgPreview_${sceneNum}`);
+                        if (previewImg) {
+                            previewImg.src = data.imageUrl;
+                            previewImg.style.display = 'block';
+                        }
+                        completedCount++;
+                        if (typeof updateStepProgressBars === 'function') updateStepProgressBars();
+                    }
+                } catch (err) {
+                    console.error(`FLUX Image error for scene ${sceneNum}:`, err);
+                }
+            }
+            
+            showTopNotification(`✅ Generated ${completedCount} / ${total} FLUX AI Images!`, 'success');
+        }
+
+        async function rerollFluxImageForScene(sceneNum) {
+            const promptInput = document.getElementById(`promptText_${sceneNum}`);
+            const prompt = promptInput ? promptInput.value.trim() : 'cinematic film still';
+            const projId = (document.getElementById('projectSelect') ? document.getElementById('projectSelect').value : 'default') || 'default';
+            
+            showTopNotification(`🔄 Re-rolling FLUX Image for Scene #${sceneNum}...`, 'info');
+            
+            try {
+                const res = await fetch('/api/generate-flux-image', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        prompt: prompt,
+                        scene_num: sceneNum,
+                        project_id: projId
+                    })
+                });
+                const data = await res.json();
+                if (data.status === 'success' && data.imageUrl) {
+                    const previewImg = document.getElementById(`sceneImgPreview_${sceneNum}`);
+                    if (previewImg) {
+                        previewImg.src = data.imageUrl + '?t=' + Date.now();
+                        previewImg.style.display = 'block';
+                    }
+                    showTopNotification(`✨ FLUX Image updated for Scene #${sceneNum}!`, 'success');
+                    if (typeof updateStepProgressBars === 'function') updateStepProgressBars();
+                } else {
+                    alert('FLUX Image Error: ' + (data.error || 'Failed to render'));
+                }
+            } catch (err) {
+                alert('Connection error: ' + err.message);
             }
         }
 

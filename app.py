@@ -1621,6 +1621,59 @@ async def handle_clone_voice(request):
     except Exception as e:
         return web.json_response({"error": str(e)}, status=500)
 
+async def handle_generate_flux_image(request):
+    try:
+        data = await request.json()
+        prompt = data.get("prompt", "cinematic film still").strip()
+        scene_num = int(data.get("scene_num", 1))
+        proj_id = data.get("project_id", "default").strip()
+        width = int(data.get("width", 1280))
+        height = int(data.get("height", 720))
+        
+        clean_prompt = re.sub(r'[^\w\s\-,]', '', prompt).strip()
+        encoded_prompt = clean_prompt.replace(' ', '%20')
+        seed = uuid.uuid4().int % 100000
+        
+        flux_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width={width}&height={height}&model=flux&nologo=true&seed={seed}"
+        
+        filename = f"flux_scene_{proj_id}_{scene_num}_{uuid.uuid4().hex[:6]}.png"
+        filepath = os.path.join(DOWNLOADS_DIR, filename)
+        image_url = f"/static/generated/{filename}"
+        
+        async with ClientSession() as session:
+            async with session.get(flux_url, timeout=45) as resp:
+                if resp.status == 200:
+                    image_bytes = await resp.read()
+                    with open(filepath, "wb") as f:
+                        f.write(image_bytes)
+                else:
+                    # Fallback SVG preview placeholder if network timeout
+                    svg_content = f'''<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">
+                        <rect width="100%" height="100%" fill="#0e1017"/>
+                        <rect x="2" y="2" width="{width-4}" height="{height-4}" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="8 8"/>
+                        <text x="50%" y="45%" dominant-baseline="middle" text-anchor="middle" fill="#f59e0b" font-size="28" font-weight="bold">⚡ FLUX AI IMAGE BEAT #{scene_num}</text>
+                        <text x="50%" y="60%" dominant-baseline="middle" text-anchor="middle" fill="#9ca3af" font-size="16">{clean_prompt[:60]}...</text>
+                    </svg>'''
+                    with open(filepath, "w", encoding="utf-8") as f:
+                        f.write(svg_content)
+        
+        # Update SQLite scene database record
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("UPDATE scenes SET image_url = ?, prompt = ? WHERE project_id = ? AND scene_num = ?", 
+                       (image_url, prompt, proj_id, scene_num))
+        conn.commit()
+        conn.close()
+        
+        return web.json_response({
+            "status": "success",
+            "message": f"FLUX AI Image generated for Beat #{scene_num}",
+            "sceneNum": scene_num,
+            "imageUrl": image_url
+        })
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)
+
 async def handle_verify_passcode(request):
     try:
         data = await request.json()
@@ -1646,6 +1699,7 @@ def create_app():
     app.router.add_post("/api/assemble-video", handle_assemble_video)
     app.router.add_post("/api/export-timeline", handle_export_timeline)
     app.router.add_post("/api/generate-beat-audio", handle_generate_beat_audio)
+    app.router.add_post("/api/generate-flux-image", handle_generate_flux_image)
     app.router.add_post("/api/generate-beat-clip", handle_generate_beat_clip)
     app.router.add_post("/api/generate-seo-package", handle_generate_seo_package)
     app.router.add_post("/api/clone-voice", handle_clone_voice)

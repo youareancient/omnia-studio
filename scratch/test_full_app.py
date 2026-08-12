@@ -70,6 +70,16 @@ async def test_full_app():
             beat_audio_res = await resp.json()
             print("POST /api/generate-beat-audio status:", resp.status, beat_audio_res.get("status"))
 
+        # 6. Test generate FLUX AI image for Scene #1
+        flux_payload = {
+            "prompt": "2D Vox vector illustration of dark nightclub",
+            "scene_num": 1,
+            "project_id": "default"
+        }
+        async with session.post("http://127.0.0.1:8999/api/generate-flux-image", json=flux_payload) as resp:
+            flux_res = await resp.json()
+            print("POST /api/generate-flux-image status:", resp.status, flux_res.get("status"), "| Image URL:", flux_res.get("imageUrl"))
+
         print("\nALL TESTS PASSED 100% SUCCESSFULLY!")
 
     await runner.cleanup()
