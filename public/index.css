@@ -139,7 +139,7 @@ input, select, textarea, button, audio, video, iframe {
 }
 
 /* Glassmorphic Cards & Elevate Animations */
-.apple-card, .output-card {
+.apple-card, .output-card, .step-card, .breakdown-card {
     background: var(--glass-bg);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
@@ -149,8 +149,10 @@ input, select, textarea, button, audio, video, iframe {
     box-shadow: var(--shadow-card);
     transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease, border-color 0.3s ease;
     margin-bottom: 1.25rem;
-    width: 100%;
-    box-sizing: border-box;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
 }
 
 .apple-card:hover {
@@ -160,22 +162,40 @@ input, select, textarea, button, audio, video, iframe {
 
 /* Buttons System */
 .btn-apple {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
     background: linear-gradient(135deg, #f59e0b, #d97706);
     color: #ffffff;
     font-family: 'Montserrat', sans-serif;
     font-weight: 800;
-    font-size: 0.9rem;
+    font-size: 0.8rem !important;
+    line-height: 1.35 !important;
     border: none;
-    border-radius: 980px;
-    padding: 12px 22px;
+    border-radius: 10px !important;
+    padding: 10px 14px !important;
     cursor: pointer;
     transition: all 0.25s ease;
     box-shadow: 0 6px 20px rgba(245, 158, 11, 0.3);
     outline: none;
+    white-space: normal !important;
+    text-align: center !important;
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+    overflow: hidden !important;
+}
+
+.btn-apple * {
+    max-width: 100% !important;
+    min-width: 0 !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
 }
 
 .btn-apple:hover {
@@ -322,3 +342,86 @@ input, select, textarea, button, audio, video, iframe {
 .anim-crossfade { animation: crossfadeAnim 2s infinite ease-in-out; }
 .anim-fade-black { animation: fadeBlackAnim 2s infinite ease-in-out; }
 .anim-flash-white { animation: flashWhiteAnim 2s infinite ease-in-out; }
+
+/* Responsive Flexbox/Grid Layout & Text-Overflow Protection */
+h1, .hero-title {
+    font-size: clamp(1.8rem, 4vw, 3.2rem) !important;
+    line-height: 1.15;
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
+h2, .section-title {
+    font-size: clamp(1.3rem, 3vw, 2.2rem) !important;
+    line-height: 1.2;
+    word-break: break-word;
+}
+
+h3, h4, .card-title {
+    font-size: clamp(0.95rem, 2vw, 1.25rem) !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+p, span, label, div {
+    max-width: 100%;
+    overflow-wrap: break-word;
+}
+
+.truncate-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.breakdown-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 16px;
+    padding: 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+    word-break: break-word;
+    box-shadow: var(--shadow-card);
+}
+
+.breakdown-script, .breakdown-prompt {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
+@media (max-width: 768px) {
+    .header-container {
+        padding: 0.75rem 1rem !important;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    
+    .nav-links {
+        display: none !important;
+    }
+    
+    .main-wrapper {
+        padding: 0.5rem !important;
+    }
+}
+
+/* Visual Alignment Inspection & Grid Debug Engine */
+body.debug-grid-active * {
+    outline: 1px dashed rgba(245, 158, 11, 0.35) !important;
+    outline-offset: -1px;
+}
+
+body.debug-grid-active .apple-card,
+body.debug-grid-active .step-card,
+body.debug-grid-active .breakdown-card {
+    outline: 2px solid rgba(59, 130, 246, 0.6) !important;
+}

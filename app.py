@@ -3,6 +3,8 @@ import json
 import os
 import re
 import uuid
+import urllib.parse
+import sqlite3
 import edge_tts
 from aiohttp import web, ClientSession, FormData
 
@@ -18,10 +20,16 @@ os.makedirs(DOWNLOADS_DIR, exist_ok=True)
 INDEX_HTML_PATH = os.path.join(STATIC_DIR, "index.html")
 
 VOICE_PRESETS = {
-    "andrew": {"id": "en-US-AndrewNeural", "name": "Andrew (YouTube Documentary)", "desc": "High energy, warm & engaging (Recommended for YouTube monetization)"},
+    "andrew": {"id": "en-US-AndrewNeural", "name": "Andrew (YouTube Documentary)", "desc": "High energy, warm & engaging (#1 for Documentary Essays)"},
     "christopher": {"id": "en-US-ChristopherNeural", "name": "Christopher (Deep Storyteller)", "desc": "Deep, authoritative, cinematic business tone"},
-    "ava": {"id": "en-US-AvaNeural", "name": "Ava (Modern Expressive)", "desc": "Clear, modern, expressive narrator voice"},
-    "guy": {"id": "en-US-GuyNeural", "name": "Guy (News & Commentary)", "desc": "Clear American news broadcaster style"}
+    "ava": {"id": "en-US-AvaNeural", "name": "Ava (Modern Expressive)", "desc": "Clear, modern, expressive narrator voice (#1 Tech)"},
+    "guy": {"id": "en-US-GuyNeural", "name": "Guy (News & Commentary)", "desc": "Clear American news broadcaster style"},
+    "brian": {"id": "en-US-BrianNeural", "name": "Brian (Viral Shorts & Tech)", "desc": "Young, energetic, engaging creator tone"},
+    "emma": {"id": "en-US-EmmaNeural", "name": "Emma (Conversational Finance)", "desc": "Warm, trustworthy conversational female narrator"},
+    "ryan": {"id": "en-GB-RyanNeural", "name": "Ryan (British History & Mystery)", "desc": "Deep cinematic British voice for war & documentaries"},
+    "sonia": {"id": "en-GB-SoniaNeural", "name": "Sonia (British Art & Culture)", "desc": "Elegant British documentarian female voice"},
+    "william": {"id": "en-AU-WilliamNeural", "name": "William (Australian Authentic)", "desc": "Relaxed, authentic Australian narrator"},
+    "liam": {"id": "en-CA-LiamNeural", "name": "Liam (Canadian Dynamic)", "desc": "Dynamic Canadian podcast narrator"}
 }
 
 import sqlite3
@@ -256,53 +264,54 @@ def split_script_into_scenes(raw_text):
                 
     return scenes if scenes else [raw_text]
 
-async def call_groq_ai_prompt_engineer(session, scene_text, scene_number, style_name="Clean Vector Economics (Milly / Cortex)"):
-    api_key = os.environ.get("GROQ_API_KEY", "").strip()
+async def call_groq_ai_prompt_engineer(session, scene_text, scene_number, niche="economics", visual_style="vox_2d", groq_key=""):
+    api_key = groq_key.strip() or os.environ.get("GROQ_API_KEY", "").strip()
     if not api_key:
         return None
 
-    if "Photorealistic" in style_name:
-        system_prompt = (
-            "MASTER PROMPT — UNIVERSAL PHOTOREALISTIC 8K DOCUMENTARY IMAGE PROMPT GENERATOR\n\n"
-            "You are a professional AI Image Prompt Engineer, Visual Director, Cinematographer, and Documentary Storyteller for high-end YouTube channels.\n\n"
-            "Your task is to transform any supplied script beat sentence into a single, detailed, standalone photorealistic 8K image-generation prompt.\n\n"
-            "1. 100% PHOTOREALISTIC 8K CINEMATIC DOCUMENTARY STYLE (STRICTLY NO CARTOONS OR DRAWINGS):\n"
-            "Every generated prompt MUST enforce hyperrealistic 8K documentary photography for the ENTIRE scene — including backgrounds, real lighting, physical environments, ultra-detailed micro-textures, and realistic subjects.\n"
-            "STRICT NEGATIVE CONSTRAINT: ABSOLUTELY NO 2D CARTOONS, NO DRAWINGS, NO STICK FIGURES, NO SKETCHES, NO WHITEBOARD ARTWORK, NO INFOGRAPHIC TEXTBOXES, AND NO SPLIT-SCREEN DIAGRAMS. Every person and object MUST look like a real 35mm film still or hyperrealistic 8K photograph!\n\n"
-            "2. CINEMATIC COMPOSITION & LIGHTING:\n"
-            "- Shallow depth of field, 35mm / 85mm portrait camera lens, natural ambient volumetric lighting, volumetric shadows, award-winning film grain, cinematic color grading, hyper-detailed skin textures/materials.\n"
-            "- Single continuous full-frame 16:9 cinematic camera shot.\n\n"
-            "3. DYNAMIC SUBJECT EVALUATION:\n"
-            "- If the script line features a presenter or narrator host addressing the audience, describe a charismatic realistic presenter in modern professional attire, illuminated by studio/natural lighting.\n"
-            "- If the script line describes physical objects, infrastructure, money, markets, or environments, focus 100% on a stunning cinematic B-roll camera shot of the subject without any presenter.\n\n"
-            "4. OUTPUT FORMAT:\n"
-            "Output ONLY a single detailed, standalone 1-paragraph image prompt starting with 'Hyperrealistic 8K ultra-detailed documentary photography...' ready to paste directly into an AI image generator.\n\n"
-            "Respond strictly in JSON format:\n"
-            '{\n  "prompt": "Hyperrealistic 8K ultra-detailed documentary photography, shot on 35mm lens, cinematic film lighting..."\n}'
-        )
-    else:
-        system_prompt = (
-            "MASTER PROMPT — CLEAN VECTOR ECONOMICS EXPLAINER IMAGE PROMPT GENERATOR\n\n"
-            "Act as a Professional AI Image Prompt Engineer with 5+ years experience, Visual Director, and Educational Illustrator for premium YouTube channels like @misterfinanceyt, @TheWealthCortexx, and @millyproblems.\n\n"
-            "Your task is to transform any supplied script beat sentence into a detailed, standalone image prompt and stock video search keywords locked to the Clean Vector Economics visual style.\n\n"
-            "1. VISUAL STYLE & AESTHETIC:\n"
-            "Hand-drawn professional educational cartoon illustration, clean studio-quality digital vector artwork with thick, smooth black outlines, crisp linework, soft flat colors, and polished modern explainer-animation aesthetics.\n"
-            "Clean white background with generous negative space, keeping the composition uncluttered, highly readable, and focused on the main concept. Professional educational explainer style, balanced composition, subtle flat shading, high contrast, modern vector finish, minimal distractions, no text watermarks, no clutter.\n\n"
-            "2. VISUAL DIRECTIVES:\n"
-            "- Include the exact subject being discussed with visual humor whenever possible.\n"
-            "- When accounting/business terms like revenue, costs, electricity, margins are mentioned, visualize them clearly with clean vector graphics or minimal numbers.\n"
-            "- Keep composition uncluttered with generous white negative space.\n\n"
-            "3. OUTPUT FORMAT:\n"
-            "Output ONLY a JSON object with 'prompt', 'emotion', 'background', 'mood', and 'stock_keywords'.\n"
-            "JSON structure:\n"
-            "{\n"
-            '  "prompt": "Hand-drawn professional educational cartoon illustration, clean studio-quality digital vector artwork with thick, smooth black outlines, crisp linework, soft flat colors, and polished modern explainer-animation aesthetics. [Detailed Scene Description]. Clean white background with generous negative space, keeping composition uncluttered and highly readable. Professional educational explainer style, balanced composition, subtle flat shading, high contrast, modern vector finish, minimal distractions, no text, no logos, no watermarks, polished animation-studio quality.",\n'
-            '  "emotion": "peaceful imagination, hopeful daydreaming",\n'
-            '  "background": "clean white background with ample negative space",\n'
-            '  "mood": "simple, educational, modern, calm, easy to understand",\n'
-            '  "stock_keywords": "data center, server room, businessman thinking"\n'
-            "}"
-        )
+    niche_context_map = {
+        "economics": "The Economics of... (Business, Money, Accounting, Costs, Revenue, Profit Margins, Financial Assets)",
+        "documentary": "Deep Investigative Documentary (True Crime, High-Stakes Mysteries, Unsolved Cases, Cold Case Files)",
+        "tech_ai": "Tech Reviews & AI Future Trends (Silicon Valley, Supercomputing, Robotics, Future Tech & Microchips)",
+        "history_war": "Historical Warfare & Empires (Ancient Battles, Empires, Tactical Warfare, Military History & Fortresses)"
+    }
+    niche_directive = niche_context_map.get(niche, niche_context_map["economics"])
+
+    style_aesthetic_map = {
+        "vox_2d": "Hand-drawn professional educational cartoon illustration, clean studio-quality digital vector artwork with thick, smooth black outlines, crisp linework, soft flat colors, and polished modern explainer-animation aesthetics. Clean white background with generous negative space.",
+        "kurzgesagt": "Kurzgesagt flat vector illustration, vibrant neon gradient palette, clean geometric shapes, high contrast educational graphic aesthetic, polished vector finish with bold visual hierarchy.",
+        "claymation": "3D claymation stop-motion animation aesthetic, tactile plasticine clay figures, dramatic chiaroscuro studio lighting, detailed handmade clay surface textures and subtle thumb-print details.",
+        "photoreal": "Hyperrealistic 8K 35mm film documentary photography, shallow depth of field, 35mm/85mm portrait camera lens, natural ambient volumetric lighting, volumetric shadows, award-winning film grain, cinematic color grading, hyper-detailed real skin/material micro-textures. STRICT NO CARTOONS/DRAWINGS constraint.",
+        "horror_auto": "Dark 16mm analog horror film photography, eerie fog, chiaroscuro flashlight beam shadows, lo-fi VHS grain, atmospheric haunting shadows, dark uncanny storytelling composition.",
+        "engraving": "19th-century vintage copperplate engraving, etched ink cross-hatching linework, antique weathered parchment paper texture, classic historical archival illustration.",
+        "cyberpunk": "Cyberpunk anime cell-shaded webtoon illustration, vibrant glowing neon laser lights, futuristic dark cityscape aesthetic, sharp high-contrast cell shading.",
+        "tech_vector": "Modern tech 3D isometric vector render, clean glossy plastic surfaces, vibrant corporate tech color scheme, 8K clean studio lighting render with sharp 3D perspective.",
+        "oil_painting": "Masterpiece Renaissance oil painting, rich impasto canvas brushstrokes, dramatic Rembrandt chiaroscuro lighting, deep classic golden oil tones on textured canvas.",
+        "midjourney_raw": "Cinematic widescreen raw photography, award-winning composition, natural realistic lighting, shallow depth of field --ar 16:9 --style raw"
+    }
+    style_directive = style_aesthetic_map.get(visual_style, style_aesthetic_map["vox_2d"])
+
+    system_prompt = f"""MASTER PROMPT — YOUTUBE EXPLAINER HIGH-RETENTION IMAGE PROMPT GENERATOR
+
+You are a 10+ year veteran AI Image Prompt Engineer, Visual Director, and Storyteller for top YouTube channels like @misterfinanceyt, @TheWealthCortexx, and @millyproblems.
+
+Your task is to transform the script line into a SINGLE, HIGHLY DETAILED, MULTI-SENTENCE STANDALONE IMAGE PROMPT strictly locked to the specified NICHE and VISUAL ART STYLE.
+
+NICHE CONTEXT: {niche_directive}
+VISUAL ART STYLE: {style_directive}
+
+MASTER GENERATION RULES:
+1. 3-5 SECOND SCENE FOCUS: Each scene covers 3-5 seconds (1 sentence). Include ONLY elements relevant to the scene line without clutter.
+2. STANDALONE LONG PROMPT: The generated prompt MUST be a full, detailed, multi-sentence paragraph (80-150 words). Never write 'same as before' or use generic short descriptions.
+3. SUBJECT & ACTION: Describe the subject's exact posture, clothing, hair, gestures, facial expression, and action in vivid detail. Use visual humor or thought bubbles whenever applicable.
+4. DIAGRAMS & LABELS: When accounting, business, or niche terms (revenue, costs, margins, stats) are mentioned, describe clean text/stat/chart visual callouts inside the prompt.
+5. COMPOSITION & NEGATIVE SPACE: Maintain a balanced composition with generous negative space, keeping the visual clean, professional, highly readable, and free of clutter or watermarks.
+
+Respond STRICTLY in JSON format:
+{{
+  "prompt": "[Complete, rich, multi-sentence standalone image prompt starting with the visual style signature and detailing subject, posture, composition, lighting, environment, negative space, and quality finish]"
+}}
+"""
 
     user_prompt = f"Script Line (Beat {scene_number}): \"{scene_text}\""
 
@@ -355,38 +364,36 @@ STOPWORDS = {
     "you've", "your", "yours", "yourself", "yourselves"
 }
 
-def build_vector_art_scene_prompt_fallback(text):
+def build_vector_art_scene_prompt_fallback(text, niche="economics", visual_style="vox_2d"):
     clean_line = re.sub(r'\s+', ' ', text).strip()
     
+    style_header_map = {
+        "claymation": "3D claymation stop-motion animation style, tactile plasticine clay figures, dramatic chiaroscuro studio lighting, detailed handmade clay textures.",
+        "photoreal": "Hyperrealistic 8K 35mm film documentary photograph, shallow depth of field, anamorphic lens flare, natural volumetric lighting, award-winning movie still photography.",
+        "kurzgesagt": "Kurzgesagt flat vector illustration style, vibrant neon gradient color palette, bold geometric shapes, clean educational infographic aesthetic.",
+        "horror_auto": "Dark 16mm analog horror film photograph, lo-fi VHS grain, eerie atmospheric fog, flashlight beam shadows, dark haunting storytelling composition.",
+        "engraving": "19th-century vintage copperplate engraving, etched ink cross-hatching linework, antique weathered parchment paper texture.",
+        "cyberpunk": "Cyberpunk anime cell-shaded webtoon illustration, vibrant glowing neon lights, futuristic dark cityscape aesthetic, high contrast cell shading.",
+        "tech_vector": "Modern tech 3D isometric vector render, clean glossy plastic surfaces, corporate tech color palette, 8K studio lighting.",
+        "oil_painting": "Masterpiece Renaissance oil painting, rich impasto canvas brushstrokes, dramatic Rembrandt chiaroscuro lighting, deep golden oil tones.",
+        "midjourney_raw": "Cinematic widescreen raw photography, award-winning composition, natural realistic lighting --ar 16:9 --style raw",
+        "vox_2d": "Hand-drawn professional educational cartoon illustration, clean studio-quality digital vector artwork with thick, smooth black outlines, crisp linework, soft flat colors, clean white background with generous negative space."
+    }
+
+    style_header = style_header_map.get(visual_style, style_header_map["vox_2d"])
+
     money_match = re.search(r'(\$?\d+[\d,.]*\s*(million|billion|thousand|k|m)?)', clean_line, re.IGNORECASE)
-    money_callout = ""
-    if money_match and len(money_match.group(0)) > 1:
-        money_callout = f" Hand-drawn financial text label showing \"{money_match.group(0).upper()}\"."
-
-    # Smart check for narrator presence
-    narrator_keywords = ["you", "your", "we", "our", "welcome", "let's", "okay", "so", "look", "here"]
-    has_narrator = any(re.search(rf'\b{kw}\b', clean_line, re.IGNORECASE) for kw in narrator_keywords)
-
-    character_snippet = ""
-    if has_narrator:
-        character_snippet = (
-            "Featuring the central recurring character: a simple hand-drawn expressive 2D stick figure guide with clean black ink outlines, wearing a vibrant crimson-red backwards baseball cap, an eye-catching electric-blue oversized hoodie, deep indigo baggy jeans, fresh white sneakers, and a prominent giant glowing metallic gold dollar-sign ($) medallion necklace, standing out as the colorful narrator. "
-            "STRICT NO LABELS RULE: DO NOT WRITE THE WORDS 'HOST', 'HOST 3', OR ANY POINTER ARROWS ON OR NEAR THE CHARACTER. "
-        )
+    money_callout = f" Clear visual text label displaying \"{money_match.group(0).upper()}\"." if money_match else ""
 
     prompt_str = (
-        "100% 2D hand-drawn editorial economics cartoon illustration, professional educational cartoon style, whiteboard-inspired artwork, thick slightly imperfect black ink outlines, sketchy marker strokes, subtle paper grain, 60-30-10 color harmony with warm off-white canvas. "
-        "STRICT NO PHOTOGRAPHY RULE: ABSOLUTELY NO REALISTIC PHOTOGRAPHY, NO REAL HUMAN PHOTOS, NO REALISTIC PEOPLE OR PHOTO-REALISTIC BACKGROUNDS. ALL BACKGROUND PEOPLE AND ENVIRONMENTS MUST BE 2D HAND-DRAWN CARTOON FIGURES. "
-        f"{character_snippet}"
-        f"A single full-frame 16:9 2D cartoon physical location scene depicting: \"{clean_line}\". "
-        "Showing a grand 2D hand-drawn physical environment (e.g. 2D cartoon nightclub exterior, 2D illustrated street food market, or 2D cartoon building interior). "
-        "ABSOLUTELY NO INFOGRAPHIC SLIDES, NO TOP CATEGORY HEADINGS, NO SPLIT-SCREEN DIAGRAM BOXES, AND NO CONNECTING ARROWS. "
-        f"{money_callout} Professional YouTube economics explainer documentary aesthetic."
+        f"{style_header} A full-frame 16:9 cinematic shot depicting: \"{clean_line}\". "
+        f"A relaxed character in comfortable modern attire is positioned naturally in a clean scene with generous negative space. {money_callout} "
+        "Professional high-retention YouTube explainer documentary aesthetic, balanced composition, minimal clutter, no text watermarks."
     )
 
     return prompt_str
 
-async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode):
+async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode, niche="economics", visual_style="vox_2d", groq_key=""):
     try:
         BACKGROUND_JOBS[job_id] = {
             "status": "processing",
@@ -493,7 +500,7 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
 
             async with ClientSession() as http_session:
                 tasks = [
-                    call_groq_ai_prompt_engineer(http_session, sitem["text"], idx)
+                    call_groq_ai_prompt_engineer(http_session, sitem["text"], idx, niche=niche, visual_style=visual_style, groq_key=groq_key)
                     for idx, (sitem) in enumerate(scenes_raw, start=1)
                 ]
                 ai_prompts = await asyncio.gather(*tasks)
@@ -501,7 +508,7 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
             scenes = []
             for idx, (sitem, prompt_res) in enumerate(zip(scenes_raw, ai_prompts), start=1):
                 if not prompt_res:
-                    prompt_res = build_vector_art_scene_prompt_fallback(sitem["text"])
+                    prompt_res = build_vector_art_scene_prompt_fallback(sitem["text"], niche, visual_style)
                 
                 scenes.append({
                     "scene": idx,
@@ -592,12 +599,15 @@ async def handle_start_job(request):
         rate = data.get("rate", "+1%")
         filename = data.get("filename", "").strip()
         mode = data.get("mode", "audio")
+        niche = data.get("niche", "economics")
+        visual_style = data.get("visual_style", "vox_2d")
+        groq_key = data.get("groq_key", "").strip()
 
         if not raw_text:
             return web.json_response({"error": "Script text cannot be empty"}, status=400)
 
         job_id = str(uuid.uuid4())
-        asyncio.create_task(process_job_async(job_id, raw_text, voice_preset, rate, filename, mode))
+        asyncio.create_task(process_job_async(job_id, raw_text, voice_preset, rate, filename, mode, niche, visual_style, groq_key))
 
         return web.json_response({"job_id": job_id, "status": "processing"})
     except Exception as e:
@@ -1621,6 +1631,23 @@ async def handle_clone_voice(request):
     except Exception as e:
         return web.json_response({"error": str(e)}, status=500)
 
+def condense_prompt_for_flux(raw_prompt):
+    if not raw_prompt:
+        return "cinematic film still, high quality"
+    
+    clean = re.sub(r'[\r\n]+', ' ', raw_prompt)
+    clean = re.sub(r'[^\w\s\-,.]', '', clean).strip()
+
+    if len(clean) > 220:
+        truncated = clean[:220]
+        last_space = truncated.rfind(' ')
+        if last_space > 80:
+            clean = truncated[:last_space]
+        else:
+            clean = truncated
+
+    return clean
+
 async def handle_generate_flux_image(request):
     try:
         data = await request.json()
@@ -1630,8 +1657,8 @@ async def handle_generate_flux_image(request):
         width = int(data.get("width", 1280))
         height = int(data.get("height", 720))
         
-        clean_prompt = re.sub(r'[^\w\s\-,]', '', prompt).strip()
-        encoded_prompt = clean_prompt.replace(' ', '%20')
+        flux_prompt = condense_prompt_for_flux(prompt)
+        encoded_prompt = urllib.parse.quote_plus(flux_prompt)
         seed = uuid.uuid4().int % 100000
         
         flux_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width={width}&height={height}&model=flux&nologo=true&seed={seed}"
@@ -1641,21 +1668,38 @@ async def handle_generate_flux_image(request):
         image_url = f"/static/generated/{filename}"
         
         async with ClientSession() as session:
-            async with session.get(flux_url, timeout=45) as resp:
-                if resp.status == 200:
-                    image_bytes = await resp.read()
-                    with open(filepath, "wb") as f:
-                        f.write(image_bytes)
-                else:
-                    # Fallback SVG preview placeholder if network timeout
-                    svg_content = f'''<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">
-                        <rect width="100%" height="100%" fill="#0e1017"/>
-                        <rect x="2" y="2" width="{width-4}" height="{height-4}" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="8 8"/>
-                        <text x="50%" y="45%" dominant-baseline="middle" text-anchor="middle" fill="#f59e0b" font-size="28" font-weight="bold">⚡ FLUX AI IMAGE BEAT #{scene_num}</text>
-                        <text x="50%" y="60%" dominant-baseline="middle" text-anchor="middle" fill="#9ca3af" font-size="16">{clean_prompt[:60]}...</text>
-                    </svg>'''
-                    with open(filepath, "w", encoding="utf-8") as f:
-                        f.write(svg_content)
+            try:
+                async with session.get(flux_url, timeout=30) as resp:
+                    if resp.status == 200:
+                        image_bytes = await resp.read()
+                        with open(filepath, "wb") as f:
+                            f.write(image_bytes)
+                    else:
+                        # Fallback attempt with gen.pollinations.ai
+                        alt_url = f"https://gen.pollinations.ai/prompt/{encoded_prompt}?width={width}&height={height}&model=flux&nologo=true"
+                        async with session.get(alt_url, timeout=20) as alt_resp:
+                            if alt_resp.status == 200:
+                                image_bytes = await alt_resp.read()
+                                with open(filepath, "wb") as f:
+                                    f.write(image_bytes)
+                            else:
+                                svg_content = f'''<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">
+                                    <rect width="100%" height="100%" fill="#0e1017"/>
+                                    <rect x="2" y="2" width="{width-4}" height="{height-4}" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="8 8"/>
+                                    <text x="50%" y="45%" dominant-baseline="middle" text-anchor="middle" fill="#f59e0b" font-size="28" font-weight="bold">⚡ FLUX AI IMAGE BEAT #{scene_num}</text>
+                                    <text x="50%" y="60%" dominant-baseline="middle" text-anchor="middle" fill="#9ca3af" font-size="16">{clean_prompt[:60]}...</text>
+                                </svg>'''
+                                with open(filepath, "w", encoding="utf-8") as f:
+                                    f.write(svg_content)
+            except Exception as net_err:
+                svg_content = f'''<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">
+                    <rect width="100%" height="100%" fill="#0e1017"/>
+                    <rect x="2" y="2" width="{width-4}" height="{height-4}" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="8 8"/>
+                    <text x="50%" y="45%" dominant-baseline="middle" text-anchor="middle" fill="#f59e0b" font-size="28" font-weight="bold">⚡ FLUX AI IMAGE BEAT #{scene_num}</text>
+                    <text x="50%" y="60%" dominant-baseline="middle" text-anchor="middle" fill="#9ca3af" font-size="16">{clean_prompt[:60]}...</text>
+                </svg>'''
+                with open(filepath, "w", encoding="utf-8") as f:
+                    f.write(svg_content)
         
         # Update SQLite scene database record
         conn = sqlite3.connect(DB_PATH)

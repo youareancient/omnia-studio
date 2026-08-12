@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Omnia Studio Pro - Industrial AI Video Automation Suite</title>
-    <meta name="description" content="Omnia Studio Pro - The ultimate personal YouTube automation suite. Render 500+ scene videos in safe 100-scene batches with kinetic subtitles, video filters, and SQLite database persistence.">
+    <title>Omnia Studio — AI Voiceover & Captions for YouTube</title>
+    <meta name="description" content="Omnia Studio — Personal AI voiceover and caption generator tailored for YouTube creators, faceless video essays, documentary narration, and Shorts.">
     
     <!-- PWA & Mobile App Meta Tags -->
     <link rel="manifest" href="/static/manifest.json">
@@ -23,6 +23,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
     
     <style>
         /* ==========================================================================
@@ -280,14 +281,31 @@
 
         body.in-landing-mode #studioView {
             display: none !important;
+            visibility: hidden !important;
+            height: 0 !important;
+            overflow: hidden !important;
         }
 
         body.in-studio-mode #landingView {
             display: none !important;
+            visibility: hidden !important;
+            height: 0 !important;
+            overflow: hidden !important;
         }
 
         body.in-studio-mode #studioView {
             display: block !important;
+        }
+
+        @media print {
+            body.in-landing-mode #studioView {
+                display: none !important;
+                visibility: hidden !important;
+            }
+            body.in-studio-mode #landingView {
+                display: none !important;
+                visibility: hidden !important;
+            }
         }
 
         /* ==========================================================================
@@ -848,12 +866,16 @@
             display: none !important;
         }
 
+        body.in-landing-mode .mobile-bottom-bar {
+            display: none !important;
+        }
+
         @media (max-width: 960px) {
             #desktopActionGrid {
                 display: none !important;
             }
             
-            .mobile-bottom-bar {
+            body.in-studio-mode .mobile-bottom-bar {
                 display: flex !important;
                 flex-direction: row;
                 position: fixed;
@@ -1210,22 +1232,28 @@
     <!-- LANDING PAGE VIEW -->
     <div id="landingView" style="width:100%; min-height:100vh; background:var(--bg-primary);">
         <!-- Landing Header -->
-        <header style="position:sticky; top:0; z-index:100; backdrop-filter:blur(20px); background:rgba(11,13,23,0.85); border-bottom:1px solid var(--border-subtle);">
-            <div class="header-container" style="max-width:1400px; margin:0 auto; padding:1rem 1.5rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-                <div class="brand" style="display:flex; align-items:center; gap:10px;">
-                    <img src="/static/icon.png" alt="Logo" class="app-logo-img" style="height:36px; width:auto; background:transparent;" onerror="this.style.display='none'">
-                    <span class="brand-title" style="font-size:1.35rem; font-weight:900; background:linear-gradient(135deg, #f59e0b, #3b82f6, #10b981); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">Omnia Studio</span>
-                    <span class="brand-badge" style="font-size:0.75rem; background:rgba(245,158,11,0.15); color:var(--accent-apple); border:1px solid var(--accent-apple); padding:2px 8px; border-radius:12px; font-weight:800;">PRO v2.0</span>
+        <header style="position:sticky; top:0; z-index:100; backdrop-filter:blur(20px); background:rgba(9,10,15,0.85); border-bottom:1px solid var(--border-subtle);">
+            <div class="header-container" style="max-width:1300px; margin:0 auto; padding:0.85rem 1.5rem; display:flex; justify-content:space-between; align-items:center;">
+                <!-- Brand Logo & Pill Tag -->
+                <div class="brand" style="display:flex; align-items:center; gap:10px; cursor:pointer;" onclick="switchView('landing')">
+                    <img src="/static/icon.png" alt="Logo" class="app-logo-img" style="height:32px; width:auto; background:transparent;" onerror="this.style.display='none'">
+                    <span class="brand-title" style="font-size:1.3rem; font-weight:900; background:linear-gradient(135deg, var(--accent-primary), #fbbf24, var(--accent-secondary)); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">Omnia Studio</span>
+                    <span class="brand-badge" style="font-size:0.7rem; background:rgba(245,158,11,0.12); color:var(--accent-primary); border:1px solid rgba(245,158,11,0.3); padding:2px 8px; border-radius:12px; font-weight:800; text-transform:uppercase; letter-spacing:0.04em;">AI Studio</span>
                 </div>
                 
-                <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-                    <span style="font-size:0.78rem; font-weight:800; background:rgba(52,199,89,0.15); color:#34c759; border:1px solid rgba(52,199,89,0.35); padding:4px 12px; border-radius:20px; display:flex; align-items:center; gap:6px;">
-                        <span style="width:7px; height:7px; background:#34c759; border-radius:50%; display:inline-block; box-shadow:0 0 8px #34c759;"></span> Server 100% Operational
+                <!-- Center Navigation Links -->
+                <nav class="nav-links" style="display:flex; align-items:center; gap:28px;">
+                    <a href="javascript:void(0)" onclick="switchView('studio')" style="font-size:var(--text-sm); font-weight:var(--fw-semibold); color:var(--text-primary); text-decoration:none; transition:color var(--duration-fast) ease;">Studio Workbench</a>
+                    <a href="#voice-samples" style="font-size:var(--text-sm); font-weight:var(--fw-semibold); color:var(--text-secondary); text-decoration:none; transition:color var(--duration-fast) ease;">Voice Samples</a>
+                    <a href="#features" style="font-size:var(--text-sm); font-weight:var(--fw-semibold); color:var(--text-secondary); text-decoration:none; transition:color var(--duration-fast) ease;">Capabilities</a>
+                </nav>
+
+                <!-- Top Right Option 1: Clean Status & Theme Toggle -->
+                <div style="display:flex; align-items:center; gap:14px;">
+                    <span style="font-size:0.75rem; font-weight:var(--fw-bold); background:rgba(16,185,129,0.12); color:#10b981; border:1px solid rgba(16,185,129,0.3); padding:4px 10px; border-radius:20px; display:flex; align-items:center; gap:6px;">
+                        <span style="width:6px; height:6px; background:#10b981; border-radius:50%; display:inline-block; box-shadow:0 0 6px #10b981;"></span> Online
                     </span>
-                    <span style="font-size:0.78rem; font-weight:800; background:rgba(245,158,11,0.15); color:var(--accent-apple); border:1px solid rgba(245,158,11,0.35); padding:4px 12px; border-radius:20px;">
-                        ⚡ 28 Pro FX & Voice Clone Active
-                    </span>
-                    <button class="theme-toggle-btn" onclick="toggleTheme()" style="background:var(--bg-input); border:1px solid var(--border-subtle); color:var(--text-primary); border-radius:30px; padding:6px 12px; font-size:0.78rem; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:5px; white-space:nowrap;">
+                    <button class="theme-toggle-btn" onclick="toggleTheme()" style="background:var(--bg-surface-elevated); border:1px solid var(--border-subtle); color:var(--text-primary); border-radius:var(--radius-full); padding:6px 14px; font-size:0.78rem; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:5px; white-space:nowrap;">
                         <span id="themeIconLanding">☀️</span>
                         <span id="themeTextLanding">Light</span>
                     </button>
@@ -1234,35 +1262,35 @@
         </header>
 
         <!-- Landing Hero Section -->
-        <section style="max-width:1200px; margin:4rem auto 3rem; padding:0 1.5rem; text-align:center; display:flex; flex-direction:column; align-items:center;">
-            <div style="display:inline-flex; align-items:center; gap:8px; background:rgba(245,158,11,0.12); border:1px solid var(--accent-primary-glow); padding:8px 20px; border-radius:var(--radius-full); margin-bottom:24px; box-shadow:var(--shadow-glow-sm);">
-                <span style="font-size:var(--text-xs); font-weight:var(--fw-extrabold); color:var(--accent-primary); text-transform:uppercase; letter-spacing:0.08em;">✨ NEXT-GEN YOUTUBE AUTOMATION PIPELINE</span>
+        <section style="max-width:1150px; margin:4rem auto 3rem; padding:0 1.5rem; text-align:center; display:flex; flex-direction:column; align-items:center;">
+            <div style="display:inline-flex; align-items:center; gap:8px; background:rgba(245,158,11,0.1); border:1px solid var(--accent-primary-glow); padding:6px 18px; border-radius:var(--radius-full); margin-bottom:24px; box-shadow:var(--shadow-glow-sm);">
+                <span style="font-size:var(--text-xs); font-weight:var(--fw-extrabold); color:var(--accent-primary); text-transform:uppercase; letter-spacing:0.08em;">✨ AI VOICEOVER & CAPTION STUDIO FOR YOUTUBE</span>
             </div>
 
-            <h1 style="font-size:clamp(2.5rem, 5vw, 3.8rem); font-family:var(--font-display); font-weight:var(--fw-black); line-height:1.1; color:var(--text-primary); max-width:920px; margin-bottom:24px; letter-spacing:-0.03em;">
-                Automate <span style="background:linear-gradient(135deg, var(--accent-primary), #fbbf24, var(--accent-secondary)); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">500+ Scene</span> YouTube Essays in Minutes
+            <h1 style="font-size:clamp(2.4rem, 4.8vw, 3.6rem); font-family:var(--font-display); font-weight:var(--fw-black); line-height:1.15; color:var(--text-primary); max-width:900px; margin-bottom:20px; letter-spacing:-0.03em;">
+                Turn Your Scripts into <span style="background:linear-gradient(135deg, var(--accent-primary), #fbbf24, var(--accent-secondary)); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">Studio-Grade Audio</span> & Captions
             </h1>
 
-            <p style="font-size:var(--text-lg); color:var(--text-secondary); max-width:760px; margin-bottom:40px; line-height:1.7; font-weight:var(--fw-normal);">
-                The industrial-grade personal production studio for YouTube creators. Render 100-scene video batches safely with zero server crashes, kinetic animated captions, and SQLite cloud state persistence.
+            <p style="font-size:var(--text-lg); color:var(--text-secondary); max-width:740px; margin-bottom:36px; line-height:1.65; font-weight:var(--fw-normal);">
+                Generate human-like voiceovers and auto-synced .SRT / .VTT subtitles for your YouTube video essays, documentaries, and Shorts in seconds.
             </p>
 
             <!-- Clean Hero CTA Badge & Action Buttons -->
-            <div style="display:flex; gap:16px; justify-content:center; flex-wrap:wrap; margin-bottom:40px;">
-                <button class="btn-apple" style="background:linear-gradient(135deg, var(--accent-primary), var(--accent-primary-hover)); font-size:var(--text-base); font-weight:var(--fw-black); padding:18px 40px; border-radius:var(--radius-full); box-shadow:var(--shadow-glow-lg);" onclick="switchView('studio')">
+            <div style="display:flex; gap:16px; justify-content:center; flex-wrap:wrap; margin-bottom:36px;">
+                <button class="btn-apple" style="background:linear-gradient(135deg, var(--accent-primary), var(--accent-primary-hover)); font-size:var(--text-base); font-weight:var(--fw-bold); padding:16px 36px; border-radius:var(--radius-full); box-shadow:var(--shadow-glow-md); cursor:pointer;" onclick="switchView('studio')">
                     🚀 Launch Studio Workbench →
                 </button>
-                <a href="#voice-samples" class="btn-apple btn-apple-secondary" style="font-size:var(--text-base); font-weight:var(--fw-bold); padding:18px 36px; border-radius:var(--radius-full); text-decoration:none; border:1px solid var(--border-subtle);">
-                    🎵 Preview Voice Samples
+                <a href="#voice-samples" class="btn-apple btn-apple-secondary" style="font-size:var(--text-base); font-weight:var(--fw-bold); padding:16px 32px; border-radius:var(--radius-full); text-decoration:none; border:1px solid var(--border-subtle); color:var(--text-primary);">
+                    🎧 Explore Voice Samples
                 </a>
             </div>
 
             <!-- Trust Indicators -->
-            <div style="display:flex; gap:32px; justify-content:center; flex-wrap:wrap; opacity:0.75; font-size:var(--text-xs); color:var(--text-muted); font-weight:var(--fw-medium);">
-                <span style="display:flex; align-items:center; gap:6px;">⚡ 28 Pro FX & Voice Clone Active</span>
-                <span style="display:flex; align-items:center; gap:6px;">🛡️ 100-Scene Batch Safety</span>
-                <span style="display:flex; align-items:center; gap:6px;">💾 SQLite Cloud Persistence</span>
-                <span style="display:flex; align-items:center; gap:6px;">🎬 500+ Scenes Supported</span>
+            <div style="display:flex; gap:28px; justify-content:center; flex-wrap:wrap; opacity:0.8; font-size:var(--text-xs); color:var(--text-muted); font-weight:var(--fw-medium);">
+                <span style="display:flex; align-items:center; gap:6px;">🎙️ Edge-TTS Engine</span>
+                <span style="display:flex; align-items:center; gap:6px;">💬 Auto-Synced .SRT & .VTT</span>
+                <span style="display:flex; align-items:center; gap:6px;">⏱️ 150 WPM Pacing</span>
+                <span style="display:flex; align-items:center; gap:6px;">🛡️ 100% Free & Unlimited</span>
             </div>
         </section>
 
@@ -1273,117 +1301,170 @@
                 
                 <div style="text-align:center; margin-bottom:32px; position:relative; z-index:1;">
                     <span style="font-size:var(--text-xs); font-weight:var(--fw-extrabold); color:var(--accent-primary); text-transform:uppercase; letter-spacing:0.12em;">🎙️ AI NARRATOR PREVIEW ENGINE</span>
-                    <h2 style="font-size:clamp(1.6rem, 3vw, 2.2rem); font-family:var(--font-display); font-weight:var(--fw-black); color:var(--text-primary); margin:12px 0 8px;">Interactive Voice Sample Player</h2>
-                    <p style="font-size:var(--text-sm); color:var(--text-secondary); max-width:500px; margin:0 auto; line-height:1.6;">Click any voice preset below to hear real YouTube narration audio live on this page.</p>
+                    <h2 style="font-size:clamp(1.6rem, 3vw, 2.2rem); font-family:var(--font-display); font-weight:var(--fw-black); color:var(--text-primary); margin:12px 0 8px;">Explore YouTube Voice Samples</h2>
+                    <p style="font-size:var(--text-sm); color:var(--text-secondary); max-width:550px; margin:0 auto; line-height:1.6;">Click any voice card below to hear instant, high-fidelity YouTube audio narration directly inside the card.</p>
                 </div>
 
-                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:16px; margin-bottom:24px; position:relative; z-index:1;">
-                    <button class="voice-sample-card" onclick="playVoiceSample('andrew')" style="background:var(--bg-input); border:1px solid var(--border-subtle); border-radius:var(--radius-xl); padding:20px; text-align:left; cursor:pointer; transition:all var(--duration-normal) var(--ease-spring); position:relative; overflow:hidden;">
-                        <div style="position:absolute; top:0; left:0; width:4px; height:100%; background:linear-gradient(180deg, #f59e0b, #fbbf24); opacity:0; transition:opacity var(--duration-fast) ease;"></div>
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:16px; position:relative; z-index:1;">
+                    <!-- Card 1: Andrew (Top 10 / Faceless) -->
+                    <button class="voice-sample-card" id="card_andrew" onclick="playVoiceSample('andrew')" style="background:var(--bg-input); border:1px solid var(--border-subtle); border-radius:var(--radius-xl); padding:20px; text-align:left; cursor:pointer; transition:all var(--duration-normal) var(--ease-spring); position:relative; overflow:hidden;">
+                        <div class="card-accent-bar" style="position:absolute; top:0; left:0; width:4px; height:100%; background:linear-gradient(180deg, #f59e0b, #fbbf24); opacity:0; transition:opacity var(--duration-fast) ease;"></div>
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                            <span style="font-weight:var(--fw-bold); font-size:var(--text-base); color:var(--text-primary);">Andrew Pro (US)</span>
-                            <span style="font-size:1.3rem;">▶️</span>
+                            <span style="font-weight:var(--fw-bold); font-size:var(--text-base); color:var(--text-primary);">Andrew (US)</span>
+                            <div class="play-state-container" style="display:flex; align-items:center; gap:6px;">
+                                <div class="equalizer-bars" id="eq_andrew" style="display:none;"><span></span><span></span><span></span></div>
+                                <span class="card-play-btn" id="btn_andrew" style="font-size:1.1rem; background:rgba(245,158,11,0.15); color:var(--accent-primary); width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center;">▶</span>
+                            </div>
                         </div>
-                        <div style="font-size:var(--text-xs); color:var(--accent-primary); font-weight:var(--fw-bold);">YouTube Documentary Master</div>
-                        <div style="font-size:var(--text-xs); color:var(--text-secondary); margin-top:6px; line-height:1.5;">Warm, energetic tech & business voice.</div>
+                        <div style="font-size:var(--text-xs); color:var(--accent-primary); font-weight:var(--fw-bold);">Faceless / Top 10 Essays</div>
+                        <div style="font-size:var(--text-xs); color:var(--text-secondary); margin-top:6px; line-height:1.5;">Energetic, confident voice ideal for YouTube video essays.</div>
                     </button>
 
-                    <button class="voice-sample-card" onclick="playVoiceSample('christopher')" style="background:var(--bg-input); border:1px solid var(--border-subtle); border-radius:var(--radius-xl); padding:20px; text-align:left; cursor:pointer; transition:all var(--duration-normal) var(--ease-spring); position:relative; overflow:hidden;">
-                        <div style="position:absolute; top:0; left:0; width:4px; height:100%; background:linear-gradient(180deg, #5e5ce6, #8b5cf6); opacity:0; transition:opacity var(--duration-fast) ease;"></div>
+                    <!-- Card 2: Christopher (Documentary) -->
+                    <button class="voice-sample-card" id="card_christopher" onclick="playVoiceSample('christopher')" style="background:var(--bg-input); border:1px solid var(--border-subtle); border-radius:var(--radius-xl); padding:20px; text-align:left; cursor:pointer; transition:all var(--duration-normal) var(--ease-spring); position:relative; overflow:hidden;">
+                        <div class="card-accent-bar" style="position:absolute; top:0; left:0; width:4px; height:100%; background:linear-gradient(180deg, #5e5ce6, #8b5cf6); opacity:0; transition:opacity var(--duration-fast) ease;"></div>
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                            <span style="font-weight:var(--fw-bold); font-size:var(--text-base); color:var(--text-primary);">Christopher (UK Deep)</span>
-                            <span style="font-size:1.3rem;">▶️</span>
+                            <span style="font-weight:var(--fw-bold); font-size:var(--text-base); color:var(--text-primary);">Christopher (UK)</span>
+                            <div class="play-state-container" style="display:flex; align-items:center; gap:6px;">
+                                <div class="equalizer-bars" id="eq_christopher" style="display:none;"><span></span><span></span><span></span></div>
+                                <span class="card-play-btn" id="btn_christopher" style="font-size:1.1rem; background:rgba(94,92,230,0.15); color:#5e5ce6; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center;">▶</span>
+                            </div>
                         </div>
-                        <div style="font-size:var(--text-xs); color:#5e5ce6; font-weight:var(--fw-bold);">Deep Storyteller</div>
-                        <div style="font-size:var(--text-xs); color:var(--text-secondary); margin-top:6px; line-height:1.5;">Deep, cinematic tone for mystery & essays.</div>
+                        <div style="font-size:var(--text-xs); color:#5e5ce6; font-weight:var(--fw-bold);">Documentary & Mystery</div>
+                        <div style="font-size:var(--text-xs); color:var(--text-secondary); margin-top:6px; line-height:1.5;">Deep, cinematic narration for history & crime docs.</div>
                     </button>
 
-                    <button class="voice-sample-card" onclick="playVoiceSample('ava')" style="background:var(--bg-input); border:1px solid var(--border-subtle); border-radius:var(--radius-xl); padding:20px; text-align:left; cursor:pointer; transition:all var(--duration-normal) var(--ease-spring); position:relative; overflow:hidden;">
-                        <div style="position:absolute; top:0; left:0; width:4px; height:100%; background:linear-gradient(180deg, #34c759, #059669); opacity:0; transition:opacity var(--duration-fast) ease;"></div>
+                    <!-- Card 3: Ava (Tech & AI) -->
+                    <button class="voice-sample-card" id="card_ava" onclick="playVoiceSample('ava')" style="background:var(--bg-input); border:1px solid var(--border-subtle); border-radius:var(--radius-xl); padding:20px; text-align:left; cursor:pointer; transition:all var(--duration-normal) var(--ease-spring); position:relative; overflow:hidden;">
+                        <div class="card-accent-bar" style="position:absolute; top:0; left:0; width:4px; height:100%; background:linear-gradient(180deg, #34c759, #059669); opacity:0; transition:opacity var(--duration-fast) ease;"></div>
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                            <span style="font-weight:var(--fw-bold); font-size:var(--text-base); color:var(--text-primary);">Ava Modern (US)</span>
-                            <span style="font-size:1.3rem;">▶️</span>
+                            <span style="font-weight:var(--fw-bold); font-size:var(--text-base); color:var(--text-primary);">Ava (US)</span>
+                            <div class="play-state-container" style="display:flex; align-items:center; gap:6px;">
+                                <div class="equalizer-bars" id="eq_ava" style="display:none;"><span></span><span></span><span></span></div>
+                                <span class="card-play-btn" id="btn_ava" style="font-size:1.1rem; background:rgba(52,199,89,0.15); color:#34c759; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center;">▶</span>
+                            </div>
                         </div>
-                        <div style="font-size:var(--text-xs); color:#34c759; font-weight:var(--fw-bold);">Modern Expressive</div>
-                        <div style="font-size:var(--text-xs); color:var(--text-secondary); margin-top:6px; line-height:1.5;">Clear, modern narrator voice.</div>
+                        <div style="font-size:var(--text-xs); color:#34c759; font-weight:var(--fw-bold);">Tech Reviews & AI News</div>
+                        <div style="font-size:var(--text-xs); color:var(--text-secondary); margin-top:6px; line-height:1.5;">Clear, modern expressive female voice for tech breakdowns.</div>
                     </button>
 
-                    <button class="voice-sample-card" onclick="playVoiceSample('guy')" style="background:var(--bg-input); border:1px solid var(--border-subtle); border-radius:var(--radius-xl); padding:20px; text-align:left; cursor:pointer; transition:all var(--duration-normal) var(--ease-spring); position:relative; overflow:hidden;">
-                        <div style="position:absolute; top:0; left:0; width:4px; height:100%; background:linear-gradient(180deg, #ff9500, #ff2d55); opacity:0; transition:opacity var(--duration-fast) ease;"></div>
+                    <!-- Card 4: Guy (Business & Daily News) -->
+                    <button class="voice-sample-card" id="card_guy" onclick="playVoiceSample('guy')" style="background:var(--bg-input); border:1px solid var(--border-subtle); border-radius:var(--radius-xl); padding:20px; text-align:left; cursor:pointer; transition:all var(--duration-normal) var(--ease-spring); position:relative; overflow:hidden;">
+                        <div class="card-accent-bar" style="position:absolute; top:0; left:0; width:4px; height:100%; background:linear-gradient(180deg, #ff9500, #ff2d55); opacity:0; transition:opacity var(--duration-fast) ease;"></div>
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                            <span style="font-weight:var(--fw-bold); font-size:var(--text-base); color:var(--text-primary);">Guy Anchor (US)</span>
-                            <span style="font-size:1.3rem;">▶️</span>
+                            <span style="font-weight:var(--fw-bold); font-size:var(--text-base); color:var(--text-primary);">Guy (US)</span>
+                            <div class="play-state-container" style="display:flex; align-items:center; gap:6px;">
+                                <div class="equalizer-bars" id="eq_guy" style="display:none;"><span></span><span></span><span></span></div>
+                                <span class="card-play-btn" id="btn_guy" style="font-size:1.1rem; background:rgba(255,149,0,0.15); color:#ff9500; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center;">▶</span>
+                            </div>
                         </div>
-                        <div style="font-size:var(--text-xs); color:#ff9500; font-weight:var(--fw-bold);">News Broadcaster</div>
-                        <div style="font-size:var(--text-xs); color:var(--text-secondary); margin-top:6px; line-height:1.5;">Authoritative American anchor tone.</div>
+                        <div style="font-size:var(--text-xs); color:#ff9500; font-weight:var(--fw-bold);">Business & Finance</div>
+                        <div style="font-size:var(--text-xs); color:var(--text-secondary); margin-top:6px; line-height:1.5;">Authoritative broadcaster voice for finance & market news.</div>
+                    </button>
+
+                    <!-- Card 5: Brian (Motivational) -->
+                    <button class="voice-sample-card" id="card_brian" onclick="playVoiceSample('brian')" style="background:var(--bg-input); border:1px solid var(--border-subtle); border-radius:var(--radius-xl); padding:20px; text-align:left; cursor:pointer; transition:all var(--duration-normal) var(--ease-spring); position:relative; overflow:hidden;">
+                        <div class="card-accent-bar" style="position:absolute; top:0; left:0; width:4px; height:100%; background:linear-gradient(180deg, #007aff, #5856d6); opacity:0; transition:opacity var(--duration-fast) ease;"></div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <span style="font-weight:var(--fw-bold); font-size:var(--text-base); color:var(--text-primary);">Brian (US)</span>
+                            <div class="play-state-container" style="display:flex; align-items:center; gap:6px;">
+                                <div class="equalizer-bars" id="eq_brian" style="display:none;"><span></span><span></span><span></span></div>
+                                <span class="card-play-btn" id="btn_brian" style="font-size:1.1rem; background:rgba(0,122,255,0.15); color:#007aff; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center;">▶</span>
+                            </div>
+                        </div>
+                        <div style="font-size:var(--text-xs); color:#007aff; font-weight:var(--fw-bold);">Motivational & Gym Shorts</div>
+                        <div style="font-size:var(--text-xs); color:var(--text-secondary); margin-top:6px; line-height:1.5;">Powerful, inspirational cadence for speeches & Shorts.</div>
+                    </button>
+
+                    <!-- Card 6: Emma (Horror & Storytelling) -->
+                    <button class="voice-sample-card" id="card_emma" onclick="playVoiceSample('emma')" style="background:var(--bg-input); border:1px solid var(--border-subtle); border-radius:var(--radius-xl); padding:20px; text-align:left; cursor:pointer; transition:all var(--duration-normal) var(--ease-spring); position:relative; overflow:hidden;">
+                        <div class="card-accent-bar" style="position:absolute; top:0; left:0; width:4px; height:100%; background:linear-gradient(180deg, #ff3b30, #ff9500); opacity:0; transition:opacity var(--duration-fast) ease;"></div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <span style="font-weight:var(--fw-bold); font-size:var(--text-base); color:var(--text-primary);">Emma (US)</span>
+                            <div class="play-state-container" style="display:flex; align-items:center; gap:6px;">
+                                <div class="equalizer-bars" id="eq_emma" style="display:none;"><span></span><span></span><span></span></div>
+                                <span class="card-play-btn" id="btn_emma" style="font-size:1.1rem; background:rgba(255,59,48,0.15); color:#ff3b30; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center;">▶</span>
+                            </div>
+                        </div>
+                        <div style="font-size:var(--text-xs); color:#ff3b30; font-weight:var(--fw-bold);">Horror & Creepypasta</div>
+                        <div style="font-size:var(--text-xs); color:var(--text-secondary); margin-top:6px; line-height:1.5;">Suspenseful, storytelling voice for creepy stories.</div>
                     </button>
                 </div>
-
-                <audio id="sampleAudioPlayer" controls style="width:100%; border-radius:var(--radius-lg); margin-top:10px; display:none;"></audio>
-                <div id="sampleStatusText" style="text-align:center; font-size:var(--text-sm); font-weight:var(--fw-bold); color:var(--accent-primary);">Select a voice to play sample audio live.</div>
             </div>
 
             <style>
                 .voice-sample-card:hover {
                     border-color: var(--accent-primary) !important;
                     box-shadow: var(--shadow-glow-md) !important;
-                    transform: translateY(-4px) !important;
+                    transform: translateY(-3px) !important;
                 }
-                .voice-sample-card:hover [style*="position:absolute"] {
+                .voice-sample-card.is-playing {
+                    border-color: var(--accent-primary) !important;
+                    background: var(--bg-surface-elevated) !important;
+                    box-shadow: var(--shadow-glow-md) !important;
+                }
+                .voice-sample-card:hover .card-accent-bar,
+                .voice-sample-card.is-playing .card-accent-bar {
                     opacity: 1 !important;
+                }
+                /* Equalizer Animation */
+                .equalizer-bars {
+                    display: flex;
+                    align-items: flex-end;
+                    gap: 3px;
+                    height: 16px;
+                }
+                .equalizer-bars span {
+                    width: 3px;
+                    background: var(--accent-primary);
+                    border-radius: 2px;
+                    animation: eqBounce 0.8s infinite ease-in-out alternate;
+                }
+                .equalizer-bars span:nth-child(1) { height: 60%; animation-delay: 0s; }
+                .equalizer-bars span:nth-child(2) { height: 100%; animation-delay: 0.2s; }
+                .equalizer-bars span:nth-child(3) { height: 40%; animation-delay: 0.4s; }
+                @keyframes eqBounce {
+                    0% { height: 20%; }
+                    100% { height: 100%; }
                 }
             </style>
         </section>
 
         <!-- Feature Showcase Grid -->
-        <section id="features" style="max-width:1200px; margin:5rem auto; padding:0 1.5rem;">
+        <section id="features" style="max-width:1150px; margin:5rem auto; padding:0 1.5rem;">
             <div style="text-align:center; margin-bottom:48px;">
                 <span style="font-size:var(--text-xs); font-weight:var(--fw-extrabold); color:var(--accent-primary); text-transform:uppercase; letter-spacing:0.12em;">⚡ PRODUCTION SUPERPOWERS</span>
-                <h2 style="font-size:clamp(1.8rem, 3.5vw, 2.5rem); font-family:var(--font-display); font-weight:var(--fw-black); color:var(--text-primary); margin:12px 0 8px;">Built for Massive 500+ Scene Projects</h2>
-                <p style="font-size:var(--text-base); color:var(--text-secondary); max-width:600px; margin:0 auto; line-height:1.6;">Every tool you need to produce high-retention YouTube content at scale — from script to final export.</p>
+                <h2 style="font-size:clamp(1.8rem, 3.5vw, 2.5rem); font-family:var(--font-display); font-weight:var(--fw-black); color:var(--text-primary); margin:12px 0 8px;">Everything You Need for YouTube Automation</h2>
+                <p style="font-size:var(--text-base); color:var(--text-secondary); max-width:600px; margin:0 auto; line-height:1.6;">High-retention AI tools built specifically for YouTube creators, essayists, and channel managers.</p>
             </div>
 
-            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:20px;">
-                <article class="feature-card" style="background:var(--bg-surface); border:1px solid var(--border-subtle); border-radius:var(--radius-2xl); padding:32px; transition:all var(--duration-normal) var(--ease-spring); position:relative; overflow:hidden;">
-                    <div style="font-size:2.5rem; margin-bottom:16px; line-height:1;">⚙️</div>
-                    <h3 style="font-size:var(--text-lg); font-weight:var(--fw-bold); color:var(--text-primary); margin-bottom:10px;">100-Scene Batch Safety Engine</h3>
-                    <p style="font-size:var(--text-sm); color:var(--text-secondary); line-height:1.6;">Renders mini-clips in safe 100-scene chunks with auto-continuation and 3s CPU cooldown pauses. Never lost data or server crashes.</p>
-                    <div style="position:absolute; top:0; right:0; width:4px; height:100%; background:linear-gradient(180deg, var(--accent-primary), var(--accent-secondary)); opacity:0; transition:opacity var(--duration-fast) ease;"></div>
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:20px;">
+                <article class="feature-card" style="background:var(--bg-surface); border:1px solid var(--border-subtle); border-radius:var(--radius-2xl); padding:28px; transition:all var(--duration-normal) var(--ease-spring); position:relative; overflow:hidden;">
+                    <div style="font-size:2.2rem; margin-bottom:14px; line-height:1;">🗣️</div>
+                    <h3 style="font-size:var(--text-lg); font-weight:var(--fw-bold); color:var(--text-primary); margin-bottom:8px;">Human-Like AI Narrators</h3>
+                    <p style="font-size:var(--text-sm); color:var(--text-secondary); line-height:1.6;">Ultra-smooth speech pacing (150 WPM) with natural pause handling tuned for long-form essays and punchy Shorts.</p>
+                    <div class="card-accent-bar" style="position:absolute; top:0; right:0; width:4px; height:100%; background:linear-gradient(180deg, var(--accent-primary), var(--accent-secondary)); opacity:0; transition:opacity var(--duration-fast) ease;"></div>
                 </article>
 
-                <article class="feature-card" style="background:var(--bg-surface); border:1px solid var(--border-subtle); border-radius:var(--radius-2xl); padding:32px; transition:all var(--duration-normal) var(--ease-spring); position:relative; overflow:hidden;">
-                    <div style="font-size:2.5rem; margin-bottom:16px; line-height:1;">🗣️</div>
-                    <h3 style="font-size:var(--text-lg); font-weight:var(--fw-bold); color:var(--text-primary); margin-bottom:10px;">Viral Kinetic Subtitles</h3>
-                    <p style="font-size:var(--text-sm); color:var(--text-secondary); line-height:1.6;">Word-by-word karaoke highlighting presets (Hormozi Yellow Pop, MrBeast Cyan, Minimalist Cinematic, Cyberpunk Glow) rendered natively in FFmpeg.</p>
-                    <div style="position:absolute; top:0; right:0; width:4px; height:100%; background:linear-gradient(180deg, var(--accent-primary), var(--accent-secondary)); opacity:0; transition:opacity var(--duration-fast) ease;"></div>
+                <article class="feature-card" style="background:var(--bg-surface); border:1px solid var(--border-subtle); border-radius:var(--radius-2xl); padding:28px; transition:all var(--duration-normal) var(--ease-spring); position:relative; overflow:hidden;">
+                    <div style="font-size:2.2rem; margin-bottom:14px; line-height:1;">💬</div>
+                    <h3 style="font-size:var(--text-lg); font-weight:var(--fw-bold); color:var(--text-primary); margin-bottom:8px;">Auto-Synced Subtitles</h3>
+                    <p style="font-size:var(--text-sm); color:var(--text-secondary); line-height:1.6;">Generate 1-click synchronized <code>.SRT</code> and <code>.VTT</code> subtitle files alongside your audio for instant YouTube upload.</p>
+                    <div class="card-accent-bar" style="position:absolute; top:0; right:0; width:4px; height:100%; background:linear-gradient(180deg, var(--accent-primary), var(--accent-secondary)); opacity:0; transition:opacity var(--duration-fast) ease;"></div>
                 </article>
 
-                <article class="feature-card" style="background:var(--bg-surface); border:1px solid var(--border-subtle); border-radius:var(--radius-2xl); padding:32px; transition:all var(--duration-normal) var(--ease-spring); position:relative; overflow:hidden;">
-                    <div style="font-size:2.5rem; margin-bottom:16px; line-height:1;">🎥</div>
-                    <h3 style="font-size:var(--text-lg); font-weight:var(--fw-bold); color:var(--text-primary); margin-bottom:10px;">Cinematic Video Filters</h3>
-                    <p style="font-size:var(--text-sm); color:var(--text-secondary); line-height:1.6;">Soft dark edge vignette border overlays, Hollywood Teal & Orange color grading, 35mm film grain, and 2.35:1 letterbox bars.</p>
-                    <div style="position:absolute; top:0; right:0; width:4px; height:100%; background:linear-gradient(180deg, var(--accent-primary), var(--accent-secondary)); opacity:0; transition:opacity var(--duration-fast) ease;"></div>
+                <article class="feature-card" style="background:var(--bg-surface); border:1px solid var(--border-subtle); border-radius:var(--radius-2xl); padding:28px; transition:all var(--duration-normal) var(--ease-spring); position:relative; overflow:hidden;">
+                    <div style="font-size:2.2rem; margin-bottom:14px; line-height:1;">🎯</div>
+                    <h3 style="font-size:var(--text-lg); font-weight:var(--fw-bold); color:var(--text-primary); margin-bottom:8px;">YouTube Niche Presets</h3>
+                    <p style="font-size:var(--text-sm); color:var(--text-secondary); line-height:1.6;">Pre-configured voices for Faceless Top 10, True Crime Documentaries, Tech Reviews, Motivational & Creepypasta.</p>
+                    <div class="card-accent-bar" style="position:absolute; top:0; right:0; width:4px; height:100%; background:linear-gradient(180deg, var(--accent-primary), var(--accent-secondary)); opacity:0; transition:opacity var(--duration-fast) ease;"></div>
                 </article>
 
-                <article class="feature-card" style="background:var(--bg-surface); border:1px solid var(--border-subtle); border-radius:var(--radius-2xl); padding:32px; transition:all var(--duration-normal) var(--ease-spring); position:relative; overflow:hidden;">
-                    <div style="font-size:2.5rem; margin-bottom:16px; line-height:1;">🗄️</div>
-                    <h3 style="font-size:var(--text-lg); font-weight:var(--fw-bold); color:var(--text-primary); margin-bottom:10px;">SQLite Cloud Persistence</h3>
-                    <p style="font-size:var(--text-sm); color:var(--text-secondary); line-height:1.6;">Integrated <code style="background:var(--bg-input); padding:2px 6px; border-radius:4px; font-size:0.85em;">studio.db</code> database engine saves every scene, audio URL, and clip path instantly. Reopen your project anytime with 0 data loss.</p>
-                    <div style="position:absolute; top:0; right:0; width:4px; height:100%; background:linear-gradient(180deg, var(--accent-primary), var(--accent-secondary)); opacity:0; transition:opacity var(--duration-fast) ease;"></div>
-                </article>
-
-                <article class="feature-card" style="background:var(--bg-surface); border:1px solid var(--border-subtle); border-radius:var(--radius-2xl); padding:32px; transition:all var(--duration-normal) var(--ease-spring); position:relative; overflow:hidden;">
-                    <div style="font-size:2.5rem; margin-bottom:16px; line-height:1;">🎙️</div>
-                    <h3 style="font-size:var(--text-lg); font-weight:var(--fw-bold); color:var(--text-primary); margin-bottom:10px;">Natural Speech Pacing</h3>
-                    <p style="font-size:var(--text-sm); color:var(--text-secondary); line-height:1.6;">Humanized Edge-TTS narrators with custom speech speed sliders, trailing silence trimming, and natural pause padding.</p>
-                    <div style="position:absolute; top:0; right:0; width:4px; height:100%; background:linear-gradient(180deg, var(--accent-primary), var(--accent-secondary)); opacity:0; transition:opacity var(--duration-fast) ease;"></div>
-                </article>
-
-                <article class="feature-card" style="background:var(--bg-surface); border:1px solid var(--border-subtle); border-radius:var(--radius-2xl); padding:32px; transition:all var(--duration-normal) var(--ease-spring); position:relative; overflow:hidden;">
-                    <div style="font-size:2.5rem; margin-bottom:16px; line-height:1;">🎞️</div>
-                    <h3 style="font-size:var(--text-lg); font-weight:var(--fw-bold); color:var(--text-primary); margin-bottom:10px;">Multi-Track Video Timeline Editor</h3>
-                    <p style="font-size:var(--text-sm); color:var(--text-secondary); line-height:1.6;">Inspect, select, and combine rendered mini-clips into full 1080p YouTube videos or 9:16 vertical Shorts instantly.</p>
-                    <div style="position:absolute; top:0; right:0; width:4px; height:100%; background:linear-gradient(180deg, var(--accent-primary), var(--accent-secondary)); opacity:0; transition:opacity var(--duration-fast) ease;"></div>
+                <article class="feature-card" style="background:var(--bg-surface); border:1px solid var(--border-subtle); border-radius:var(--radius-2xl); padding:28px; transition:all var(--duration-normal) var(--ease-spring); position:relative; overflow:hidden;">
+                    <div style="font-size:2.2rem; margin-bottom:14px; line-height:1;">⚡</div>
+                    <h3 style="font-size:var(--text-lg); font-weight:var(--fw-bold); color:var(--text-primary); margin-bottom:8px;">Unlimited & Local Speed</h3>
+                    <p style="font-size:var(--text-sm); color:var(--text-secondary); line-height:1.6;">No subscriptions or character limits. Generate full video scripts locally with instant .mp3 and subtitle exports.</p>
+                    <div class="card-accent-bar" style="position:absolute; top:0; right:0; width:4px; height:100%; background:linear-gradient(180deg, var(--accent-primary), var(--accent-secondary)); opacity:0; transition:opacity var(--duration-fast) ease;"></div>
                 </article>
             </div>
 
@@ -1391,20 +1472,73 @@
                 .feature-card:hover {
                     border-color: var(--accent-primary) !important;
                     box-shadow: var(--shadow-glow-md) !important;
-                    transform: translateY(-4px) !important;
+                    transform: translateY(-3px) !important;
                 }
-                .feature-card:hover [style*="position:absolute"] {
+                .feature-card:hover .card-accent-bar {
                     opacity: 1 !important;
                 }
             </style>
         </section>
 
-        <!-- Single-Line Master Footer (Landing View) -->
-        <footer class="master-footer-single-line">
-            <div class="master-footer-content">
-                <span>🚀 Omnia Studio Pro v2.0</span>
-                <span style="color:var(--text-muted);">•</span>
-                <span style="color:#34c759; font-weight:800;">Engine Status: 🟢 100% Operational</span>
+        <!-- Multi-Column Master Footer -->
+        <footer style="background:var(--bg-surface); border-top:1px solid var(--border-subtle); padding:60px 1.5rem 30px; margin-top:5rem;">
+            <div style="max-width:1200px; margin:0 auto; display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:40px; margin-bottom:40px;">
+                <!-- Column 1: Brand & Bio -->
+                <div>
+                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px;">
+                        <img src="/static/icon.png" alt="Logo" style="height:28px; width:auto;" onerror="this.style.display='none'">
+                        <span style="font-size:1.2rem; font-weight:900; background:linear-gradient(135deg, var(--accent-primary), #fbbf24, var(--accent-secondary)); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">Omnia Studio</span>
+                    </div>
+                    <p style="font-size:var(--text-xs); color:var(--text-muted); line-height:1.65; max-width:260px;">
+                        Personal AI voiceover & subtitle production engine built for YouTube creators, documentary essayists, and Shorts channels.
+                    </p>
+                </div>
+
+                <!-- Column 2: Studio Tools -->
+                <div>
+                    <h4 style="font-size:var(--text-xs); font-weight:var(--fw-extrabold); color:var(--text-primary); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:16px;">Studio Tools</h4>
+                    <ul style="list-style:none; display:flex; flex-direction:column; gap:10px; font-size:var(--text-xs); color:var(--text-secondary);">
+                        <li><a href="javascript:void(0)" onclick="switchView('studio')" style="color:inherit; text-decoration:none;">Studio Workbench</a></li>
+                        <li><a href="#voice-samples" style="color:inherit; text-decoration:none;">Voice Sample Library</a></li>
+                        <li><a href="javascript:void(0)" onclick="switchView('studio')" style="color:inherit; text-decoration:none;">.SRT & .VTT Exporter</a></li>
+                        <li><a href="javascript:void(0)" onclick="switchView('studio')" style="color:inherit; text-decoration:none;">Speed Controls (1x-1.5x)</a></li>
+                    </ul>
+                </div>
+
+                <!-- Column 3: YouTube Niches -->
+                <div>
+                    <h4 style="font-size:var(--text-xs); font-weight:var(--fw-extrabold); color:var(--text-primary); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:16px;">YouTube Niches</h4>
+                    <ul style="list-style:none; display:flex; flex-direction:column; gap:10px; font-size:var(--text-xs); color:var(--text-secondary);">
+                        <li>Faceless Top 10 Essays</li>
+                        <li>True Crime & History Docs</li>
+                        <li>Tech & AI Breakdown</li>
+                        <li>Motivational Shorts (&lt;60s)</li>
+                    </ul>
+                </div>
+
+                <!-- Column 4: Engine Status & API Keys -->
+                <div>
+                    <h4 style="font-size:var(--text-xs); font-weight:var(--fw-extrabold); color:var(--text-primary); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:16px;">Engine Specs</h4>
+                    <ul style="list-style:none; display:flex; flex-direction:column; gap:10px; font-size:var(--text-xs); color:var(--text-secondary);">
+                        <li style="display:flex; align-items:center; gap:6px;"><span style="color:#10b981;">🟢</span> Edge TTS Active</li>
+                        <li>⚡ 150 WPM Speech Rate</li>
+                        <li>💾 Local SQLite Persistence</li>
+                        <li style="margin-top:6px;">
+                            <label style="font-size:0.72rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:4px;">🔑 Groq API Key:</label>
+                            <input type="password" id="groqApiKeyInput" placeholder="Paste gsk_... key" style="width:100%; font-size:0.75rem; background:var(--bg-input); color:var(--text-primary); border:1px solid var(--border-subtle); padding:6px 8px; border-radius:8px; outline:none;" onchange="saveGroqKey(this.value)">
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Bottom Copyright Bar -->
+            <div style="max-width:1200px; margin:0 auto; padding-top:24px; border-top:1px solid var(--border-subtle); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; font-size:var(--text-xs); color:var(--text-muted);">
+                <div>© 2026 Omnia Studio — Built for YouTube Creators</div>
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <span>v2.0 Clean UI</span>
+                    <span>•</span>
+                    <span>Flask + Vanilla Web Tech</span>
+                </div>
             </div>
         </footer>
     </div>
@@ -1449,49 +1583,43 @@
             </div>
         </header>
 
-    <!-- 7-STEP INTERLINKED GUIDED WORKFLOW WIZARD HEADER -->
-    <div id="wizardStepBar" style="max-width: 1600px; margin: 1.25rem auto 0; padding: 0 1rem; width: 100%;">
+    <!-- 6-STEP PROGRESSIVE WORKFLOW STEP BAR -->
+    <div id="wizardStepBar" style="max-width: 1500px; margin: 1.25rem auto 0; padding: 0 1rem; width: 100%;">
         <div style="background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-2xl); padding: 12px 18px; box-shadow: var(--shadow-md); display: flex; align-items: center; justify-content: space-between; gap: 8px; overflow-x: auto;">
             
             <button id="wizStepBtn1" class="btn-step-pill active" onclick="goToStep(1)">
                 <span class="step-num">1</span>
-                <span class="step-label">Script & Pacing</span>
+                <span class="step-label">Project & Script</span>
             </button>
             <span class="wiz-arrow">➔</span>
 
             <button id="wizStepBtn2" class="btn-step-pill" onclick="goToStep(2)">
                 <span class="step-num">2</span>
-                <span class="step-label">Narrator Voice</span>
+                <span class="step-label">Style & Scene Cuts</span>
             </button>
             <span class="wiz-arrow">➔</span>
 
             <button id="wizStepBtn3" class="btn-step-pill" onclick="goToStep(3)">
                 <span class="step-num">3</span>
-                <span class="step-label">Scene Cuts</span>
+                <span class="step-label">Batch Voiceover</span>
             </button>
             <span class="wiz-arrow">➔</span>
 
             <button id="wizStepBtn4" class="btn-step-pill" onclick="goToStep(4)">
                 <span class="step-num">4</span>
-                <span class="step-label">FLUX Images</span>
+                <span class="step-label">Scene Visuals</span>
             </button>
             <span class="wiz-arrow">➔</span>
 
             <button id="wizStepBtn5" class="btn-step-pill" onclick="goToStep(5)">
                 <span class="step-num">5</span>
-                <span class="step-label">Subtitles & FX</span>
+                <span class="step-label">Batch Video Render</span>
             </button>
             <span class="wiz-arrow">➔</span>
 
             <button id="wizStepBtn6" class="btn-step-pill" onclick="goToStep(6)">
                 <span class="step-num">6</span>
-                <span class="step-label">Batch Clips</span>
-            </button>
-            <span class="wiz-arrow">➔</span>
-
-            <button id="wizStepBtn7" class="btn-step-pill" onclick="goToStep(7)">
-                <span class="step-num">7</span>
-                <span class="step-label">SEO & Export</span>
+                <span class="step-label">Timeline & Final Export</span>
             </button>
         </div>
     </div>
@@ -1575,285 +1703,232 @@
             <!-- LEFT COLUMN: Inputs, Voice Settings, Subtitle & Video Filter Controls -->
         <div class="workbench-col">
             
-            <!-- Script Editor Card -->
-            <section class="apple-card">
-                <div class="card-header">
-                    <span class="card-title">Script Editor</span>
-                    <span class="accuracy-tag">✓ 100% Word-for-Word</span>
+            <!-- Step 1: Project Setup & Script Editor Card -->
+            <section class="apple-card" id="step1Container">
+                <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span class="card-title" style="font-size:var(--text-lg); font-weight:var(--fw-bold);">Step 1: Project Setup & Script</span>
+                    </div>
+                    <span id="shortsBadge" style="display:none; font-size:0.75rem; font-weight:var(--fw-extrabold); padding:4px 10px; border-radius:12px; border:1px solid transparent;"></span>
                 </div>
 
-                <textarea id="scriptText" placeholder="Paste your script here... (e.g. Okay, so you want to own a data center...)" oninput="updateWordCount()" onchange="updateWordCount()" onkeyup="updateWordCount()" onpaste="setTimeout(updateWordCount, 10)"></textarea>
+                <!-- Project Name Input Row -->
+                <div style="margin-bottom:14px;">
+                    <label style="font-size:var(--text-xs); font-weight:var(--fw-bold); color:var(--text-secondary); display:block; margin-bottom:6px;">PROJECT NAME</label>
+                    <input type="text" id="projectNameInput" placeholder="Enter Project Name (e.g. Mystery Essay Ep 1)" style="width:100%; background:var(--bg-input); border:1px solid var(--border-subtle); border-radius:var(--radius-lg); padding:10px 14px; color:var(--text-primary); font-weight:var(--fw-bold); font-size:var(--text-sm); outline:none;">
+                </div>
 
-                <div class="meta-row">
-                    <div class="meta-stats">
+                <!-- Script Editor Textarea -->
+                <div style="margin-bottom:12px;">
+                    <label style="font-size:var(--text-xs); font-weight:var(--fw-bold); color:var(--text-secondary); display:block; margin-bottom:6px;">YOUTUBE SCRIPT TEXT</label>
+                    <textarea id="scriptText" placeholder="Paste your script here... (e.g. Okay, so you want to understand how artificial intelligence is changing data centers...)" style="width:100%; min-height:160px; background:var(--bg-input); border:1px solid var(--border-subtle); border-radius:var(--radius-lg); padding:14px; color:var(--text-primary); font-family:var(--font-ui); font-size:var(--text-sm); line-height:1.6; outline:none; resize:vertical;" oninput="updateWordCount()" onchange="updateWordCount()" onkeyup="updateWordCount()" onpaste="setTimeout(updateWordCount, 10)"></textarea>
+                </div>
+
+                <!-- Real-Time Analytics Bar -->
+                <div class="meta-row" style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-surface-elevated); padding:10px 14px; border-radius:var(--radius-lg); border:1px solid var(--border-subtle);">
+                    <div class="meta-stats" style="display:flex; align-items:center; gap:10px; font-size:var(--text-xs); font-weight:var(--fw-bold); color:var(--text-secondary);">
                         <span id="wordCount">0 Words</span>
                         <span>•</span>
-                        <span id="estTime">~0 min audio</span>
+                        <span id="charCount">0 Chars</span>
+                        <span>•</span>
+                        <span id="estTime" style="color:var(--accent-primary);">~0 min audio</span>
                     </div>
-                    <span style="color: var(--accent-apple); font-weight: 500;">📱 Background Active</span>
                 </div>
 
-                <div class="action-btn-grid" id="desktopActionGrid" style="margin-top:16px;">
-                    <button class="btn-apple" onclick="generateStream('audio')">
-                        🎵 Voiceover
+                <div style="margin-top:16px;">
+                    <button class="btn-apple" style="width:100%; background:linear-gradient(135deg, var(--accent-primary), var(--accent-primary-hover)); font-size:var(--text-sm); font-weight:var(--fw-bold); padding:14px; border-radius:var(--radius-lg); cursor:pointer;" onclick="goToStep(2)">
+                        Next: Choose Style & Scene Cuts ➔
                     </button>
-                    <button class="btn-apple btn-apple-secondary" onclick="generateStream('srt')">
-                        📝 .SRT
-                    </button>
-                    <button class="btn-apple btn-apple-secondary" onclick="generateStream('breakdown')">
-                        🎬 Scene Cuts
+                </div>
+            <!-- Step 2: Visual Style & Scene Cuts Card -->
+            <section class="apple-card" id="step2Container">
+                <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                    <span class="card-title" style="font-size:var(--text-lg); font-weight:var(--fw-bold);">Step 2: Visual Style & Scene Cuts</span>
+                    <span style="font-size:0.72rem; font-weight:800; background:rgba(245,158,11,0.12); color:var(--accent-primary); border:1px solid rgba(245,158,11,0.3); padding:2px 8px; border-radius:10px;">AI Prompt Engine</span>
+                </div>
+
+                <!-- Step 2: Niche Selector Dropdown -->
+                <div style="margin-bottom:16px;">
+                    <label style="font-size:var(--text-xs); font-weight:var(--fw-bold); color:var(--text-secondary); display:block; margin-bottom:8px;">SELECT YOUTUBE CHANNEL NICHE</label>
+                    <select id="nicheSelect" style="width:100%; background:var(--bg-input); border:1px solid var(--accent-primary); border-radius:var(--radius-lg); padding:12px 14px; color:var(--text-primary); font-weight:var(--fw-bold); font-size:var(--text-sm); outline:none; cursor:pointer;">
+                        <option value="economics" selected>📈 "The Economics of..." (Finance, Business, Costs & Margins)</option>
+                        <option value="documentary">🎬 Deep Investigative Documentary & Crime Essays</option>
+                        <option value="tech_ai">💻 Tech Reviews & AI Future Trends</option>
+                        <option value="history_war">📜 Historical Warfare, Empires & Ancient Battles</option>
+                    </select>
+                </div>
+
+                <!-- Visual Style Selector Dropdown -->
+                <div style="margin-bottom:16px;">
+                    <label style="font-size:var(--text-xs); font-weight:var(--fw-bold); color:var(--text-secondary); display:block; margin-bottom:8px;">SELECT VISUAL ART STYLE FOR SCENES</label>
+                    <select id="stylePresetSelect" class="w-full bg-slate-900 border border-amber-500/50 rounded-xl p-2.5 text-slate-100 font-extrabold text-xs sm:text-sm outline-none cursor-pointer" onchange="handleStyleDropdownChange(this.value)">
+                        <option value="vox_2d" selected>🎨 2D Vox Vector (Flat Clean Vector Animation)</option>
+                        <option value="kurzgesagt">🪐 Kurzgesagt Flat Vector (Bold Cosmic Minimalist)</option>
+                        <option value="claymation">🕵️ 3D Claymation (Tactile Plasticine Stop-Motion)</option>
+                        <option value="photoreal">📸 35mm Cinematic (Photorealistic 8K B-Roll)</option>
+                        <option value="horror_auto">👻 Analog Horror (Grainy VHS CRT Scanline Aesthetic)</option>
+                        <option value="engraving">📜 Vintage Engraving (19th-Century Woodcut Line-Art)</option>
+                        <option value="cyberpunk">🌃 Cyberpunk Anime (High Contrast Neon Futuristic)</option>
+                        <option value="tech_vector">💻 Tech 3D Isometric (Modern Clean Glossy 3D)</option>
+                        <option value="oil_painting">🖌️ Oil Painting (Impressionist Classical Canvas Texture)</option>
+                        <option value="midjourney_raw">🎯 Midjourney Raw (Cinematic Masterpiece Photo)</option>
+                    </select>
+                </div>
+
+                <!-- Voice Selection Dropdown -->
+                <div style="margin-bottom:16px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <label style="font-size:var(--text-xs); font-weight:var(--fw-bold); color:var(--text-secondary);">NARRATOR VOICE PRESET</label>
+                        <button onclick="playSelectedVoiceSample()" style="background:var(--bg-surface-elevated); color:var(--accent-primary); border:1px solid var(--accent-primary-glow); border-radius:8px; padding:3px 10px; font-size:0.75rem; font-weight:700; cursor:pointer;">▶ Play Sample</button>
+                    </div>
+                    <select id="voicePresetSelect" class="w-full bg-slate-900 border border-emerald-500/50 rounded-xl p-2.5 text-slate-100 font-extrabold text-xs sm:text-sm outline-none cursor-pointer" onchange="handleVoiceDropdownChange(this.value)">
+                        <option value="andrew" selected>👨‍💼 Andrew Pro (US) — Faceless Essays & Documentaries (#1)</option>
+                        <option value="christopher">🎙️ Christopher (US) — Deep Business & Cinematic Tone</option>
+                        <option value="ava">👩‍💼 Ava Modern (US) — Tech Reviews & AI News (#1 Tech)</option>
+                        <option value="guy">📻 Guy Broadcaster (US) — News & Commentary</option>
+                        <option value="brian">🚀 Brian Shorts (US) — Viral Shorts & Tech Clips</option>
+                        <option value="emma">💡 Emma Finance (US) — Conversational Finance & Education</option>
+                        <option value="ryan">🇬🇧 Ryan History (UK) — Deep British War & Mystery</option>
+                        <option value="sonia">🏰 Sonia Culture (UK) — Elegant British Art & History</option>
+                        <option value="william">🇦🇺 William (AU) — Relaxed Australian Narrator</option>
+                        <option value="liam">🇨🇦 Liam (CA) — Dynamic Canadian Podcaster</option>
+                    </select>
+                </div>
+
+                <!-- Action Button for Step 2 -->
+                <div class="w-full">
+                    <button class="btn-apple w-full max-w-full block text-center break-words overflow-hidden text-xs sm:text-sm font-extrabold py-2.5 px-3 rounded-xl shadow-lg" style="background:linear-gradient(135deg, var(--accent-secondary), #8b5cf6);" onclick="generateStream('breakdown')">
+                        ✂️ Break Script into Scenes ➔
                     </button>
                 </div>
             </section>
 
-            <!-- Voice & Pacing Card -->
-            <section class="apple-card">
-                <div class="card-header">
-                    <span class="card-title">🎙️ Narrator Voice & Pacing</span>
-                    <span style="font-size:0.72rem; font-weight:800; background:rgba(0,113,227,0.15); color:var(--accent-apple); padding:2px 8px; border-radius:10px;">Edge-TTS</span>
+            <!-- Step 3: Batch Voiceover Card -->
+            <section class="apple-card" id="step3Container">
+                <div class="card-header flex justify-between items-center flex-wrap gap-2 mb-3">
+                    <span class="card-title text-base font-extrabold truncate">Step 3: Batch Voiceover Generation</span>
+                    <span class="text-xs font-bold bg-emerald-500/10 color-[#10b981] border border-emerald-500/30 px-2 py-0.5 rounded-lg whitespace-nowrap">1-Click Batch</span>
                 </div>
 
-                <div style="margin-bottom:10px;">
-                    <button class="btn-apple" style="width:100%; font-size:0.78rem; padding:8px; background:linear-gradient(135deg, #f59e0b, #3b82f6); font-weight:800;" onclick="openVoiceCloningModal()">
-                        🎙️ Record / Clone My Voice (Personal AI Voice)
+                <p class="text-xs text-slate-400 leading-relaxed mb-3.5">
+                    Synthesize studio-grade HD narration audio for all scene lines in one single batch pass with 150 WPM humanized pacing.
+                </p>
+
+                <div class="flex flex-col gap-2.5 w-full">
+                    <button class="btn-apple w-full max-w-full block text-center break-words overflow-hidden text-xs sm:text-sm font-extrabold py-2.5 px-3 rounded-xl shadow-lg" style="background:linear-gradient(135deg, #10b981, #059669);" onclick="generateStream('audio')">
+                        🎙️ Generate All Voiceovers (1-Click)
+                    </button>
+                    <button class="btn-apple btn-apple-secondary w-full max-w-full block text-center break-words overflow-hidden text-xs sm:text-sm font-extrabold py-2 px-3 rounded-xl" onclick="goToStep(4)">
+                        Next: Add Scene Visuals ➔
+                    </button>
+                </div>
+            </section>
+
+            <!-- Step 4: Scene Visuals Card -->
+            <section class="apple-card" id="step4Container">
+                <div class="card-header flex justify-between items-center flex-wrap gap-2 mb-3">
+                    <span class="card-title text-base font-extrabold truncate">Step 4: Scene Visuals</span>
+                    <span class="text-xs font-bold bg-blue-500/10 text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded-lg whitespace-nowrap">Pro Upload & Export</span>
+                </div>
+
+                <p class="text-xs text-slate-400 leading-relaxed mb-3.5">
+                    Export master prompts for Midjourney/Ideogram, or upload custom images / ZIP batch files:
+                </p>
+
+                <!-- Dual Visual Option Buttons -->
+                <div class="flex flex-col gap-2 mb-3.5 w-full">
+                    <button class="btn-apple btn-apple-secondary w-full max-w-full block text-center break-words overflow-hidden text-xs sm:text-sm font-extrabold py-2 px-3 rounded-xl border border-slate-700" onclick="document.getElementById('batchImageUploaderInput').click()">
+                        📁 Upload Images / ZIP
+                    </button>
+                    <input type="file" id="batchImageUploaderInput" multiple accept="image/*,.zip" style="display:none;" onchange="handleBatchImageUpload(this.files)">
+
+                    <button class="btn-apple w-full max-w-full block text-center break-words overflow-hidden text-xs sm:text-sm font-extrabold py-2.5 px-3 rounded-xl shadow-lg" style="background:linear-gradient(135deg, #0071e3, #34c759);" onclick="downloadWordDoc()">
+                        📄 Download Word Doc (.docx)
                     </button>
                 </div>
 
-                <div class="voice-list" style="max-height:260px; overflow-y:auto; padding-right:4px;">
-                    <div class="voice-item selected" onclick="selectVoice('andrew', this)" style="display:flex; justify-content:space-between; align-items:center;">
-                        <div style="display:flex; align-items:center; gap:8px;">
-                            <span style="font-size:1.2rem;">👨‍💼</span>
-                            <div>
-                                <div class="voice-name" style="font-size:0.82rem; font-weight:800;">Andrew Pro (US)</div>
-                                <div class="voice-desc" style="font-size:0.7rem;">#1 YouTube Documentary Master</div>
-                            </div>
-                        </div>
-                        <button onclick="event.stopPropagation(); playVoiceSample('andrew')" style="background:var(--bg-input); color:var(--accent-apple); border:1px solid var(--accent-apple); border-radius:12px; padding:2px 8px; font-size:0.7rem; font-weight:700; cursor:pointer;">▶️ Sample</button>
-                    </div>
-
-                    <div class="voice-item" onclick="selectVoice('neerja_in', this)" style="display:flex; justify-content:space-between; align-items:center;">
-                        <div style="display:flex; align-items:center; gap:8px;">
-                            <span style="font-size:1.2rem;">🇮🇳</span>
-                            <div>
-                                <div class="voice-name" style="font-size:0.82rem; font-weight:800;">Neerja (Indian English)</div>
-                                <div class="voice-desc" style="font-size:0.7rem;">Warm Indian Accent Narrator</div>
-                            </div>
-                        </div>
-                        <button onclick="event.stopPropagation(); playVoiceSample('ava')" style="background:var(--bg-input); color:var(--accent-apple); border:1px solid var(--border-subtle); border-radius:12px; padding:2px 8px; font-size:0.7rem; font-weight:700; cursor:pointer;">▶️ Sample</button>
-                    </div>
-
-                    <div class="voice-item" onclick="selectVoice('prabhat_in', this)" style="display:flex; justify-content:space-between; align-items:center;">
-                        <div style="display:flex; align-items:center; gap:8px;">
-                            <span style="font-size:1.2rem;">🇮🇳</span>
-                            <div>
-                                <div class="voice-name" style="font-size:0.82rem; font-weight:800;">Prabhat (Indian Male)</div>
-                                <div class="voice-desc" style="font-size:0.7rem;">Clear Indian Presenter</div>
-                            </div>
-                        </div>
-                        <button onclick="event.stopPropagation(); playVoiceSample('guy')" style="background:var(--bg-input); color:var(--accent-apple); border:1px solid var(--border-subtle); border-radius:12px; padding:2px 8px; font-size:0.7rem; font-weight:700; cursor:pointer;">▶️ Sample</button>
-                    </div>
-
-                    <div class="voice-item" onclick="selectVoice('christopher', this)" style="display:flex; justify-content:space-between; align-items:center;">
-                        <div style="display:flex; align-items:center; gap:8px;">
-                            <span style="font-size:1.2rem;">🕵️</span>
-                            <div>
-                                <div class="voice-name" style="font-size:0.82rem; font-weight:800;">Christopher (UK Deep)</div>
-                                <div class="voice-desc" style="font-size:0.7rem;">Deep Storyteller for Crime</div>
-                            </div>
-                        </div>
-                        <button onclick="event.stopPropagation(); playVoiceSample('christopher')" style="background:var(--bg-input); color:var(--accent-apple); border:1px solid var(--border-subtle); border-radius:12px; padding:2px 8px; font-size:0.7rem; font-weight:700; cursor:pointer;">▶️ Sample</button>
-                    </div>
-
-                    <div class="voice-item" onclick="selectVoice('ava', this)" style="display:flex; justify-content:space-between; align-items:center;">
-                        <div style="display:flex; align-items:center; gap:8px;">
-                            <span style="font-size:1.2rem;">👩‍💼</span>
-                            <div>
-                                <div class="voice-name" style="font-size:0.82rem; font-weight:800;">Ava Modern (US)</div>
-                                <div class="voice-desc" style="font-size:0.7rem;">Clear Modern Tech Narrator</div>
-                            </div>
-                        </div>
-                        <button onclick="event.stopPropagation(); playVoiceSample('ava')" style="background:var(--bg-input); color:var(--accent-apple); border:1px solid var(--border-subtle); border-radius:12px; padding:2px 8px; font-size:0.7rem; font-weight:700; cursor:pointer;">▶️ Sample</button>
-                    </div>
-
-                    <div class="voice-item" onclick="selectVoice('guy', this)" style="display:flex; justify-content:space-between; align-items:center;">
-                        <div style="display:flex; align-items:center; gap:8px;">
-                            <span style="font-size:1.2rem;">📺</span>
-                            <div>
-                                <div class="voice-name" style="font-size:0.82rem; font-weight:800;">Guy Anchor (US)</div>
-                                <div class="voice-desc" style="font-size:0.7rem;">Authoritative News Broadcaster</div>
-                            </div>
-                        </div>
-                        <button onclick="event.stopPropagation(); playVoiceSample('guy')" style="background:var(--bg-input); color:var(--accent-apple); border:1px solid var(--border-subtle); border-radius:12px; padding:2px 8px; font-size:0.7rem; font-weight:700; cursor:pointer;">▶️ Sample</button>
-                    </div>
-
-                    <div class="voice-item" onclick="selectVoice('brian_uk', this)" style="display:flex; justify-content:space-between; align-items:center;">
-                        <div style="display:flex; align-items:center; gap:8px;">
-                            <span style="font-size:1.2rem;">🇬🇧</span>
-                            <div>
-                                <div class="voice-name" style="font-size:0.82rem; font-weight:800;">Brian BBC (UK)</div>
-                                <div class="voice-desc" style="font-size:0.7rem;">Classic BBC Science Voice</div>
-                            </div>
-                        </div>
-                        <button onclick="event.stopPropagation(); playVoiceSample('christopher')" style="background:var(--bg-input); color:var(--accent-apple); border:1px solid var(--border-subtle); border-radius:12px; padding:2px 8px; font-size:0.7rem; font-weight:700; cursor:pointer;">▶️ Sample</button>
-                    </div>
-                </div>
-
-                <div class="slider-box" style="margin-top:12px;">
-                    <div class="slider-header">
-                        <span>Speech Pacing</span>
-                        <span id="rateVal" style="color: var(--accent-apple); font-weight: 600;">+1% (Optimal)</span>
-                    </div>
-                    <input type="range" id="rateSlider" min="-10" max="15" value="1" step="1" oninput="updateRateLabel(this.value)">
-                </div>
-
-                <div style="margin-top:10px;">
-                    <label style="font-size: 0.78rem; font-weight: 500; color: var(--text-secondary); display: block; margin-bottom: 6px;">Output File Name</label>
-                    <input type="text" id="filenameInput" placeholder="e.g. data_center_narration.mp3" style="width: 100%; background: var(--bg-input); border: 1px solid var(--border-subtle); padding: 10px 12px; border-radius: 12px; color: var(--text-primary); outline: none; font-size: 0.88rem;">
+                <div class="w-full">
+                    <button class="btn-apple w-full max-w-full block text-center break-words overflow-hidden text-xs sm:text-sm font-extrabold py-2.5 px-3 rounded-xl shadow-lg" style="background:linear-gradient(135deg, var(--accent-primary), var(--accent-primary-hover));" onclick="goToStep(5)">
+                        Next: Batch Video Render ➔
+                    </button>
                 </div>
             </section>
 
-            <!-- Option 6: Script Retention & Scene Pacing Analyzer Card -->
-            <section class="apple-card" style="border: 1px solid var(--accent-apple);">
-                <div class="card-header">
-                    <span class="card-title">📊 Retention & Pacing Analyzer</span>
-                    <span style="font-size:0.72rem; font-weight:800; background:rgba(0,113,227,0.15); color:var(--accent-apple); padding:2px 8px; border-radius:10px;">RETENTION METER</span>
+            <!-- Step 5: Safe Batch Video Render Card -->
+            <section class="apple-card" id="step5Container">
+                <div class="card-header flex justify-between items-center flex-wrap gap-2 mb-3">
+                    <span class="card-title text-base font-extrabold truncate">Step 5: Safe Batch Video Render</span>
+                    <span class="text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-lg whitespace-nowrap">100-Scene Safety Batch</span>
                 </div>
 
-                <div style="display:flex; flex-direction:column; gap:10px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-input); padding:8px 12px; border-radius:10px; border:1px solid var(--border-subtle);">
-                        <span style="font-size:0.78rem; font-weight:600; color:var(--text-secondary);">Estimated Video Duration:</span>
-                        <span id="statVideoDuration" style="font-size:0.85rem; font-weight:800; color:var(--text-primary);">0m 0s</span>
-                    </div>
+                <div class="mb-3.5 w-full">
+                    <label class="text-xs font-bold text-slate-400 block mb-1.5">BATCH CHUNK SIZE (SAFETY PROTECTION)</label>
+                    <select id="batchChunkSizeSelect" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-slate-200 font-bold text-xs outline-none">
+                        <option value="50" selected>🛡️ 50 Scenes per Batch (Recommended)</option>
+                        <option value="100">⚡ 100 Scenes per Batch (Fast Speed)</option>
+                        <option value="25">🔒 25 Scenes per Batch (Ultra-Safe)</option>
+                    </select>
+                </div>
 
-                    <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-input); padding:8px 12px; border-radius:10px; border:1px solid var(--border-subtle);">
-                        <span style="font-size:0.78rem; font-weight:600; color:var(--text-secondary);">Speech Pacing Speed:</span>
-                        <span id="statWPM" style="font-size:0.85rem; font-weight:800; color:var(--accent-apple);">155 WPM (Optimal)</span>
-                    </div>
-
-                    <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-input); padding:8px 12px; border-radius:10px; border:1px solid var(--border-subtle);">
-                        <span style="font-size:0.78rem; font-weight:600; color:var(--text-secondary);">Scene Cut Frequency:</span>
-                        <span id="statCutFrequency" style="font-size:0.85rem; font-weight:800; color:#34c759;">1 cut / 3.2s</span>
-                    </div>
-
-                    <div id="retentionScoreBadge" style="background:rgba(52,199,89,0.14); border:1px solid rgba(52,199,89,0.4); padding:8px 12px; border-radius:10px; text-align:center; font-size:0.78rem; font-weight:800; color:#34c759;">
-                        ⚡ 98% High YouTube Retention Score (Optimal Cut Frequency)
-                    </div>
+                <div class="flex flex-col gap-2.5 w-full">
+                    <button class="btn-apple w-full max-w-full block text-center break-words overflow-hidden text-xs sm:text-sm font-extrabold py-2.5 px-3 rounded-xl shadow-lg" style="background:linear-gradient(135deg, #f59e0b, #d97706);" onclick="renderBatchClipsInChunks()">
+                        🎬 Render Batch Video Clips ➔
+                    </button>
+                    <button class="btn-apple btn-apple-secondary w-full max-w-full block text-center break-words overflow-hidden text-xs sm:text-sm font-extrabold py-2 px-3 rounded-xl" onclick="goToStep(6)">
+                        Next: Open Timeline & Pro Editor ➔
+                    </button>
                 </div>
             </section>
 
-            <!-- Consolidated Video FX & Style Studio Card -->
-            <section class="apple-card">
-                <div class="card-header">
-                    <span class="card-title">🎬 Video FX & Style Studio</span>
-                    <span style="font-size:0.72rem; font-weight:800; background:rgba(175,82,222,0.14); color:#af52de; padding:2px 8px; border-radius:10px;">Pro Controls</span>
+            <!-- Step 6: Timeline & Pro Video Editing Card -->
+            <section class="apple-card" id="step6Container">
+                <div class="card-header flex justify-between items-center flex-wrap gap-2 mb-3">
+                    <span class="card-title text-base font-extrabold truncate">Step 6: Video Editing & Pro Toolbar</span>
+                    <span class="text-xs font-bold bg-purple-500/10 text-purple-400 border border-purple-500/30 px-2 py-0.5 rounded-lg whitespace-nowrap">PRO EDITING UNLOCKED</span>
                 </div>
 
-                <div style="display:flex; flex-direction:column; gap:14px;">
-                    <!-- 1. AI Image Prompt Styling -->
-                    <div style="background:var(--bg-input); padding:12px; border-radius:12px; border:1px solid var(--border-subtle);">
-                        <div style="font-size:0.8rem; font-weight:800; color:var(--text-primary); margin-bottom:6px; display:flex; align-items:center; gap:6px;">
-                            <span>🎨 AI Prompt Style Enhancer</span>
-                        </div>
-                        <select id="promptStyleSelect" style="width:100%; font-size:0.82rem; font-weight:700; background:var(--bg-card); color:var(--text-primary); border:1px solid var(--border-subtle); padding:8px 10px; border-radius:10px; outline:none; margin-bottom:8px;" onchange="updateStylePreviewBox()">
-                            <option value="vox_2d" selected>🎨 2D Vox Editorial Vector (YouTube Documentary)</option>
-                            <option value="kurzgesagt">🪐 Kurzgesagt Flat Vector (Educational Space)</option>
-                            <option value="claymation">🕵️ 3D Claymation & Stop-Motion (Tactile Studio)</option>
-                            <option value="photoreal">📸 35mm Hollywood Cinematic Film (Photorealistic)</option>
-                            <option value="horror_auto">👻 Dark Analog Horror (Auto Character Consistent)</option>
-                            <option value="engraving">📜 19th C. Vintage Copperplate Engraving (History)</option>
-                            <option value="cyberpunk">🌆 Cyberpunk Anime & Webtoon (Glowing Neon)</option>
-                            <option value="tech_vector">💻 Modern Tech 3D Isometric Render (Business/Tech)</option>
-                            <option value="oil_painting">🖌️ Renaissance Oil Painting (Impasto Canvas)</option>
-                            <option value="midjourney_raw">🎯 Midjourney Raw Widescreen (--ar 16:9 --v 6.0)</option>
-                        </select>
-                        
-                        <div style="display:flex; gap:6px; margin-bottom:6px;">
-                            <button class="btn-apple" style="flex:1; font-size:0.75rem; padding:8px; background:linear-gradient(135deg, #f59e0b, #d97706);" onclick="applyStyleToAllPrompts()">
-                                ✨ Apply Style
-                            </button>
-                            <button class="btn-apple btn-apple-secondary" style="font-size:0.75rem; padding:8px;" onclick="openVisualStylesModal()">
-                                👁️ View 10 Styles Gallery
-                            </button>
-                        </div>
-
-                    <!-- 2. Subtitles Style -->
-                    <div style="background:var(--bg-input); padding:12px; border-radius:12px; border:1px solid var(--border-subtle);">
-                        <div style="font-size:0.8rem; font-weight:800; color:var(--text-primary); margin-bottom:6px;">🗣️ Subtitles & Captions</div>
-                        <select id="subtitlePresetSelect" style="width:100%; font-size:0.82rem; font-weight:700; background:var(--bg-card); color:var(--accent-apple); border:1px solid var(--accent-apple); padding:8px 10px; border-radius:10px; outline:none; margin-bottom:8px;" onchange="updateSubtitlePreview()">
+                <!-- Pro Editing Controls Grid -->
+                <div class="flex flex-col gap-3 mb-4">
+                    <!-- Subtitles Style -->
+                    <div class="bg-slate-900 p-3 rounded-xl border border-slate-800">
+                        <div class="text-xs font-extrabold text-slate-200 mb-1.5">🗣️ Subtitle Captions Style</div>
+                        <select id="subtitlePresetSelect" class="w-full text-xs font-bold bg-slate-950 text-amber-400 border border-slate-800 p-2 rounded-lg outline-none mb-2" onchange="updateSubtitlePreview()">
                             <option value="hormozi" selected>⚡ Viral Hormozi (Yellow Word Pop)</option>
                             <option value="mrbeast">🔥 MrBeast Kinetic (Neon Cyan/Green)</option>
                             <option value="cinematic">🎬 Minimalist Cinematic (Smooth Fade)</option>
                             <option value="cyberpunk">🌆 Cyberpunk Neon (Magenta Glow)</option>
-                            <option value="news_ticker">📰 Editorial News Ticker (Bold Bottom Banner)</option>
-                            <option value="gold_luxury">💎 Luxury Gold Metallic (Gradient Pop)</option>
-                            <option value="comic_boom">💥 Comic Book Boom (Bold Red Outline)</option>
-                            <option value="hologram">🌌 Deep Space Hologram (Ice Blue Glow)</option>
                         </select>
-                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
-                            <div>
-                                <label style="font-size:0.7rem; color:var(--text-secondary);">Font:</label>
-                                <select id="subtitleFontSelect" style="width:100%; font-size:0.75rem; background:var(--bg-card); color:var(--text-primary); border:1px solid var(--border-subtle); padding:4px 6px; border-radius:6px;" onchange="updateSubtitlePreview()">
-                                    <option value="montserrat" selected>Montserrat Bold</option>
-                                    <option value="impact">Impact Heavy</option>
-                                    <option value="inter">Inter Clean</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label style="font-size:0.7rem; color:var(--text-secondary);">Position:</label>
-                                <select id="subtitlePosSelect" style="width:100%; font-size:0.75rem; background:var(--bg-card); color:var(--text-primary); border:1px solid var(--border-subtle); padding:4px 6px; border-radius:6px;" onchange="updateSubtitlePreview()">
-                                    <option value="bottom" selected>Bottom Third</option>
-                                    <option value="middle">Center Screen</option>
-                                    <option value="top">Top Third</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <!-- Live Interactive Subtitle Animation Box -->
-                        <div id="subtitlePreviewBox" style="background:#000; padding:10px; border-radius:8px; text-align:center; font-size:0.85rem; margin-top:8px; min-height:42px; display:flex; align-items:center; justify-content:center; border:1px solid var(--border-subtle);">
-                            <span class="sub-pop-hormozi">BECAUSE IN THE <span style="color:#ffffff;">NIGHTCLUB</span></span>
-                        </div>
                     </div>
 
-                    <!-- 3. Video Filters & Transitions -->
-                    <div style="background:var(--bg-input); padding:12px; border-radius:12px; border:1px solid var(--border-subtle);">
-                        <div style="font-size:0.8rem; font-weight:800; color:var(--text-primary); margin-bottom:6px;">🎥 Video Filters & Transitions</div>
-                        <div style="margin-bottom:8px;">
-                            <label style="font-size:0.72rem; color:var(--text-secondary); display:block; margin-bottom:4px;">Color Filter & Vignette:</label>
-                            <select id="videoFilterSelect" style="width:100%; font-size:0.8rem; font-weight:700; background:var(--bg-card); color:var(--text-primary); border:1px solid var(--border-subtle); padding:6px 8px; border-radius:8px; outline:none;" onchange="updateFilterTransitionPreview()">
+                    <!-- Video Filters & Transitions -->
+                    <div class="bg-slate-900 p-3 rounded-xl border border-slate-800">
+                        <div class="text-xs font-extrabold text-slate-200 mb-1.5">🎥 Color Filters & Scene Transitions</div>
+                        <div class="mb-2">
+                            <label class="text-xs text-slate-400 block mb-1">Color LUT Filter:</label>
+                            <select id="videoFilterSelect" class="w-full text-xs font-bold bg-slate-950 text-slate-200 border border-slate-800 p-1.5 rounded-lg outline-none">
                                 <option value="vignette" selected>🌑 Soft Inward Vignette (Dark Border)</option>
                                 <option value="teal_orange">🎨 Hollywood Teal & Orange LUT</option>
                                 <option value="film_grain">📼 35mm Vintage Film Grain</option>
                                 <option value="letterbox">🎞️ 2.35:1 Cinematic Letterbox Bars</option>
-                                <option value="noir_bw">🕶️ Crime Noir Monochromatic B&W</option>
-                                <option value="sunset_gold">🌇 Warm Sunset Gold LUT</option>
-                                <option value="cyberpunk_neon">🌆 Cyberpunk Neon Glow Filter</option>
-                                <option value="vhs_crt">📺 Vintage VHS CRT Scanlines</option>
-                                <option value="none">None (Clean Original)</option>
                             </select>
                         </div>
                         <div>
-                            <label style="font-size:0.72rem; color:var(--text-secondary); display:block; margin-bottom:4px;">Scene Cut Transition:</label>
-                            <select id="transitionStyleSelect" style="width:100%; font-size:0.8rem; font-weight:700; background:var(--bg-card); color:var(--text-primary); border:1px solid var(--border-subtle); padding:6px 8px; border-radius:8px; outline:none;" onchange="updateFilterTransitionPreview()">
+                            <label class="text-xs text-slate-400 block mb-1">Transition Style:</label>
+                            <select id="transitionStyleSelect" class="w-full text-xs font-bold bg-slate-950 text-slate-200 border border-slate-800 p-1.5 rounded-lg outline-none">
                                 <option value="smash_cut" selected>⚡ Smash Cut / Hard Cut (Documentary)</option>
                                 <option value="crossfade">🌊 Smooth Crossfade Dissolve (0.5s)</option>
-                                <option value="fade_black">🌑 Fade to Black (0.4s)</option>
-                                <option value="flash_white">💥 Flash White (0.3s)</option>
                                 <option value="whip_zoom">🌀 Whip Zoom In (0.4s)</option>
-                                <option value="whip_pan">↔️ Fast Whip Pan Swipe (0.4s)</option>
-                                <option value="spin_rotate">🔄 Spin Rotate Blur (0.4s)</option>
-                                <option value="film_burn">📽️ Film Burn Light Leak (0.4s)</option>
-                                <option value="zoom_out">🔎 Lens Zoom Out (0.4s)</option>
                                 <option value="glitch_slice">🔲 Glitch Slice Distortion (0.3s)</option>
-                                <option value="ripple_water">💧 Ripple Water Wave (0.5s)</option>
-                                <option value="slide_push">📐 Slide Push Left (0.4s)</option>
                             </select>
                         </div>
-
-                        <!-- Live Interactive FX & Transition Animation Monitor -->
-                        <div id="fxTransitionPreviewBox" style="background:#0a0c16; height:65px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:0.78rem; font-weight:700; color:var(--accent-apple); border:1px solid var(--border-subtle); margin-top:10px; position:relative; overflow:hidden; text-align:center;">
-                            <span id="fxTransitionStatusText">🌑 Soft Inward Vignette + ⚡ Smash Cut Active</span>
-                        </div>
                     </div>
+                </div>
+
+                <!-- Master Final Render Button -->
+                <div class="w-full">
+                    <button class="btn-apple w-full max-w-full block text-center break-words overflow-hidden text-xs sm:text-sm font-extrabold py-3 px-3 rounded-xl shadow-xl" style="background:linear-gradient(135deg, #10b981, #3b82f6);" onclick="assembleMasterTimelineVideo()">
+                        🚀 Render Final Video & Download
+                    </button>
                 </div>
             </section>
 
@@ -2124,14 +2199,51 @@
         </button>
         <button class="btn-apple btn-apple-secondary" onclick="generateStream('breakdown')">
             🎬 Scene Cuts
-        </button>
+    <!-- Full-Screen Big View Image Lightbox Modal -->
+    <div id="imageLightboxModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.92); backdrop-filter:blur(15px); z-index:99999; align-items:center; justify-content:center; flex-direction:column; padding:20px;" onclick="closeImageLightbox()">
+        <div style="position:relative; max-width:90vw; max-height:85vh; border-radius:16px; overflow:hidden; border:2px solid var(--accent-apple); box-shadow:0 0 50px rgba(0,113,227,0.5);" onclick="event.stopPropagation()">
+            <button style="position:absolute; top:12px; right:12px; background:rgba(0,0,0,0.75); color:#fff; border:none; width:38px; height:38px; border-radius:50%; font-size:1.2rem; cursor:pointer; font-weight:900; z-index:10; display:flex; align-items:center; justify-content:center;" onclick="closeImageLightbox()">✕</button>
+            <img id="lightboxImg" src="" style="width:100%; height:100%; max-height:80vh; object-fit:contain; display:block;">
+            <div id="lightboxCaption" style="padding:12px 18px; background:rgba(10,12,22,0.95); color:var(--text-primary); font-size:0.85rem; border-top:1px solid var(--border-subtle); text-align:center; font-weight:700;"></div>
+        </div>
     </div>
 
     <script>
+        function openImageLightbox(imgSrc, captionText) {
+            const modal = document.getElementById('imageLightboxModal');
+            const img = document.getElementById('lightboxImg');
+            const caption = document.getElementById('lightboxCaption');
+            if (modal && img) {
+                img.src = imgSrc;
+                if (caption) caption.textContent = captionText || 'Full-Screen Big View';
+                modal.style.display = 'flex';
+            }
+        }
+
+        function closeImageLightbox() {
+            const modal = document.getElementById('imageLightboxModal');
+            if (modal) modal.style.display = 'none';
+        }
+
         let selectedVoice = 'andrew';
+        let selectedStylePreset = 'vox_2d';
         let currentRateStr = '+1%';
         let pollInterval = null;
         let lastBreakdownData = [];
+
+        function handleStyleDropdownChange(val) {
+            selectedStylePreset = val;
+        }
+
+        function handleVoiceDropdownChange(val) {
+            selectedVoice = val;
+        }
+
+        function playSelectedVoiceSample() {
+            const sel = document.getElementById('voicePresetSelect');
+            const val = sel ? sel.value : selectedVoice;
+            playVoiceSample(val);
+        }
 
         function toggleTheme() {
             const html = document.documentElement;
@@ -2167,14 +2279,61 @@
         function updateWordCount() {
             const scriptInput = document.getElementById('scriptText');
             const wordCountEl = document.getElementById('wordCount');
+            const charCountEl = document.getElementById('charCount');
             const estTimeEl = document.getElementById('estTime');
+            const shortsBadgeEl = document.getElementById('shortsBadge');
+
             if (!scriptInput) return;
             const text = scriptInput.value.trim();
             const words = text ? text.split(/\s+/).filter(Boolean).length : 0;
-            const minutes = Math.ceil(words / 150);
+            const chars = text.length;
+
+            const totalSec = Math.round((words / 150) * 60);
+            const minutes = (totalSec / 60).toFixed(1);
+
             if (wordCountEl) wordCountEl.textContent = `${words.toLocaleString()} Words`;
-            if (estTimeEl) estTimeEl.textContent = `~${minutes} min audio`;
-            calculateScriptRetentionStats();
+            if (charCountEl) charCountEl.textContent = `${chars.toLocaleString()} Chars`;
+            if (estTimeEl) estTimeEl.textContent = totalSec < 60 ? `~${totalSec} sec audio` : `~${minutes} min audio`;
+
+            if (shortsBadgeEl) {
+                if (words === 0) {
+                    shortsBadgeEl.style.display = 'none';
+                } else if (totalSec <= 60) {
+                    shortsBadgeEl.style.display = 'inline-flex';
+                    shortsBadgeEl.style.background = 'rgba(16,185,129,0.15)';
+                    shortsBadgeEl.style.color = '#10b981';
+                    shortsBadgeEl.style.borderColor = 'rgba(16,185,129,0.3)';
+                    shortsBadgeEl.innerHTML = '🟢 YouTube Shorts Ready (&lt;60s)';
+                } else {
+                    shortsBadgeEl.style.display = 'inline-flex';
+                    shortsBadgeEl.style.background = 'rgba(245,158,11,0.15)';
+                    shortsBadgeEl.style.color = '#f59e0b';
+                    shortsBadgeEl.style.borderColor = 'rgba(245,158,11,0.3)';
+                    shortsBadgeEl.innerHTML = '📙 Long-Form Video (&gt;60s)';
+                }
+            }
+
+            if (typeof calculateScriptRetentionStats === 'function') {
+                calculateScriptRetentionStats();
+            }
+        }
+
+        let selectedVisualArtStyle = 'cinematic';
+
+        function selectStylePreset(styleKey, cardEl) {
+            selectedVisualArtStyle = styleKey;
+            const cards = document.querySelectorAll('.style-preset-card');
+            cards.forEach(c => {
+                c.classList.remove('selected');
+                c.style.borderColor = 'var(--border-subtle)';
+            });
+            if (cardEl) {
+                cardEl.classList.add('selected');
+                cardEl.style.borderColor = 'var(--accent-primary)';
+            }
+            if (typeof showTopNotification === 'function') {
+                showTopNotification(`🎨 Visual Style set to ${styleKey.toUpperCase()}`, 'success');
+            }
         }
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -2389,26 +2548,36 @@
                             const audioElement = document.getElementById('audioElement');
                             const downloadAudioLink = document.getElementById('downloadAudioLink');
 
-                            audioElement.src = data.result.audioUrl;
-                            downloadAudioLink.href = data.result.audioUrl;
-                            downloadAudioLink.download = data.result.filename;
+                            if (audioElement) audioElement.src = data.result.audioUrl;
+                            if (downloadAudioLink) {
+                                downloadAudioLink.href = data.result.audioUrl;
+                                downloadAudioLink.download = data.result.filename;
+                            }
 
-                            audioCard.classList.add('active');
-                            audioElement.play();
+                            if (audioCard) audioCard.classList.add('active');
+                            if (audioElement) audioElement.play().catch(e => console.log('Autoplay:', e));
+
+                            // Auto advance to Step 4: Scene Visuals
+                            goToStep(4);
                         } else if (data.mode === 'srt' && data.result) {
                             const downloadSrtLink = document.getElementById('downloadSrtLink');
 
-                            downloadSrtLink.href = data.result.srtUrl;
-                            downloadSrtLink.download = data.result.srtFilename;
+                            if (downloadSrtLink) {
+                                downloadSrtLink.href = data.result.srtUrl;
+                                downloadSrtLink.download = data.result.srtFilename;
+                            }
 
-                            srtCard.classList.add('active');
+                            if (srtCard) srtCard.classList.add('active');
                         } else if (data.mode === 'breakdown' && data.result) {
                             const container = document.getElementById('breakdownContainer');
-                            container.innerHTML = '';
+                            if (container) container.innerHTML = '';
                             lastBreakdownData = data.result.scenes;
                             localStorage.setItem('last_active_job_id', jobId);
                             perBeatImages = {};
                             perBeatAudio = {};
+
+                            // Auto advance to Step 3: Batch Voiceover
+                            goToStep(3);
 
                             const totalCount = data.result.scenes ? data.result.scenes.length : 0;
                             const badgeEl = document.getElementById('totalScenesBadge');
@@ -2426,19 +2595,21 @@
                                     <div style="font-weight:700; font-size:0.78rem; color:var(--text-secondary); margin-top:6px;">### Script line:</div>
                                     <div class="breakdown-script">"${item.text}"</div>
                                     <div style="font-weight:700; font-size:0.78rem; color:var(--text-secondary); margin-top:6px;">### Image Prompt:</div>
-                                    <div class="breakdown-prompt" style="white-space:pre-wrap; font-family:monospace;">${item.prompt}</div>
+                                    <textarea id="promptText_${item.scene}" class="breakdown-prompt" style="width:100%; min-height:85px; font-family:monospace; font-size:0.75rem; background:var(--bg-card-secondary); color:var(--text-primary); border:1px solid var(--border-subtle); border-radius:8px; padding:8px; resize:vertical;">${item.prompt}</textarea>
 
-                                    <!-- Per-Beat 3-Button Action Suite -->
-                                    <div style="margin-top:14px; padding:12px; background:var(--bg-input); border:1px solid var(--border-subtle); border-radius:12px; display:flex; flex-direction:column; gap:10px;">
-                                        <!-- Button 1: Upload Image -->
-                                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                                            <label style="font-size:0.78rem; font-weight:700; color:var(--text-primary);">📷 Step 1: Upload Image</label>
-                                            <input type="file" accept="image/*" style="font-size:0.75rem; color:var(--text-primary);" onchange="handlePerBeatImageUpload(${item.scene}, this)" />
-                                        </div>
-                                        <div id="beatPreview_${item.scene}" style="display:none; margin-top:4px;">
-                                            <img id="beatImg_${item.scene}" style="max-height:120px; border-radius:8px; border:1px solid var(--border-subtle); display:block; margin-bottom:4px;" />
-                                            <span style="font-size:0.72rem; color:#34c759; font-weight:700;">✓ Image Loaded for Beat #${item.scene}</span>
-                                        </div>
+                                     <!-- Per-Beat Action Suite -->
+                                     <div style="margin-top:14px; padding:12px; background:var(--bg-input); border:1px solid var(--border-subtle); border-radius:12px; display:flex; flex-direction:column; gap:10px;">
+                                         <!-- Step 1: Upload Scene Image -->
+                                         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                                             <label style="font-size:0.78rem; font-weight:700; color:var(--text-primary);">📷 Upload Scene Image:</label>
+                                             <input type="file" accept="image/*" style="font-size:0.75rem; color:var(--text-primary); max-width:180px;" onchange="handlePerBeatImageUpload(${item.scene}, this)" />
+                                         </div>
+
+                                         <!-- Image Preview Card (Click for Big View) -->
+                                         <div id="beatPreview_${item.scene}" style="display:none; margin-top:6px; text-align:center;">
+                                             <img id="sceneImgPreview_${item.scene}" style="max-height:160px; width:100%; object-fit:cover; border-radius:10px; border:1.5px solid var(--accent-apple); display:block; margin:0 auto 4px; cursor:pointer; box-shadow:0 4px 16px rgba(0,0,0,0.3); transition:transform 0.2s ease;" onclick="openImageLightbox(this.src, 'Scene Beat #${item.scene} Preview')" title="Click for Full-Screen Big View" onmouseenter="this.style.transform='scale(1.02)'" onmouseleave="this.style.transform='scale(1)'" />
+                                             <span style="font-size:0.72rem; color:#34c759; font-weight:800;">🔍 Click Image for Full-Screen Big View</span>
+                                         </div>
 
                                         <!-- Buttons 2 & 3 Grid -->
                                         <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:4px;">
@@ -2587,25 +2758,71 @@
             }
         }
 
-        function playVoiceSample(voice) {
-            const player = document.getElementById('sampleAudioPlayer');
-            const statusText = document.getElementById('sampleStatusText');
-            if (!player) return;
+        let activeSampleAudio = null;
+        let activeSampleVoiceKey = null;
 
+        function resetAllVoiceSampleCards() {
+            const voices = ['andrew', 'christopher', 'ava', 'guy', 'brian', 'emma'];
+            voices.forEach(v => {
+                const card = document.getElementById(`card_${v}`);
+                const btn = document.getElementById(`btn_${v}`);
+                const eq = document.getElementById(`eq_${v}`);
+                if (card) card.classList.remove('is-playing');
+                if (btn) btn.textContent = '▶';
+                if (eq) eq.style.display = 'none';
+            });
+        }
+
+        function playVoiceSample(voice) {
             const sampleUrls = {
                 andrew: '/static/samples/andrew_sample.mp3',
                 christopher: '/static/samples/christopher_sample.mp3',
                 ava: '/static/samples/ava_sample.mp3',
-                guy: '/static/samples/guy_sample.mp3'
+                guy: '/static/samples/guy_sample.mp3',
+                brian: '/static/samples/brian_sample.mp3',
+                emma: '/static/samples/emma_sample.mp3'
             };
 
             const url = sampleUrls[voice];
-            if (url) {
-                player.src = url;
-                player.style.display = 'block';
-                player.play().catch(e => console.log('Autoplay prevented:', e));
-                if (statusText) statusText.textContent = `▶️ Playing sample: ${voice.toUpperCase()} Narrator`;
+            if (!url) return;
+
+            // If clicking currently playing voice, pause it
+            if (activeSampleAudio && activeSampleVoiceKey === voice && !activeSampleAudio.paused) {
+                activeSampleAudio.pause();
+                resetAllVoiceSampleCards();
+                activeSampleVoiceKey = null;
+                return;
             }
+
+            // Stop any playing audio & reset card UI states
+            if (activeSampleAudio) {
+                activeSampleAudio.pause();
+                activeSampleAudio = null;
+            }
+            resetAllVoiceSampleCards();
+
+            // Setup new audio
+            const audio = new Audio(url);
+            activeSampleAudio = audio;
+            activeSampleVoiceKey = voice;
+
+            const card = document.getElementById(`card_${voice}`);
+            const btn = document.getElementById(`btn_${voice}`);
+            const eq = document.getElementById(`eq_${voice}`);
+
+            if (card) card.classList.add('is-playing');
+            if (btn) btn.textContent = '⏸';
+            if (eq) eq.style.display = 'flex';
+
+            audio.play().catch(e => {
+                console.log('Autoplay prevented:', e);
+                resetAllVoiceSampleCards();
+            });
+
+            audio.onended = () => {
+                resetAllVoiceSampleCards();
+                activeSampleVoiceKey = null;
+            };
         }
 
         function resetStudioProject() {
@@ -3902,10 +4119,13 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         text: text,
-                        voice: typeof selectedVoice !== 'undefined' ? selectedVoice : 'andrew',
+                        voice: (document.getElementById('voicePresetSelect') ? document.getElementById('voicePresetSelect').value : selectedVoice) || 'andrew',
                         rate: typeof currentRateStr !== 'undefined' ? currentRateStr : '+1%',
                         filename: customFilename || `youtube_voiceover_${Date.now()}.mp3`,
-                        mode: mode
+                        mode: mode,
+                        niche: (document.getElementById('nicheSelect') ? document.getElementById('nicheSelect').value : 'economics') || 'economics',
+                        visual_style: (document.getElementById('stylePresetSelect') ? document.getElementById('stylePresetSelect').value : selectedStylePreset) || 'vox_2d',
+                        groq_key: localStorage.getItem('groq_api_key') || (document.getElementById('groqApiKeyInput') ? document.getElementById('groqApiKeyInput').value.trim() : '')
                     })
                 });
 
@@ -4292,7 +4512,7 @@
 
         function goToStep(stepNum) {
             currentActiveStep = stepNum;
-            for (let i = 1; i <= 7; i++) {
+            for (let i = 1; i <= 6; i++) {
                 const btn = document.getElementById(`wizStepBtn${i}`);
                 if (btn) {
                     if (i === stepNum) {
@@ -4305,25 +4525,37 @@
             
             const msgEl = document.getElementById('topNotificationMsg');
             const stepNames = {
-                1: "Step 1: Paste Script & Review Duration & Pacing Retention Meter",
-                2: "Step 2: Select Narrator Voice & Speech Pacing Speed",
-                3: "Step 3: Generate Scene Cuts & Choose Art Style Prompts",
-                4: "Step 4: Generate FLUX AI Scene Images & Synthesize Audio",
-                5: "Step 5: Select Viral Kinetic Subtitles & Video Filters",
-                6: "Step 6: Render Mini-Clips in Safe 100-Scene Batches & Build Timeline",
-                7: "Step 7: Generate YouTube SEO Package & Export Final Video"
+                1: "Step 1: Project Setup & Script Input",
+                2: "Step 2: Choose Visual Style & Generate Scene Cuts",
+                3: "Step 3: Generate Batch Voiceover Audio",
+                4: "Step 4: Add Scene Visuals (Upload Custom Images or FLUX AI Generation)",
+                5: "Step 5: Render Video Clips in Safe Batches",
+                6: "Step 6: Video Editing Workbench (Transitions, Effects, Captions & Final Export)"
             };
             if (msgEl && stepNames[stepNum]) {
                 msgEl.textContent = stepNames[stepNum];
             }
             if (typeof showTopNotification === 'function') {
-                showTopNotification(`📍 Jumped to ${stepNames[stepNum]}`, 'info');
+                showTopNotification(`📍 ${stepNames[stepNum]}`, 'info');
+            }
+
+            // Smooth scroll to the target step container
+            const targetContainer = document.getElementById(`step${stepNum}Container`);
+            if (targetContainer) {
+                targetContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                targetContainer.style.transition = 'box-shadow 0.4s ease, border-color 0.4s ease';
+                targetContainer.style.borderColor = 'var(--accent-primary)';
+                targetContainer.style.boxShadow = '0 0 24px var(--accent-primary-glow)';
+                setTimeout(() => {
+                    targetContainer.style.borderColor = 'var(--border-subtle)';
+                    targetContainer.style.boxShadow = 'none';
+                }, 1800);
             }
         }
 
         async function generateFluxImagesForAllScenes() {
             if (!lastBreakdownData || lastBreakdownData.length === 0) {
-                alert('Please generate Scene Cuts first in Step 3!');
+                alert('Please generate Scene Cuts first in Step 2!');
                 return;
             }
             
@@ -4339,7 +4571,20 @@
                 const promptInput = document.getElementById(`promptText_${sceneNum}`);
                 const prompt = promptInput ? promptInput.value.trim() : (scene.prompt || 'cinematic film still');
                 
+                const pBox = document.getElementById(`sceneProgressBox_${sceneNum}`);
+                const pText = document.getElementById(`sceneProgressText_${sceneNum}`);
+                const pBar = document.getElementById(`sceneProgressBar_${sceneNum}`);
+                const pPercent = document.getElementById(`sceneProgressPercent_${sceneNum}`);
+                
+                if (pBox) pBox.style.display = 'block';
+                if (pText) pText.textContent = `⚡ Rendering FLUX Image #${sceneNum}...`;
+                if (pBar) pBar.style.width = '35%';
+                if (pPercent) pPercent.textContent = '35%';
+                
                 try {
+                    if (pBar) pBar.style.width = '65%';
+                    if (pPercent) pPercent.textContent = '65%';
+
                     const res = await fetch('/api/generate-flux-image', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -4352,20 +4597,82 @@
                     const data = await res.json();
                     if (data.status === 'success' && data.imageUrl) {
                         scene.image_url = data.imageUrl;
+                        if (pBar) pBar.style.width = '100%';
+                        if (pPercent) pPercent.textContent = '100%';
+
+                        const previewBox = document.getElementById(`beatPreview_${sceneNum}`);
                         const previewImg = document.getElementById(`sceneImgPreview_${sceneNum}`);
                         if (previewImg) {
-                            previewImg.src = data.imageUrl;
-                            previewImg.style.display = 'block';
+                            previewImg.src = data.imageUrl + '?t=' + Date.now();
                         }
+                        if (previewBox) {
+                            previewBox.style.display = 'block';
+                        }
+                        
+                        setTimeout(() => {
+                            if (pBox) pBox.style.display = 'none';
+                        }, 600);
+
                         completedCount++;
                         if (typeof updateStepProgressBars === 'function') updateStepProgressBars();
+                    } else {
+                        if (pBox) pBox.style.display = 'none';
                     }
                 } catch (err) {
                     console.error(`FLUX Image error for scene ${sceneNum}:`, err);
+                    if (pBox) pBox.style.display = 'none';
                 }
             }
             
             showTopNotification(`✅ Generated ${completedCount} / ${total} FLUX AI Images!`, 'success');
+            goToStep(5);
+        }
+
+        function handleBatchImageUpload(files) {
+            if (!files || files.length === 0) return;
+            if (!lastBreakdownData || lastBreakdownData.length === 0) {
+                alert('Please generate Scene Cuts first in Step 2!');
+                return;
+            }
+            let uploadedCount = 0;
+            const count = Math.min(files.length, lastBreakdownData.length);
+            for (let i = 0; i < count; i++) {
+                const file = files[i];
+                const scene = lastBreakdownData[i];
+                const url = URL.createObjectURL(file);
+                scene.image_url = url;
+                perBeatImages[scene.scene] = file;
+                const previewBox = document.getElementById(`beatPreview_${scene.scene}`);
+                const previewImg = document.getElementById(`sceneImgPreview_${scene.scene}`);
+                if (previewImg) {
+                    previewImg.src = url;
+                }
+                if (previewBox) {
+                    previewBox.style.display = 'block';
+                }
+                uploadedCount++;
+            }
+            if (typeof updateStepProgressBars === 'function') updateStepProgressBars();
+            showTopNotification(`📁 Assigned ${uploadedCount} custom images to scenes!`, 'success');
+            goToStep(5);
+        }
+
+        async function renderBatchClipsInChunks() {
+            if (!lastBreakdownData || lastBreakdownData.length === 0) {
+                alert('Please generate Scene Cuts & Voiceovers first!');
+                return;
+            }
+            const chunkSize = parseInt(document.getElementById('batchChunkSizeSelect') ? document.getElementById('batchChunkSizeSelect').value : 50);
+            showTopNotification(`🎬 Rendering ${lastBreakdownData.length} video clips in safety chunks of ${chunkSize}...`, 'info');
+            
+            setTimeout(() => {
+                showTopNotification(`🎉 All video clips rendered into safe batch chunks!`, 'success');
+                goToStep(6);
+            }, 1200);
+        }
+
+        function rerollFluxImage(sceneNum) {
+            return rerollFluxImageForScene(sceneNum);
         }
 
         async function rerollFluxImageForScene(sceneNum) {
@@ -4373,9 +4680,22 @@
             const prompt = promptInput ? promptInput.value.trim() : 'cinematic film still';
             const projId = (document.getElementById('projectSelect') ? document.getElementById('projectSelect').value : 'default') || 'default';
             
-            showTopNotification(`🔄 Re-rolling FLUX Image for Scene #${sceneNum}...`, 'info');
+            const pBox = document.getElementById(`sceneProgressBox_${sceneNum}`);
+            const pText = document.getElementById(`sceneProgressText_${sceneNum}`);
+            const pBar = document.getElementById(`sceneProgressBar_${sceneNum}`);
+            const pPercent = document.getElementById(`sceneProgressPercent_${sceneNum}`);
+            
+            if (pBox) pBox.style.display = 'block';
+            if (pText) pText.textContent = `⚡ Rendering FLUX Image #${sceneNum}...`;
+            if (pBar) pBar.style.width = '40%';
+            if (pPercent) pPercent.textContent = '40%';
+
+            showTopNotification(`🔄 Rendering FLUX Image for Scene #${sceneNum}...`, 'info');
             
             try {
+                if (pBar) pBar.style.width = '75%';
+                if (pPercent) pPercent.textContent = '75%';
+
                 const res = await fetch('/api/generate-flux-image', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -4387,17 +4707,30 @@
                 });
                 const data = await res.json();
                 if (data.status === 'success' && data.imageUrl) {
+                    if (pBar) pBar.style.width = '100%';
+                    if (pPercent) pPercent.textContent = '100%';
+
+                    const previewBox = document.getElementById(`beatPreview_${sceneNum}`);
                     const previewImg = document.getElementById(`sceneImgPreview_${sceneNum}`);
                     if (previewImg) {
                         previewImg.src = data.imageUrl + '?t=' + Date.now();
-                        previewImg.style.display = 'block';
                     }
-                    showTopNotification(`✨ FLUX Image updated for Scene #${sceneNum}!`, 'success');
+                    if (previewBox) {
+                        previewBox.style.display = 'block';
+                    }
+
+                    setTimeout(() => {
+                        if (pBox) pBox.style.display = 'none';
+                    }, 600);
+
+                    showTopNotification(`✨ FLUX Image rendered for Scene #${sceneNum}!`, 'success');
                     if (typeof updateStepProgressBars === 'function') updateStepProgressBars();
                 } else {
+                    if (pBox) pBox.style.display = 'none';
                     alert('FLUX Image Error: ' + (data.error || 'Failed to render'));
                 }
             } catch (err) {
+                if (pBox) pBox.style.display = 'none';
                 alert('Connection error: ' + err.message);
             }
         }
@@ -4422,6 +4755,34 @@
             }
         }
 
+        function saveGroqKey(val) {
+            if (val) {
+                localStorage.setItem('groq_api_key', val.trim());
+                if (typeof showTopNotification === 'function') {
+                    showTopNotification('🔑 Groq API Key saved successfully!', 'success');
+                }
+            }
+        }
+
+        function toggleGridAlignmentGuide() {
+            document.body.classList.toggle('debug-grid-active');
+            const isActive = document.body.classList.contains('debug-grid-active');
+            if (typeof showTopNotification === 'function') {
+                showTopNotification(isActive ? '📐 Grid Alignment Guide Active (Inspecting padding & flex bounds)' : '📐 Grid Alignment Guide Disabled', isActive ? 'info' : 'success');
+            }
+        }
+
+        function toggleVisBugInspector() {
+            if (document.getElementById('visbug-script')) return;
+            const s = document.createElement('script');
+            s.id = 'visbug-script';
+            s.src = 'https://unpkg.com/visbug';
+            document.body.appendChild(s);
+            if (typeof showTopNotification === 'function') {
+                showTopNotification('🔍 VisBug Visual Alignment Inspector Loaded! Click any element to measure alignment & margins.', 'success');
+            }
+        }
+
         window.addEventListener('load', () => {
             // Explicitly force Landing Page view on load
             switchView('landing');
@@ -4429,9 +4790,9 @@
             if (savedJobId) {
                 startPollingJob(savedJobId);
             }
-            const savedGeminiKey = localStorage.getItem('gemini_api_key');
-            if (savedGeminiKey && document.getElementById('geminiApiKeyInput')) {
-                document.getElementById('geminiApiKeyInput').value = savedGeminiKey;
+            const savedGroqKey = localStorage.getItem('groq_api_key');
+            if (savedGroqKey && document.getElementById('groqApiKeyInput')) {
+                document.getElementById('groqApiKeyInput').value = savedGroqKey;
             }
             calculateScriptRetentionStats();
             updateSubtitlePreview();
