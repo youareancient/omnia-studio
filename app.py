@@ -2256,6 +2256,42 @@ async def handle_render_final_video(request):
         print("[handle_render_final_video exception]:", e)
         return web.json_response({"error": str(e)}, status=500)
 
+async def handle_generate_flux_image(request):
+    try:
+        data = await request.json()
+        prompt = data.get("prompt", "").strip()
+        scene_num = data.get("scene_num", 1)
+        if not prompt:
+            return web.json_response({"error": "Prompt is required"}, status=400)
+            
+        filename = f"flux_dev_scene_{scene_num}_{uuid.uuid4().hex[:6]}.png"
+        out_filepath = os.path.join(STATIC_DIR, "generated", filename)
+        os.makedirs(os.path.dirname(out_filepath), exist_ok=True)
+        
+        def run_flux_dev():
+            from gradio_client import Client
+            import shutil
+            client = Client("black-forest-labs/FLUX.1-dev")
+            result = client.predict(
+                prompt=prompt,
+                seed=42,
+                randomize_seed=True,
+                width=1280,
+                height=720,
+                guidance_scale=3.5,
+                num_inference_steps=28,
+                api_name="/infer"
+            )
+            gen_path = result[0] if isinstance(result, (list, tuple)) else str(result)
+            shutil.copy(gen_path, out_filepath)
+            return f"/static/generated/{filename}"
+            
+        rel_url = await asyncio.to_thread(run_flux_dev)
+        return web.json_response({"status": "success", "image_url": rel_url, "image_path": out_filepath})
+    except Exception as e:
+        print("[handle_generate_flux_image exception]:", e)
+        return web.json_response({"error": str(e)}, status=500)
+
 async def handle_upload_scene_image(request):
     try:
         reader = await request.multipart()
