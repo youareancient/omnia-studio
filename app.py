@@ -2,6 +2,7 @@ import asyncio
 import json
 import os
 import re
+import random
 import uuid
 import urllib.parse
 import sqlite3
@@ -366,25 +367,30 @@ Your task is to transform the script beat into an EXCEPTIONALLY DETAILED, MULTI-
 CORE PHILOSOPHY: BUILD THE ECONOMICS AS A PHYSICAL WORLD.
 Do not merely illustrate the subject. Create an impossibly detailed miniature physical world in which revenue, costs, customers, workers, infrastructure, resources, capacity, demand, margins, cash flow, bottlenecks, and economic relationships are visually understood through physical objects, environments, characters, architecture, movement, scale, and visual metaphors.
 
-MATERIAL SCIENCE & MODELMAKING SPECIFICATIONS:
-- Tactile sculpted matte polymer clay structures, 1/87 scale detailed miniature human figures, laser-etched clear acrylic resin blocks for digital/financial charts.
-- Painted brass and aluminum miniature industrial machinery, real miniature wood textures, frosted glass partitions, silicone rubber wiring.
+MATERIAL SCIENCE & VIBRANT COLOR PALETTE:
+- NO dull grays, monochrome, or washed-out tones. Use a VIVID, HIGHLY SATURATED, HIGH-CONTRAST COLOR PALETTE:
+  - REVENUE & PROFIT: Radiant emerald green polymer clay, glowing neon turquoise accents, polished 24K gold miniature coins.
+  - EXPENSES & BOTTLENECK: Rich ruby crimson red blocks, warm terracotta structures, deep magenta warning plaques.
+  - INFRASTRUCTURE & HARDWARE: Deep sapphire blue partitions, cobalt machinery, bright cyan fiber optic light channels.
+  - ENVIRONMENT & BACKDROP: Deep royal navy blue studio backdrop, vibrant dual-color rim lighting (cyan and magenta highlights), warm 3200K key light creating rich saturated color contrast.
+- Tactile sculpted matte polymer clay in rich vibrant hues, 1/87 scale detailed miniature human figures, laser-etched clear acrylic resin blocks for digital/financial charts.
+- Precision painted brass and aluminum miniature industrial machinery, real polished miniature wood textures, frosted glass partitions.
 - Include subtle handcrafted evidence: tiny finger-print micro-textures on clay surfaces, subtle sculpting marks, precision laser joins.
 
 MACRO CINEMATOGRAPHY & LIGHTING SPECIFICATIONS:
 - Shot on ARRI Alexa Mini with 35mm f/2.8 macro cinema lens, tilt-shift miniature depth of field, razor-sharp focal plane on primary subject.
-- 3200K warm tungsten studio key lighting with soft fill, volumetric rim lighting, ambient occlusion, realistic contact shadows on miniature ground plane.
+- Warm 3200K tungsten studio key lighting with soft fill, vibrant volumetric cyan and magenta rim lighting, ambient occlusion, realistic contact shadows on miniature ground plane.
 
 PHYSICAL ECONOMICS CONVERSIONS:
-- REVENUE -> flowing streams of 3D miniature golden coins, currency tokens
-- COST -> heavy textured slate/clay blocks, leaking pipes, resource-consuming furnaces
-- MARGIN -> physical gap distance between revenue streams and cost blocks
-- DEMAND -> dense queues of miniature figures, overflowing order bins
+- REVENUE -> flowing streams of 3D miniature golden coins, emerald green currency tokens
+- COST -> heavy textured ruby red blocks, terracotta pipes, resource-consuming furnaces
+- MARGIN -> physical gap distance between emerald revenue streams and ruby cost blocks
+- DEMAND -> dense queues of colorful 1/87 scale miniature figures, overflowing order bins
 - BOTTLENECK -> narrow physical funnel or archway accumulating miniature traffic
 - NUMBERS/STATS -> laser-etched transparent acrylic plaques displaying clear numbers
 
 COMPOSITION & HYPER-DETAIL REQUIREMENT:
-Write a rich, multi-sentence prompt (120-200 words). Detail the foreground, middle ground, background, exact spatial layout, lighting direction, color palette, and micro-storytelling details.
+Write a rich, multi-sentence prompt (120-200 words). Detail the foreground, middle ground, background, exact spatial layout, vibrant color palette, lighting direction, and micro-storytelling details.
 
 Respond STRICTLY in JSON format:
 {{
@@ -476,9 +482,9 @@ def build_vector_art_scene_prompt_fallback(text, niche="economics", visual_style
             f"SCENE: Physical Miniature World — {clean_line[:60]}\n\n"
             f"IMAGE PROMPT: Cinematic handcrafted 3D clay miniature + architectural model + macro cinematography physical infographic style. "
             f"An extraordinarily detailed 1/87 scale miniature physical environment visually constructing the economics of: \"{clean_line}\". "
-            f"The primary subject is a handcrafted architectural facility built from matte polymer clay, clear acrylic resin, and painted miniature brass. "
-            f"Abstract financial forces are physically represented: revenue flows as streams of miniature golden coins, costs manifest as heavy textured slate blocks, and demand appears as an orderly queue of 1/87 scale miniature figures. "
-            f"Shot on 35mm f/2.8 macro cinema lens, tilt-shift miniature depth-of-field, warm 3200K tungsten studio key lighting with soft fill, volumetric rim lighting, ambient occlusion, realistic physical contact shadows, and subtle handcrafted sculpting micro-textures.{money_callout}\n\n"
+            f"Set against a deep royal navy studio backdrop, featuring a vivid, highly saturated, high-contrast color palette: radiant emerald green polymer clay structures, glowing neon turquoise accents, 24K gold miniature coins, rich ruby crimson cost blocks, and deep sapphire blue infrastructure partitions. "
+            f"Abstract financial forces are physically represented with vibrant color contrast: revenue flows as streams of golden coins, costs manifest as ruby crimson blocks, and demand appears as an orderly queue of colorful 1/87 scale miniature figures. "
+            f"Shot on 35mm f/2.8 macro cinema lens, tilt-shift miniature depth-of-field, warm 3200K tungsten studio key lighting with soft fill, volumetric cyan and magenta rim lighting, ambient occlusion, realistic physical contact shadows, and subtle handcrafted sculpting micro-textures.{money_callout}\n\n"
             f"EMOTION: Intelligent, analytical, tactile, cinematic documentary.\n\n"
             f"VISUAL PURPOSE: High-retention physical miniature visualization of: {clean_line}"
         )
@@ -1453,7 +1459,10 @@ def generate_animated_ass_subtitle(
     out_ass_path: str,
     style_name: str = "hormozi",
     font_name: str = "Arial",
-    position: str = "bottom"
+    position: str = "bottom",
+    custom_fontsize: int = None,
+    custom_bg_hex: str = None,
+    custom_bg_opacity: float = 0.85
 ):
     words = script_text.strip().split()
     if not words:
@@ -1490,6 +1499,20 @@ def generate_animated_ass_subtitle(
         fontsize = 44
         outline = 4
         shadow = 3
+    elif style_name == "vox":
+        primary_color = "&H00FFFFFF"     # White
+        secondary_color = "&H00552DFF"   # Red highlight
+        outline_color = "&H00000000"
+        fontsize = 46
+        outline = 4
+        shadow = 2
+    elif style_name == "retro":
+        primary_color = "&H00D0FDF7"     # Cream base
+        secondary_color = "&H00003300"   # Dark green highlight
+        outline_color = "&H00000000"
+        fontsize = 42
+        outline = 3
+        shadow = 2
     else:  # 'cinematic'
         primary_color = "&H00FFFFFF"     # White
         secondary_color = "&H002997FF"   # Blue highlight
@@ -1497,6 +1520,22 @@ def generate_animated_ass_subtitle(
         fontsize = 38
         outline = 2
         shadow = 1
+
+    if custom_fontsize and custom_fontsize > 10:
+        fontsize = custom_fontsize
+
+    # Convert custom_bg_hex & opacity to ASS BackColour (&HAABBGGRR)
+    back_color = "&H80000000"
+    if custom_bg_hex:
+        clean_hex = custom_bg_hex.lstrip('#')
+        if len(clean_hex) == 6:
+            r_val = clean_hex[0:2]
+            g_val = clean_hex[2:4]
+            b_val = clean_hex[4:6]
+            bgr_hex = f"{b_val}{g_val}{r_val}".upper()
+            alpha_int = max(0, min(255, int((1.0 - max(0.0, min(1.0, custom_bg_opacity))) * 255)))
+            alpha_hex = f"{alpha_int:02X}"
+            back_color = f"&H{alpha_hex}{bgr_hex}"
 
     header = f"""[Script Info]
 Title: Studio Animated Subtitles
@@ -1507,14 +1546,19 @@ YCbCr Matrix: None
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,{font_name},{fontsize},{primary_color},{secondary_color},{outline_color},&H80000000,-1,0,0,0,100,100,0,0,1,{outline},{shadow},{alignment},20,20,40,1
+Style: Default,{font_name},{fontsize},{primary_color},{secondary_color},{outline_color},{back_color},-1,0,0,0,100,100,0,0,1,{outline},{shadow},{alignment},20,20,40,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 """
 
     events = []
-    chunk_size = 4
+    # 1-word-at-a-time chunking for wordbyword, bounce, and fade styles
+    if style_name in ["wordbyword", "bounce", "fade"]:
+        chunk_size = 1
+    else:
+        chunk_size = 4
+
     chunks = [words[i:i + chunk_size] for i in range(0, len(words), chunk_size)]
     
     current_time = 0.0
@@ -1525,7 +1569,12 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         
         karaoke_text = ""
         for word in chunk:
-            karaoke_text += f"{{\\kf{dur_cs_per_word}}}{word} "
+            if style_name == "bounce":
+                karaoke_text += f"{{\\fad(60,60)\\t(0,100,\\fscx120\\fscy120)\\t(100,200,\\fscx100\\fscy100)}}{word} "
+            elif style_name == "fade":
+                karaoke_text += f"{{\\fad(120,120)}}{word} "
+            else:
+                karaoke_text += f"{{\\kf{dur_cs_per_word}}}{word} "
         
         events.append(f"Dialogue: 0,{start_ts},{end_ts},Default,,0,0,0,,{karaoke_text.strip()}")
         current_time += chunk_dur
@@ -1922,6 +1971,312 @@ async def handle_verify_passcode(request):
     except Exception as e:
         return web.json_response({"error": str(e)}, status=500)
 
+def generate_scene_canvas_image(scene_text, scene_num, out_filepath):
+    try:
+        from PIL import Image, ImageDraw, ImageFont
+        width, height = 1920, 1080
+        img = Image.new("RGB", (width, height), color=(15, 23, 42))
+        draw = ImageDraw.Draw(img)
+        draw.rectangle([60, 60, width - 60, height - 60], outline=(0, 113, 227), width=4)
+        
+        try:
+            font = ImageFont.truetype("arial.ttf", 52)
+            sub_font = ImageFont.truetype("arial.ttf", 34)
+        except Exception:
+            font = ImageFont.load_default()
+            sub_font = font
+
+        draw.text((100, 120), f"SCENE BEAT #{scene_num}", fill=(255, 45, 85), font=sub_font)
+        
+        words = scene_text.split()
+        lines = []
+        curr_line = []
+        for w in words:
+            curr_line.append(w)
+            if len(" ".join(curr_line)) > 42:
+                lines.append(" ".join(curr_line[:-1]))
+                curr_line = [w]
+        if curr_line:
+            lines.append(" ".join(curr_line))
+
+        y = 380
+        for line in lines[:5]:
+            draw.text((100, y), line, fill=(255, 255, 255), font=font)
+            y += 68
+
+        img.save(out_filepath)
+    except Exception as e:
+        print("[generate_scene_canvas_image error]:", e)
+
+async def run_cmd(cmd_list):
+    proc = await asyncio.create_subprocess_exec(
+        *cmd_list,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE
+    )
+    stdout, stderr = await proc.communicate()
+    if proc.returncode != 0:
+        print(f"[run_cmd error] code={proc.returncode} stderr={stderr.decode('utf-8', errors='ignore')}")
+    return proc.returncode == 0
+
+async def handle_render_final_video(request):
+    try:
+        data = await request.json()
+        job_id = data.get("job_id", "").strip()
+        scenes = data.get("scenes", [])
+        subtitle_style = str(data.get("subtitle_style", "hormozi")).lower()
+        subtitle_pos = str(data.get("subtitle_pos", "bottom")).lower()
+        video_filter = str(data.get("video_filter", "none")).lower()
+        
+        if not scenes:
+            job = BACKGROUND_JOBS.get(job_id)
+            if job and job.get("result") and job["result"].get("scenes"):
+                scenes = job["result"]["scenes"]
+
+        if not scenes:
+            return web.json_response({"error": "No scene beats available to render video."}, status=400)
+
+        out_master_filename = f"master_video_{job_id[:8] if job_id else 'video'}.mp4"
+        out_master_filepath = os.path.join(DOWNLOADS_DIR, out_master_filename)
+
+        temp_dir = os.path.join(DOWNLOADS_DIR, f"render_tmp_{job_id[:6] if job_id else 'tmp'}")
+        os.makedirs(temp_dir, exist_ok=True)
+
+        concat_list_path = os.path.join(temp_dir, "concat.txt")
+        concat_files = []
+
+        total_scenes = len(scenes)
+        for idx, sc in enumerate(scenes):
+            scene_num = sc.get("scene", idx + 1)
+            beat_audio_filename = f"beat_audio_{job_id[:6] if job_id else 'beat'}_{scene_num:02d}.mp3"
+            beat_audio_path = os.path.join(DOWNLOADS_DIR, beat_audio_filename)
+
+            if not os.path.exists(beat_audio_path):
+                cleaned_text = humanize_script(sc.get("text", "Scene beat"))
+                await safe_edge_tts_save(cleaned_text, "en-US-AndrewNeural", "-4%", beat_audio_path)
+                await trim_trailing_audio_silence(beat_audio_path)
+                await append_natural_pause_padding(beat_audio_path, 0.35)
+
+            dur_sec = await get_media_duration_sec(beat_audio_path)
+            if dur_sec <= 0.2:
+                dur_sec = 3.0
+
+            # 30ms audio micro-fades to eliminate pops
+            faded_audio_path = os.path.join(temp_dir, f"audio_faded_{scene_num:02d}.mp3")
+            fade_out_st = max(0, dur_sec - 0.03)
+            afade_cmd = [
+                "ffmpeg", "-y", "-i", beat_audio_path,
+                "-af", f"afade=t=in:ss=0:d=0.03,afade=t=out:st={fade_out_st:.3f}:d=0.03",
+                "-c:a", "libmp3lame", "-q:a", "2", faded_audio_path
+            ]
+            await run_cmd(afade_cmd)
+
+            # Segment video clip
+            beat_clip_path = os.path.join(temp_dir, f"clip_{scene_num:02d}.mp4")
+            assigned_img = sc.get("image_path", "") or sc.get("image_url", "")
+            if assigned_img and assigned_img.startswith("/static/"):
+                rel_path = assigned_img.replace("/static/", "").replace("/", os.sep)
+                assigned_img = os.path.join(STATIC_DIR, rel_path)
+            elif assigned_img and not os.path.isabs(assigned_img):
+                assigned_img = os.path.join(STUDIO_DIR, assigned_img.replace("/", os.sep))
+
+            if not assigned_img or not os.path.exists(assigned_img):
+                assigned_img = os.path.join(temp_dir, f"canvas_{scene_num:02d}.png")
+                await asyncio.to_thread(generate_scene_canvas_image, sc.get("text", ""), scene_num, assigned_img)
+
+            vf_filters = ["scale=1920:1080:force_original_aspect_ratio=increase", "crop=1920:1080", "fps=30", "format=yuv420p"]
+            if video_filter == "vignette":
+                vf_filters.append("vignette=PI/4")
+            elif video_filter == "warm":
+                vf_filters.append("colorbalance=rh=0.1:gh=0.05:bh=-0.1")
+            elif video_filter == "grain":
+                vf_filters.append("noise=alls=12:allf=t+u")
+            
+            vf_str = ",".join(vf_filters)
+
+            clip_cmd = [
+                "ffmpeg", "-y", "-loop", "1", "-i", assigned_img, "-i", faded_audio_path,
+                "-vf", vf_str,
+                "-c:v", "libx264", "-tune", "stillimage", "-preset", "ultrafast",
+                "-c:a", "aac", "-b:a", "192k", "-shortest", beat_clip_path
+            ]
+            await run_cmd(clip_cmd)
+            concat_files.append(beat_clip_path)
+
+        with open(concat_list_path, "w", encoding="utf-8") as f:
+            for c_path in concat_files:
+                esc_path = c_path.replace("\\", "/")
+                f.write(f"file '{esc_path}'\n")
+
+        transition_style = str(data.get("transition", "crossfade")).lower()
+        allowed_transitions = data.get("allowed_transitions", [])
+        
+        # Build raw concatenated video (with xfade if selected)
+        raw_concat_video = os.path.join(temp_dir, "raw_concat.mp4")
+        
+        if len(concat_files) > 1 and transition_style != "none":
+            # 19 Premium FFmpeg xfade transition options
+            xfade_options = [
+                "fade", "fadeblack", "fadewhite", "wipeleft", "wiperight",
+                "wipeup", "wipedown", "slideleft", "slideright", "slideup",
+                "slidedown", "zoomin", "circlecrop", "rectcrop", "pixelize",
+                "diagtl", "diagtr", "horzopen", "vertopen"
+            ]
+            xfade_map = {
+                "crossfade": "fade",
+                "fadeblack": "fadeblack",
+                "fadewhite": "fadewhite",
+                "wipeleft": "wipeleft",
+                "wiperight": "wiperight",
+                "wipeup": "wipeup",
+                "wipedown": "wipedown",
+                "slideleft": "slideleft",
+                "slideright": "slideright",
+                "slideup": "slideup",
+                "slidedown": "slidedown",
+                "zoomin": "zoomin",
+                "circlecrop": "circlecrop",
+                "rectcrop": "rectcrop",
+                "pixelize": "pixelize",
+                "diagtl": "diagtl",
+                "diagtr": "diagtr",
+                "horzopen": "horzopen",
+                "vertopen": "vertopen"
+            }
+            if allowed_transitions and isinstance(allowed_transitions, list) and len(allowed_transitions) > 0:
+                selected_pool = [xfade_map.get(t, t) for t in allowed_transitions if t in xfade_map or t in xfade_options]
+                if selected_pool:
+                    xfade_options = selected_pool
+
+            # Extract durations
+            durations = []
+            for cf in concat_files:
+                d = await get_media_duration_sec(cf)
+                durations.append(max(d, 0.5))
+
+            # Build complex xfade filter graph
+            filter_parts = []
+            accum_offset = durations[0] - 0.5
+            prev_v = "0:v"
+            prev_a = "0:a"
+            
+            xfade_inputs = []
+            for idx, cf in enumerate(concat_files):
+                xfade_inputs.extend(["-i", cf])
+
+            for i in range(1, len(concat_files)):
+                if transition_style in ["random", "sequential", "cycle"] or (allowed_transitions and len(allowed_transitions) > 0):
+                    trans_kw = xfade_options[(i - 1) % len(xfade_options)]
+                else:
+                    trans_kw = xfade_map.get(transition_style, "fade")
+
+                next_v = f"{i}:v"
+                next_a = f"{i}:a"
+                out_v = f"v{i}" if i < len(concat_files) - 1 else "outv"
+                out_a = f"a{i}" if i < len(concat_files) - 1 else "outa"
+                
+                filter_parts.append(f"[{prev_v}][{next_v}]xfade=transition={trans_kw}:duration=0.5:offset={max(0, accum_offset):.3f}[{out_v}]")
+                filter_parts.append(f"[{prev_a}][{next_a}]acrossfade=d=0.5:c1=tri:c2=tri[{out_a}]")
+                
+                prev_v = out_v
+                prev_a = out_a
+                if i < len(durations) - 1:
+                    accum_offset += max(0, durations[i] - 0.5)
+
+            filter_graph = ";".join(filter_parts)
+            
+            xfade_cmd = ["ffmpeg", "-y"] + xfade_inputs + [
+                "-filter_complex", filter_graph,
+                "-map", "[outv]", "-map", "[outa]",
+                "-c:v", "libx264", "-preset", "ultrafast", "-crf", "20",
+                "-c:a", "aac", "-b:a", "192k", raw_concat_video
+            ]
+            success = await run_cmd(xfade_cmd)
+            if not success or not os.path.exists(raw_concat_video) or os.path.getsize(raw_concat_video) < 100:
+                # Fallback to concat demuxer if xfade fails
+                concat_cmd = ["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", concat_list_path, "-c:v", "copy", "-c:a", "copy", raw_concat_video]
+                await run_cmd(concat_cmd)
+        else:
+            concat_cmd = [
+                "ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", concat_list_path,
+                "-c:v", "copy", "-c:a", "copy", raw_concat_video
+            ]
+            await run_cmd(concat_cmd)
+
+        subtitle_font = str(data.get("subtitle_font", "Arial")).strip()
+        subtitle_bg_color = str(data.get("subtitle_bg_color", "#000000")).strip()
+        try:
+            subtitle_size = int(data.get("subtitle_size", 44))
+        except Exception:
+            subtitle_size = 44
+        try:
+            subtitle_bg_opacity = float(data.get("subtitle_bg_opacity", 85)) / 100.0
+        except Exception:
+            subtitle_bg_opacity = 0.85
+
+        # Filter chain for final master video
+        final_vf_filters = []
+        if subtitle_style != "off":
+            full_script = " ".join([sc.get("text", "") for sc in scenes])
+            master_dur = await get_media_duration_sec(raw_concat_video)
+            master_ass_path = os.path.join(temp_dir, "master_subtitles.ass")
+            generate_animated_ass_subtitle(
+                full_script, master_dur, master_ass_path,
+                style_name=subtitle_style,
+                font_name=subtitle_font,
+                position=subtitle_pos,
+                custom_fontsize=subtitle_size,
+                custom_bg_hex=subtitle_bg_color,
+                custom_bg_opacity=subtitle_bg_opacity
+            )
+
+            master_ass_escaped = master_ass_path.replace("\\", "/").replace(":", "\\:")
+            final_vf_filters.append(f"subtitles='{master_ass_escaped}'")
+
+        final_render_cmd = ["ffmpeg", "-y", "-i", raw_concat_video]
+        if final_vf_filters:
+            final_render_cmd.extend(["-vf", ",".join(final_vf_filters)])
+
+        final_render_cmd.extend([
+            "-af", "loudnorm=I=-14:LRA=11:TP=-1.5",
+            "-c:v", "libx264", "-preset", "fast", "-crf", "18",
+            "-c:a", "aac", "-b:a", "192k", out_master_filepath
+        ])
+        await run_cmd(final_render_cmd)
+
+        final_dur = await get_media_duration_sec(out_master_filepath)
+
+        return web.json_response({
+            "status": "success",
+            "videoUrl": f"/static/generated/{out_master_filename}",
+            "filename": out_master_filename,
+            "duration": round(final_dur, 2)
+        })
+    except Exception as e:
+        print("[handle_render_final_video exception]:", e)
+        return web.json_response({"error": str(e)}, status=500)
+
+async def handle_upload_scene_image(request):
+    try:
+        reader = await request.multipart()
+        field = await reader.next()
+        if not field or not field.filename:
+            return web.json_response({"error": "No file uploaded"}, status=400)
+        
+        filename = f"scene_img_{uuid.uuid4().hex[:8]}_{field.filename}"
+        out_path = os.path.join(STATIC_DIR, "uploads", filename)
+        os.makedirs(os.path.dirname(out_path), exist_ok=True)
+        
+        content = await field.read()
+        with open(out_path, "wb") as f:
+            f.write(content)
+                
+        rel_url = f"/static/uploads/{filename}"
+        return web.json_response({"status": "success", "image_url": rel_url, "image_path": out_path})
+    except Exception as e:
+        print("[handle_upload_scene_image error]:", e)
+        return web.json_response({"error": str(e)}, status=500)
+
 def create_app():
     # Allow large ZIP and batch uploads up to 2GB (2048MB)
     app = web.Application(client_max_size=2048 * 1024 * 1024)
@@ -1943,9 +2298,11 @@ def create_app():
     app.router.add_post("/api/generate-beat-audio", handle_generate_beat_audio)
     app.router.add_post("/api/generate-flux-image", handle_generate_flux_image)
     app.router.add_post("/api/generate-beat-clip", handle_generate_beat_clip)
+    app.router.add_post("/api/upload-scene-image", handle_upload_scene_image)
     app.router.add_post("/api/generate-seo-package", handle_generate_seo_package)
     app.router.add_post("/api/clone-voice", handle_clone_voice)
     app.router.add_post("/api/verify-passcode", handle_verify_passcode)
+    app.router.add_post("/api/render-final-video", handle_render_final_video)
     app.router.add_get("/api/projects", handle_list_projects)
     app.router.add_get("/api/projects/{id}", handle_get_project)
     app.router.add_post("/api/projects", handle_save_project)

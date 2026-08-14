@@ -486,9 +486,184 @@
                     <button class="btn-icon-pill btn-blue-pill" id="btnCopyPrompts" onclick="copyOnlyPrompts()" style="display:none;" title="Copy All Prompts">📋</button>
                     <button class="btn-icon-pill btn-green-pill" id="btnUploadBatch" onclick="triggerBatchUpload()" style="display:none;" title="Upload Batch Images">📁</button>
                     <button class="btn-icon-pill btn-purple-pill" id="btnGenerateAllVoice" onclick="generateAllBeatVoiceovers()" style="display:none;" title="Generate All Beat Voiceovers">🎙️</button>
+                    <button class="btn-icon-pill btn-blue-pill" id="btnPushTimeline" onclick="pushClipsToTimeline()" style="display:none;" title="Push Clips to Interactive Timeline">🎞️</button>
                     <input type="file" id="batchImageInput" multiple accept="image/*" style="display:none;" onchange="handleBatchImagesUpload(event)">
                 </div>
                 <button class="btn-scene-cut" id="btnSceneCut" onclick="handleSceneCut()" title="Start Scene Cut">✂️ Cut Scenes</button>
+            </div>
+        </div>
+
+        <!-- Interactive Timeline Editor Card -->
+        <div id="timelineEditorCard" style="display: none; background: var(--bg-card); border: 1px solid var(--border-accent); border-radius: var(--radius-lg); padding: 24px; margin-bottom: 24px; box-shadow: var(--shadow-card);">
+            <div style="font-family:'Outfit',sans-serif; font-size:1.15rem; font-weight:800; color:var(--text-primary); margin-bottom:16px; display:flex; justify-content:space-between; align-items:center;">
+                <span>🎞️ Studio Timeline & Live Video Monitor</span>
+                <span id="timelineStatsBadge" style="font-size:0.8rem; font-weight:700; color:var(--accent-green); background:rgba(0,113,227,0.15); padding:4px 10px; border-radius:12px; border:1px solid var(--border-accent);">0 Clips Pushed</span>
+            </div>
+
+            <!-- Top Split Studio Layout: Monitor on Left, Controls on Right -->
+            <div style="display:flex; gap:20px; margin-bottom:20px; flex-wrap:wrap; align-items:flex-start;">
+                <!-- Left Column: Compact 16:9 Live Video Monitor -->
+                <div style="flex:1; min-width:320px; max-width:480px;">
+                    <div id="timelinePreviewMonitor" style="position:relative; width:100%; aspect-ratio:16/9; background:#000; border-radius:12px 12px 0 0; border:2px solid var(--border-accent); border-bottom:none; overflow:hidden; box-shadow:0 12px 35px rgba(0,0,0,0.8); display:flex; align-items:center; justify-content:center;">
+                        <!-- Scene Image Canvas -->
+                        <img id="previewMonitorImg" src="" style="width:100%; height:100%; object-fit:cover; display:none;" />
+                        <div id="previewPlaceholderText" style="font-size:0.85rem; color:var(--text-secondary); font-weight:700; text-align:center; padding:16px;">🎬 Click any scene clip on Video Track to monitor preview</div>
+                        
+                        <!-- Video FX Filter Overlay -->
+                        <div id="previewFxOverlay" style="position:absolute; inset:0; pointer-events:none;"></div>
+                        
+                        <!-- Draggable Channel Logo Watermark with ❌ Delete Button & Resize Handle -->
+                        <div id="draggableChannelLogo" style="display:none; position:absolute; top:10px; right:10px; cursor:move; z-index:30; user-select:none; border:1px dashed rgba(255,255,255,0.6); padding:2px; border-radius:6px; background:rgba(0,0,0,0.4);" title="Drag to place logo anywhere on screen">
+                            <button onclick="deleteChannelLogo(event)" style="position:absolute; top:-8px; left:-8px; background:var(--accent-red); color:white; border:none; width:18px; height:18px; border-radius:50%; font-size:0.65rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(0,0,0,0.5);" title="Delete Watermark Logo">❌</button>
+                            <img id="channelLogoImg" src="" style="width:80px; height:auto; max-height:80px; object-fit:contain; pointer-events:none;" />
+                            <div id="logoResizeHandle" style="position:absolute; bottom:-4px; right:-4px; width:12px; height:12px; background:var(--accent-blue); border-radius:3px; cursor:se-resize;" title="Drag to resize logo"></div>
+                        </div>
+
+                        <!-- Live Subtitle Overlay -->
+                        <div id="previewCaptionOverlay" style="position:absolute; bottom:8%; left:6%; right:6%; text-align:center; font-family:'Outfit',sans-serif; transition:all 0.2s ease; pointer-events:none; z-index:10; display:none;">
+                            <span id="previewCaptionText" style="padding:6px 12px; border-radius:8px; font-size:0.95rem; font-weight:900; text-transform:uppercase; letter-spacing:0.5px;">Live Subtitle Preview</span>
+                        </div>
+
+                        <audio id="monitorAudioElement" ontimeupdate="updateMonitorProgress()" onended="onMonitorAudioEnded()"></audio>
+                    </div>
+
+                    <!-- Monitor Control Bar Below 16:9 Screen (Zero Obstruction) -->
+                    <div id="monitorControlBar" style="background:var(--bg-card); border:2px solid var(--border-accent); border-radius:0 0 12px 12px; padding:10px 14px; display:flex; align-items:center; gap:10px;">
+                        <button id="btnMonitorPlay" onclick="toggleMonitorPlay()" style="background:var(--accent-red); color:white; border:none; width:32px; height:32px; border-radius:50%; font-size:0.8rem; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0;">▶</button>
+                        <input type="range" id="monitorSeekbar" value="0" min="0" max="100" style="flex:1; accent-color:var(--accent-red);" oninput="seekMonitorAudio(this.value)">
+                        <span id="monitorTimecode" style="font-size:0.72rem; font-weight:700; color:var(--text-secondary); font-family:monospace; flex-shrink:0;">00:00 / 00:00</span>
+                    </div>
+                </div>
+
+                <!-- Right Column: Compact Studio Controls Panel (Directly Beside Monitor) -->
+                <div style="flex:1; min-width:280px; display:flex; flex-direction:column; gap:12px; background:rgba(255,255,255,0.03); padding:16px; border-radius:12px; border:1px solid var(--border-subtle);">
+                    <div style="font-size:0.88rem; font-weight:800; color:var(--text-primary); margin-bottom:4px;">🎛️ Live Effects & Captions Panel</div>
+
+                    <!-- Captions Style Dropdown (9 Options) -->
+                    <div>
+                        <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:4px;">💬 Subtitle Caption Preset:</label>
+                        <select id="timelineSubStyle" style="width:100%; background:var(--bg-input); border:1px solid var(--border-subtle); border-radius:8px; color:var(--text-primary); padding:8px; font-size:0.82rem; font-weight:600; outline:none;">
+                            <option value="wordbyword" selected>🗣️ 1-Word Karaoke (Yellow Glow)</option>
+                            <option value="bounce">💥 1-Word Pop-Up Bounce (Animated)</option>
+                            <option value="fade">✨ 1-Word Fade In/Out (Animated)</option>
+                            <option value="hormozi">🔥 Hormozi Sentence (Yellow Glow)</option>
+                            <option value="mrbeast">⚡ MrBeast Sentence (Cyan Highlight)</option>
+                            <option value="cyberpunk">🌃 Cyberpunk Sentence (Neon Pink)</option>
+                            <option value="vox">🍿 Viral Vox Sentence (Red Pill Box)</option>
+                            <option value="cinematic">🎬 Cinematic Minimal White</option>
+                            <option value="retro">🥑 Retro Vintage Cream</option>
+                            <option value="off">🚫 OFF (No Captions / Raw Clips)</option>
+                        </select>
+                    </div>
+
+                    <!-- Trending Fonts Select -->
+                    <div>
+                        <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:4px;">🔤 Caption Font Family:</label>
+                        <select id="timelineSubFont" style="width:100%; background:var(--bg-input); border:1px solid var(--border-subtle); border-radius:8px; color:var(--text-primary); padding:8px; font-size:0.82rem; font-weight:600; outline:none;">
+                            <option value="Montserrat" selected>🌟 Montserrat (Hormozi & MrBeast Standard)</option>
+                            <option value="Outfit">⚡ Outfit (Modern Bold Studio)</option>
+                            <option value="Impact">🔥 Impact (High Contrast Meme)</option>
+                            <option value="Bebas Neue">💥 Bebas Neue (Heavy Cinema)</option>
+                            <option value="Poppins">🚀 Poppins (Clean Aesthetic)</option>
+                            <option value="Komika Axis">🍿 Komika Axis (Cartoon Comic)</option>
+                        </select>
+                    </div>
+
+                    <!-- Caption Font Size & Background Controls -->
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                        <div>
+                            <label style="font-size:0.72rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:4px;">📏 Font Size (<span id="fontSizeLabel">16px</span>):</label>
+                            <input type="range" id="timelineSubFontSize" value="16" min="8" max="48" style="width:100%; accent-color:var(--accent-blue);" oninput="document.getElementById('fontSizeLabel').textContent=this.value+'px'; updatePreviewCaptionStyles();">
+                        </div>
+                        <div>
+                            <label style="font-size:0.72rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:4px;">💧 BG Opacity (<span id="bgOpacityLabel">85%</span>):</label>
+                            <input type="range" id="timelineSubBgOpacity" value="85" min="0" max="100" style="width:100%; accent-color:var(--accent-red);" oninput="document.getElementById('bgOpacityLabel').textContent=this.value+'%'; updatePreviewCaptionStyles();">
+                        </div>
+                    </div>
+
+                    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+                        <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary);">🎨 Caption BG Color:</label>
+                        <input type="color" id="timelineSubBgColor" value="#000000" style="width:40px; height:28px; border:none; border-radius:6px; cursor:pointer; background:none;" onchange="updatePreviewCaptionStyles()">
+                    </div>
+
+                    <!-- Subtitle Position -->
+                    <div>
+                        <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:4px;">📍 Subtitle Position:</label>
+                        <select id="timelineSubPos" style="width:100%; background:var(--bg-input); border:1px solid var(--border-subtle); border-radius:8px; color:var(--text-primary); padding:8px; font-size:0.82rem; font-weight:600; outline:none;">
+                            <option value="bottom" selected>⬇️ Bottom Screen</option>
+                            <option value="middle">⏹️ Center Screen</option>
+                            <option value="top">⬆️ Top Screen</option>
+                        </select>
+                    </div>
+
+                    <!-- Video FX Filter Dropdown (7 Options) -->
+                    <div>
+                        <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:4px;">🎨 Video FX Filter:</label>
+                        <select id="timelineVideoFx" style="width:100%; background:var(--bg-input); border:1px solid var(--border-subtle); border-radius:8px; color:var(--text-primary); padding:8px; font-size:0.82rem; font-weight:600; outline:none;">
+                            <option value="none" selected>✨ None (Original Colors)</option>
+                            <option value="vignette">🕶️ Vignette Shadow Lens</option>
+                            <option value="warm">☀️ Warm Documentary Tint</option>
+                            <option value="grain">🎞️ 35mm Vintage Film Grain</option>
+                            <option value="sepia">📽️ Retro Sepia Cinema</option>
+                            <option value="cold">❄️ Cold Anamorphic Blue</option>
+                            <option value="contrast">💥 High Dynamic Contrast</option>
+                        </select>
+                    </div>
+
+                    <!-- Interactive Multi-Select Transition Matrix & Randomizer -->
+                    <div>
+                        <div style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
+                            <span>🔀 Check Transitions to Mix:</span>
+                            <button style="background:none; border:none; color:var(--accent-blue); font-size:0.7rem; cursor:pointer; font-weight:700;" onclick="toggleAllTransitionCheckboxes(true)">Check All</button>
+                        </div>
+                        <div id="transitionCheckboxGrid" style="max-height:130px; overflow-y:auto; background:var(--bg-input); border:1px solid var(--border-subtle); border-radius:8px; padding:8px; display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+                            <label style="font-size:0.72rem; font-weight:600; color:var(--text-primary); display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="checkbox" class="trans-cb" value="crossfade" checked> ⚡ Crossfade</label>
+                            <label style="font-size:0.72rem; font-weight:600; color:var(--text-primary); display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="checkbox" class="trans-cb" value="fadeblack" checked> 🎬 Fade Black</label>
+                            <label style="font-size:0.72rem; font-weight:600; color:var(--text-primary); display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="checkbox" class="trans-cb" value="fadewhite" checked> 💥 White Flash</label>
+                            <label style="font-size:0.72rem; font-weight:600; color:var(--text-primary); display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="checkbox" class="trans-cb" value="wipeleft" checked> 🔀 Wipe Left</label>
+                            <label style="font-size:0.72rem; font-weight:600; color:var(--text-primary); display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="checkbox" class="trans-cb" value="wiperight" checked> 🔀 Wipe Right</label>
+                            <label style="font-size:0.72rem; font-weight:600; color:var(--text-primary); display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="checkbox" class="trans-cb" value="slideleft" checked> 👈 Slide Left</label>
+                            <label style="font-size:0.72rem; font-weight:600; color:var(--text-primary); display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="checkbox" class="trans-cb" value="slideright" checked> 👉 Slide Right</label>
+                            <label style="font-size:0.72rem; font-weight:600; color:var(--text-primary); display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="checkbox" class="trans-cb" value="slideup" checked> 👆 Slide Up</label>
+                            <label style="font-size:0.72rem; font-weight:600; color:var(--text-primary); display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="checkbox" class="trans-cb" value="slidedown" checked> 👇 Slide Down</label>
+                            <label style="font-size:0.72rem; font-weight:600; color:var(--text-primary); display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="checkbox" class="trans-cb" value="zoomin" checked> 🔍 Zoom Punch</label>
+                            <label style="font-size:0.72rem; font-weight:600; color:var(--text-primary); display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="checkbox" class="trans-cb" value="circlecrop" checked> ⭕ Iris Expand</label>
+                            <label style="font-size:0.72rem; font-weight:600; color:var(--text-primary); display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="checkbox" class="trans-cb" value="pixelize" checked> 👾 Pixelate</label>
+                        </div>
+                        <button style="width:100%; margin-top:6px; background:rgba(0,113,227,0.25); border:1px solid var(--border-accent); color:var(--accent-blue); padding:7px; border-radius:8px; font-size:0.76rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;" onclick="applyCheckedTransitionsSequentially()">🔄 Apply Checked Transitions Sequentially Across Video Cuts</button>
+                    </div>
+
+                    <!-- Channel Logo Watermark Upload -->
+                    <div>
+                        <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:4px;">🖼️ Channel Watermark Logo (Draggable):</label>
+                        <div style="display:flex; gap:8px;">
+                            <button style="flex:1; background:rgba(255,255,255,0.08); border:1px solid var(--border-subtle); color:var(--text-primary); padding:8px; border-radius:8px; font-size:0.78rem; font-weight:600; cursor:pointer;" onclick="triggerLogoUpload()">📁 Upload PNG Logo</button>
+                            <input type="file" id="channelLogoInput" accept="image/*" style="display:none;" onchange="handleChannelLogoUpload(event)">
+                        </div>
+                    </div>
+
+                    <!-- Master Render Button -->
+                    <button class="btn-scene-cut" style="background:linear-gradient(135deg, #ff2d55, #ff9500); width:100%; padding:10px; font-size:0.88rem; margin-top:6px;" onclick="renderMasterVideo()">🎬 Export Final Master Video (MP4)</button>
+                </div>
+            </div>
+
+            <!-- Timeline Visual Tracks -->
+            <div style="background:rgba(0,0,0,0.3); border:1px solid var(--border-subtle); border-radius:12px; padding:16px; display:flex; flex-direction:column; gap:14px;">
+                <!-- Video Track -->
+                <div>
+                    <div style="font-size:0.78rem; font-weight:800; color:var(--text-secondary); margin-bottom:6px; display:flex; align-items:center; gap:6px;">
+                        <span>🎥 VIDEO TRACK (Click thumbnail to seek & monitor preview)</span>
+                    </div>
+                    <div id="timelineVideoTrack" style="display:flex; gap:10px; overflow-x:auto; padding-bottom:6px;"></div>
+                </div>
+
+                <!-- Audio Track -->
+                <div>
+                    <div style="font-size:0.78rem; font-weight:800; color:var(--text-secondary); margin-bottom:6px; display:flex; align-items:center; gap:6px;">
+                        <span>🎙️ AUDIO TRACK (Pop-Free 30ms Micro-Faded Voiceovers)</span>
+                    </div>
+                    <div id="timelineAudioTrack" style="display:flex; gap:10px; overflow-x:auto; padding-bottom:6px;"></div>
+                </div>
             </div>
         </div>
 
@@ -671,13 +846,14 @@
             document.getElementById('btnGenerateAllVoice').style.display = 'none';
 
             jobStartTime = Date.now();
-            updateTodoProgress(5, 'Starting pipeline...');
+            updateVoiceProgress(5, 'Starting scene cut...');
 
             btn.disabled = true;
             btn.textContent = '⏳ Processing Scene Cuts...';
             showNotification('✂️ Segmenting script & generating styled prompts...', 'info');
 
-            const ttsEngine = document.getElementById('ttsEngineSelect').value;
+            const ttsEngineEl = document.getElementById('ttsEngineSelect');
+            const ttsEngine = ttsEngineEl ? ttsEngineEl.value : 'edge';
 
             try {
                 const res = await fetch('/api/start-job', {
@@ -697,12 +873,12 @@
                 } else {
                     alert('Error starting scene cut: ' + (data.error || 'Unknown error'));
                     btn.disabled = false;
-                    btn.textContent = '✂️ Scene Cut';
+                    btn.textContent = '✂️ Cut Scenes';
                 }
             } catch (err) {
                 alert('Connection error: ' + err.message);
                 btn.disabled = false;
-                btn.textContent = '✂️ Scene Cut';
+                btn.textContent = '✂️ Cut Scenes';
             }
         }
 
@@ -712,20 +888,20 @@
                 const data = await res.json();
 
                 if (data.progress) {
-                    updateTodoProgress(data.progress, data.status_text);
+                    updateVoiceProgress(data.progress, data.status_text);
                 }
 
                 if (data.status === 'completed' && data.result && data.result.scenes) {
-                    updateTodoProgress(100, 'Pipeline Complete!');
+                    updateVoiceProgress(100, 'Pipeline Complete!');
                     const btn = document.getElementById('btnSceneCut');
                     btn.disabled = false;
-                    btn.textContent = '✂️ Scene Cut';
+                    btn.textContent = '✂️ Cut Scenes';
                     renderOutputScenes(data.result.scenes, data.result.topic_info);
                     showNotification('✅ Scene cuts & topic-locked prompts generated!', 'success');
                 } else if (data.status === 'failed') {
                     const btn = document.getElementById('btnSceneCut');
                     btn.disabled = false;
-                    btn.textContent = '✂️ Scene Cut';
+                    btn.textContent = '✂️ Cut Scenes';
                     alert('Scene cut failed: ' + (data.error || 'Unknown error'));
                 } else {
                     const btn = document.getElementById('btnSceneCut');
@@ -744,7 +920,7 @@
             document.getElementById('batchImageInput').click();
         }
 
-        function handleBatchImagesUpload(event) {
+        async function handleBatchImagesUpload(event) {
             const files = Array.from(event.target.files);
             if (!files.length) return;
 
@@ -756,23 +932,44 @@
             files.sort((a, b) => getFileNumber(a) - getFileNumber(b));
 
             let assignedCount = 0;
-            files.forEach((file, idx) => {
+            showNotification('📁 Uploading batch image files to studio server...', 'info');
+
+            for (let idx = 0; idx < files.length; idx++) {
+                const file = files[idx];
                 const beatNum = idx + 1;
                 const promptBlock = document.getElementById(`promptBlock_${beatNum}`);
                 const previewBlock = document.getElementById(`imagePreviewBlock_${beatNum}`);
                 const imgEl = document.getElementById(`sceneImg_${beatNum}`);
                 const imgNameEl = document.getElementById(`sceneImgName_${beatNum}`);
 
-                if (promptBlock && previewBlock && imgEl) {
-                    const objectUrl = URL.createObjectURL(file);
-                    imgEl.src = objectUrl;
-                    if (imgNameEl) imgNameEl.textContent = file.name;
+                const formData = new FormData();
+                formData.append('image', file);
 
-                    promptBlock.style.display = 'none';
-                    previewBlock.style.display = 'flex';
+                try {
+                    const res = await fetch('/api/upload-scene-image', { method: 'POST', body: formData });
+                    const data = await res.json();
+
+                    const displayUrl = data.image_url || URL.createObjectURL(file);
+
+                    if (promptBlock && previewBlock && imgEl) {
+                        imgEl.src = displayUrl;
+                        if (imgNameEl) imgNameEl.textContent = file.name;
+
+                        promptBlock.style.display = 'none';
+                        previewBlock.style.display = 'flex';
+                        assignedCount++;
+                    }
+
+                    if (currentScenesData && currentScenesData[idx]) {
+                        currentScenesData[idx].image_path = data.image_path || displayUrl;
+                        currentScenesData[idx].image_url = data.image_url || displayUrl;
+                    }
+                } catch (err) {
+                    console.error(`Error uploading image #${beatNum}:`, err);
+                    if (imgEl) imgEl.src = URL.createObjectURL(file);
                     assignedCount++;
                 }
-            });
+            }
 
             if (assignedCount > 0) {
                 document.getElementById('btnCopyPrompts').style.display = 'none';
@@ -784,7 +981,7 @@
                     gridContainer.style.gridTemplateColumns = 'repeat(auto-fill, minmax(320px, 1fr))';
                     gridContainer.style.gap = '20px';
                 }
-                showNotification(`✅ Successfully assigned ${assignedCount} images! Grid view active.`, 'success');
+                showNotification(`✅ Uploaded & assigned ${assignedCount} custom images!`, 'success');
             }
         }
 
@@ -977,8 +1174,668 @@
 
             btn.disabled = false;
             btn.innerHTML = '🎙️';
+            document.getElementById('btnPushTimeline').style.display = 'inline-flex';
             updateVoiceProgress(100, 'Voiceover Audio Generation 100% Complete!');
-            showNotification(`✅ Generated all ${count} beat voiceovers!`, 'success');
+            showNotification(`✅ Generated all ${count} beat voiceovers! Click 🎞️ Push Clips to Timeline to customize & render.`, 'success');
+        }
+
+        let currentActiveBeat = 1;
+        let isDraggingLogo = false;
+        let logoDragOffset = { x: 0, y: 0 };
+        let logoPositionPct = { x: 80, y: 10 };
+
+        function triggerLogoUpload() {
+            document.getElementById('channelLogoInput').click();
+        }
+
+        function handleChannelLogoUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const objectUrl = URL.createObjectURL(file);
+            const logoContainer = document.getElementById('draggableChannelLogo');
+            const logoImg = document.getElementById('channelLogoImg');
+            
+            logoImg.src = objectUrl;
+            logoContainer.style.display = 'block';
+            showNotification('🖼️ Channel logo loaded! Drag it anywhere on the preview monitor.', 'success');
+            
+            setupLogoDrag();
+        }
+
+        function deleteChannelLogo(event) {
+            if (event) event.stopPropagation();
+            const logoContainer = document.getElementById('draggableChannelLogo');
+            const logoInput = document.getElementById('channelLogoInput');
+            logoContainer.style.display = 'none';
+            if (logoInput) logoInput.value = '';
+            showNotification('🗑️ Watermark logo deleted.', 'info');
+        }
+
+        function setupLogoDrag() {
+            const logo = document.getElementById('draggableChannelLogo');
+            const monitor = document.getElementById('timelinePreviewMonitor');
+            const resizeHandle = document.getElementById('logoResizeHandle');
+            const logoImg = document.getElementById('channelLogoImg');
+            if (!logo || !monitor) return;
+
+            logo.onmousedown = function(e) {
+                if (e.target === resizeHandle) return;
+                isDraggingLogo = true;
+                const rect = logo.getBoundingClientRect();
+                logoDragOffset.x = e.clientX - rect.left;
+                logoDragOffset.y = e.clientY - rect.top;
+                document.onmousemove = onLogoMouseMove;
+                document.onmouseup = onLogoMouseUp;
+            };
+
+            function onLogoMouseMove(e) {
+                if (!isDraggingLogo) return;
+                const mRect = monitor.getBoundingClientRect();
+                let newLeft = e.clientX - mRect.left - logoDragOffset.x;
+                let newTop = e.clientY - mRect.top - logoDragOffset.y;
+
+                newLeft = Math.max(0, Math.min(newLeft, mRect.width - logo.offsetWidth));
+                newTop = Math.max(0, Math.min(newTop, mRect.height - logo.offsetHeight));
+
+                logo.style.left = newLeft + 'px';
+                logo.style.top = newTop + 'px';
+                logo.style.right = 'auto';
+
+                logoPositionPct.x = (newLeft / mRect.width) * 100;
+                logoPositionPct.y = (newTop / mRect.height) * 100;
+            }
+
+            function onLogoMouseUp() {
+                isDraggingLogo = false;
+                document.onmousemove = null;
+                document.onmouseup = null;
+            }
+
+            // Drag-to-resize handle logic
+            let isResizingLogo = false;
+            let startWidth = 80;
+            let startX = 0;
+
+            if (resizeHandle) {
+                resizeHandle.onmousedown = function(e) {
+                    e.stopPropagation();
+                    isResizingLogo = true;
+                    startX = e.clientX;
+                    startWidth = logoImg.offsetWidth;
+                    document.onmousemove = onResizeMouseMove;
+                    document.onmouseup = onResizeMouseUp;
+                };
+            }
+
+            function onResizeMouseMove(e) {
+                if (!isResizingLogo) return;
+                const diffX = e.clientX - startX;
+                const newWidth = Math.max(30, Math.min(220, startWidth + diffX));
+                logoImg.style.width = newWidth + 'px';
+            }
+
+            function onResizeMouseUp() {
+                isResizingLogo = false;
+                document.onmousemove = null;
+                document.onmouseup = null;
+            }
+        }
+
+        function hexToRgba(hex, opacity) {
+            hex = hex.replace('#', '');
+            if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+            const r = parseInt(hex.substring(0, 2), 16) || 0;
+            const g = parseInt(hex.substring(2, 4), 16) || 0;
+            const b = parseInt(hex.substring(4, 6), 16) || 0;
+            return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+        }
+
+        function updatePreviewCaptionStyles() {
+            const style = document.getElementById('timelineSubStyle').value;
+            const pos = document.getElementById('timelineSubPos').value;
+            const fx = document.getElementById('timelineVideoFx').value;
+            const fontName = document.getElementById('timelineSubFont').value;
+            const fontSize = document.getElementById('timelineSubFontSize').value;
+            const bgColorHex = document.getElementById('timelineSubBgColor').value;
+            const bgOpacityPct = document.getElementById('timelineSubBgOpacity').value;
+
+            const overlay = document.getElementById('previewCaptionOverlay');
+            const text = document.getElementById('previewCaptionText');
+            const fxOverlay = document.getElementById('previewFxOverlay');
+
+            const customBgRgba = hexToRgba(bgColorHex, bgOpacityPct / 100);
+
+            text.style.display = 'inline-block';
+            text.style.fontFamily = `'${fontName}', sans-serif`;
+            text.style.fontSize = `${fontSize}px`;
+            text.style.maxWidth = '90%';
+            text.style.lineHeight = '1.35';
+            text.style.padding = '8px 18px';
+            text.style.borderRadius = '12px';
+            text.style.wordBreak = 'break-word';
+
+            if (style === 'off') {
+                overlay.style.display = 'none';
+            } else {
+                overlay.style.display = 'block';
+                if (pos === 'top') {
+                    overlay.style.top = '10%';
+                    overlay.style.bottom = 'auto';
+                } else if (pos === 'middle') {
+                    overlay.style.top = '40%';
+                    overlay.style.bottom = 'auto';
+                } else {
+                    overlay.style.bottom = '8%';
+                    overlay.style.top = 'auto';
+                }
+
+                if (style === 'wordbyword' || style === 'hormozi') {
+                    text.style.color = '#ffff00';
+                    text.style.background = customBgRgba;
+                    text.style.textShadow = '0 0 10px rgba(255,255,0,0.6), 2px 2px 4px #000';
+                    text.style.border = '1px solid rgba(255,255,0,0.3)';
+                } else if (style === 'mrbeast') {
+                    text.style.color = '#00ffff';
+                    text.style.background = customBgRgba;
+                    text.style.textShadow = '0 0 10px rgba(0,255,255,0.6), 2px 2px 4px #000';
+                    text.style.border = '1px solid rgba(0,255,255,0.3)';
+                } else if (style === 'cyberpunk') {
+                    text.style.color = '#ff00ff';
+                    text.style.background = customBgRgba;
+                    text.style.textShadow = '0 0 12px rgba(255,0,255,0.8), 2px 2px 4px #000';
+                    text.style.border = '1px solid rgba(255,0,255,0.4)';
+                } else if (style === 'vox') {
+                    text.style.color = '#ffffff';
+                    text.style.background = customBgRgba !== 'rgba(0, 0, 0, 0.85)' ? customBgRgba : '#ff2d55';
+                    text.style.textShadow = 'none';
+                    text.style.border = 'none';
+                    text.style.boxShadow = '0 4px 15px rgba(255,45,85,0.5)';
+                } else if (style === 'retro') {
+                    text.style.color = '#fffdd0';
+                    text.style.background = customBgRgba;
+                    text.style.textShadow = '1px 1px 3px #000';
+                    text.style.border = '1px solid rgba(255,253,208,0.3)';
+                } else { // cinematic
+                    text.style.color = '#ffffff';
+                    text.style.background = customBgRgba;
+                    text.style.textShadow = '1px 1px 3px #000';
+                    text.style.border = '1px solid rgba(255,255,255,0.2)';
+                }
+            }
+
+            if (fx === 'vignette') {
+                fxOverlay.style.background = 'radial-gradient(circle, transparent 50%, rgba(0,0,0,0.85) 100%)';
+            } else if (fx === 'warm') {
+                fxOverlay.style.background = 'rgba(255,165,0,0.12)';
+            } else if (fx === 'grain') {
+                fxOverlay.style.background = 'rgba(255,255,255,0.04)';
+            } else if (fx === 'sepia') {
+                fxOverlay.style.background = 'rgba(112,66,20,0.2)';
+            } else if (fx === 'cold') {
+                fxOverlay.style.background = 'rgba(0,113,227,0.15)';
+            } else if (fx === 'contrast') {
+                fxOverlay.style.background = 'rgba(0,0,0,0.15)';
+            } else {
+                fxOverlay.style.background = 'none';
+            }
+        }
+
+        function createDefaultBeatCanvas(beatNum, text) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1280;
+            canvas.height = 720;
+            const ctx = canvas.getContext('2d');
+
+            const grad = ctx.createLinearGradient(0, 0, 1280, 720);
+            grad.addColorStop(0, '#0f172a');
+            grad.addColorStop(0.5, '#1e1b4b');
+            grad.addColorStop(1, '#0f0f1d');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 1280, 720);
+
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.lineWidth = 2;
+            for (let x = 0; x < 1280; x += 80) {
+                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 720); ctx.stroke();
+            }
+
+            ctx.fillStyle = '#ff2d55';
+            ctx.beginPath();
+            if (ctx.roundRect) {
+                ctx.roundRect(60, 60, 180, 48, 12);
+            } else {
+                ctx.rect(60, 60, 180, 48);
+            }
+            ctx.fill();
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 24px sans-serif';
+            ctx.fillText(`BEAT #${beatNum}`, 88, 93);
+
+            ctx.fillStyle = '#e2e8f0';
+            ctx.font = 'bold 36px sans-serif';
+            const displayStr = text.length > 70 ? text.slice(0, 70) + '...' : text;
+            ctx.fillText(`"${displayStr}"`, 60, 380);
+
+            return canvas.toDataURL('image/png');
+        }
+
+        function previewSceneBeat(beatNum, autoPlay = true) {
+            currentActiveBeat = beatNum;
+            const item = currentScenesData.find(s => s.scene === beatNum);
+            if (!item) return;
+
+            // Update active highlight border on Video Track thumbnails
+            document.querySelectorAll('#timelineVideoTrack > div').forEach(el => {
+                el.style.border = '1px solid var(--border-subtle)';
+            });
+            const activeCard = document.getElementById(`vBlock_${beatNum}`);
+            if (activeCard) {
+                activeCard.style.border = '2px solid var(--accent-red)';
+            }
+
+            const monitorImg = document.getElementById('previewMonitorImg');
+            const placeholder = document.getElementById('previewPlaceholderText');
+            const captionText = document.getElementById('previewCaptionText');
+            const monitorAudio = document.getElementById('monitorAudioElement');
+            const transitionStyle = document.getElementById('timelineTransition') ? document.getElementById('timelineTransition').value : 'crossfade';
+
+            const imgEl = document.getElementById(`sceneImg_${beatNum}`);
+            let imgSrc = imgEl && imgEl.src && !imgEl.src.endsWith('#') ? imgEl.src : '';
+            if (!imgSrc) {
+                imgSrc = createDefaultBeatCanvas(beatNum, item.text);
+            }
+
+            // Apply Live Monitor CSS Transition Animation
+            monitorImg.style.transition = 'none';
+            monitorImg.style.opacity = '1';
+            monitorImg.style.transform = 'none';
+            monitorImg.style.filter = 'none';
+
+            if (transitionStyle === 'crossfade') {
+                monitorImg.style.transition = 'opacity 0.4s ease-in-out';
+                monitorImg.style.opacity = '0.2';
+                setTimeout(() => { monitorImg.style.opacity = '1'; }, 20);
+            } else if (transitionStyle === 'zoomin') {
+                monitorImg.style.transition = 'transform 0.4s ease-out, opacity 0.4s ease';
+                monitorImg.style.transform = 'scale(1.25)';
+                monitorImg.style.opacity = '0.3';
+                setTimeout(() => { monitorImg.style.transform = 'scale(1)'; monitorImg.style.opacity = '1'; }, 20);
+            } else if (transitionStyle === 'fadeblack') {
+                monitorImg.style.transition = 'filter 0.4s ease';
+                monitorImg.style.filter = 'brightness(0)';
+                setTimeout(() => { monitorImg.style.filter = 'brightness(1)'; }, 20);
+            } else if (transitionStyle === 'fadewhite') {
+                monitorImg.style.transition = 'filter 0.4s ease';
+                monitorImg.style.filter = 'brightness(3)';
+                setTimeout(() => { monitorImg.style.filter = 'brightness(1)'; }, 20);
+            } else if (transitionStyle === 'slideleft' || transitionStyle === 'wipeleft') {
+                monitorImg.style.transition = 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)';
+                monitorImg.style.transform = 'translateX(100%)';
+                setTimeout(() => { monitorImg.style.transform = 'translateX(0)'; }, 20);
+            } else if (transitionStyle === 'slideright' || transitionStyle === 'wiperight') {
+                monitorImg.style.transition = 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)';
+                monitorImg.style.transform = 'translateX(-100%)';
+                setTimeout(() => { monitorImg.style.transform = 'translateX(0)'; }, 20);
+            } else if (transitionStyle === 'slideup' || transitionStyle === 'wipeup') {
+                monitorImg.style.transition = 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)';
+                monitorImg.style.transform = 'translateY(100%)';
+                setTimeout(() => { monitorImg.style.transform = 'translateY(0)'; }, 20);
+            } else if (transitionStyle === 'slidedown' || transitionStyle === 'wipedown') {
+                monitorImg.style.transition = 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)';
+                monitorImg.style.transform = 'translateY(-100%)';
+                setTimeout(() => { monitorImg.style.transform = 'translateY(0)'; }, 20);
+            } else if (transitionStyle === 'circlecrop') {
+                monitorImg.style.transition = 'transform 0.4s ease-out, opacity 0.4s ease';
+                monitorImg.style.transform = 'scale(0.3) rotate(-5deg)';
+                monitorImg.style.opacity = '0.2';
+                setTimeout(() => { monitorImg.style.transform = 'scale(1) rotate(0deg)'; monitorImg.style.opacity = '1'; }, 20);
+            } else if (transitionStyle === 'pixelize') {
+                monitorImg.style.transition = 'filter 0.35s ease-in-out';
+                monitorImg.style.filter = 'blur(10px) contrast(200%)';
+                setTimeout(() => { monitorImg.style.filter = 'none'; }, 20);
+            }
+
+            monitorImg.src = imgSrc;
+            monitorImg.style.display = 'block';
+            placeholder.style.display = 'none';
+
+            captionText.textContent = item.text;
+            updatePreviewCaptionStyles();
+
+            const audioEl = document.getElementById(`audioElement_${beatNum}`);
+            if (audioEl && audioEl.src) {
+                monitorAudio.src = audioEl.src;
+                if (autoPlay) {
+                    monitorAudio.play().catch(() => {});
+                    document.getElementById('btnMonitorPlay').innerHTML = '⏸';
+                }
+            }
+        }
+
+        function toggleMonitorPlay() {
+            const audio = document.getElementById('monitorAudioElement');
+            const btn = document.getElementById('btnMonitorPlay');
+            if (audio.paused) {
+                if (!audio.src && currentScenesData.length > 0) {
+                    previewSceneBeat(1, true);
+                } else {
+                    audio.play();
+                    btn.innerHTML = '⏸';
+                }
+            } else {
+                audio.pause();
+                btn.innerHTML = '▶';
+            }
+        }
+
+        function getSceneDuration(sceneNum) {
+            const audioEl = document.getElementById(`audioElement_${sceneNum}`);
+            if (audioEl && !isNaN(audioEl.duration) && audioEl.duration > 0) {
+                return audioEl.duration;
+            }
+            return 3.2; // default fallback per beat
+        }
+
+        function getTotalTimelineDuration() {
+            if (!currentScenesData || currentScenesData.length === 0) return 0;
+            let total = 0;
+            currentScenesData.forEach(s => {
+                total += getSceneDuration(s.scene);
+            });
+            return total;
+        }
+
+        function formatTimecode(seconds) {
+            if (isNaN(seconds) || seconds < 0) seconds = 0;
+            const min = Math.floor(seconds / 60);
+            const sec = Math.floor(seconds % 60);
+            const tenths = Math.floor((seconds % 1) * 10);
+            return `${min < 10 ? '0' : ''}${min}:${sec < 10 ? '0' : ''}${sec}.${tenths}`;
+        }
+
+        let lastDisplayedWord = '';
+        function updateMonitorProgress() {
+            const audio = document.getElementById('monitorAudioElement');
+            const seekbar = document.getElementById('monitorSeekbar');
+            const timecode = document.getElementById('monitorTimecode');
+            const captionText = document.getElementById('previewCaptionText');
+            const subStyle = document.getElementById('timelineSubStyle') ? document.getElementById('timelineSubStyle').value : 'wordbyword';
+            
+            const totalDur = getTotalTimelineDuration();
+            if (totalDur <= 0) return;
+
+            let elapsedBefore = 0;
+            for (let i = 0; i < currentScenesData.length; i++) {
+                const sNum = currentScenesData[i].scene;
+                if (sNum === currentActiveBeat) break;
+                elapsedBefore += getSceneDuration(sNum);
+            }
+
+            const currentBeatProgress = (audio && !isNaN(audio.currentTime)) ? audio.currentTime : 0;
+            const currentTimelineTime = Math.min(totalDur, elapsedBefore + currentBeatProgress);
+
+            seekbar.value = (currentTimelineTime / totalDur) * 100;
+            timecode.textContent = `${formatTimecode(currentTimelineTime)} / ${formatTimecode(totalDur)}`;
+
+            // Real-time 1-Word-at-a-Time Live Caption Engine!
+            const item = currentScenesData.find(s => s.scene === currentActiveBeat);
+            if (item && item.text && captionText) {
+                if (subStyle === 'wordbyword' || subStyle === 'bounce' || subStyle === 'fade') {
+                    const words = item.text.trim().split(/\s+/);
+                    const dur = (audio && !isNaN(audio.duration) && audio.duration > 0) ? audio.duration : getSceneDuration(currentActiveBeat);
+                    const progressRatio = Math.max(0, Math.min(0.99, currentBeatProgress / dur));
+                    const wordIdx = Math.floor(progressRatio * words.length);
+                    const activeWord = words[wordIdx] || words[0] || '';
+
+                    if (activeWord !== lastDisplayedWord) {
+                        lastDisplayedWord = activeWord;
+                        captionText.textContent = activeWord;
+                        if (subStyle === 'bounce') {
+                            captionText.style.transition = 'transform 0.08s ease-out';
+                            captionText.style.transform = 'scale(1.25)';
+                            setTimeout(() => { captionText.style.transform = 'scale(1)'; }, 90);
+                        }
+                    }
+                } else {
+                    captionText.textContent = item.text;
+                }
+            }
+        }
+
+        function seekMonitorAudio(valPct) {
+            const totalDur = getTotalTimelineDuration();
+            if (totalDur <= 0) return;
+
+            const targetSec = (valPct / 100) * totalDur;
+            let accum = 0;
+            let targetBeat = 1;
+            let offsetInBeat = 0;
+
+            for (let i = 0; i < currentScenesData.length; i++) {
+                const sNum = currentScenesData[i].scene;
+                const dur = getSceneDuration(sNum);
+                if (accum + dur >= targetSec || i === currentScenesData.length - 1) {
+                    targetBeat = sNum;
+                    offsetInBeat = Math.max(0, targetSec - accum);
+                    break;
+                }
+                accum += dur;
+            }
+
+            if (currentActiveBeat !== targetBeat) {
+                previewSceneBeat(targetBeat, false);
+            }
+
+            const audio = document.getElementById('monitorAudioElement');
+            if (audio) {
+                audio.currentTime = offsetInBeat;
+            }
+
+            updateMonitorProgress();
+        }
+
+        function onMonitorAudioEnded() {
+            // Continuous Timeline Playback: Advance to Next Scene Beat!
+            const total = currentScenesData.length;
+            if (currentActiveBeat < total) {
+                const nextBeat = currentActiveBeat + 1;
+                previewSceneBeat(nextBeat, true);
+            } else {
+                document.getElementById('btnMonitorPlay').innerHTML = '▶';
+                document.getElementById('monitorSeekbar').value = 0;
+            }
+        }
+
+        function pushClipsToTimeline() {
+            if (!currentScenesData || currentScenesData.length === 0) {
+                alert('No scene cuts available!');
+                return;
+            }
+
+            const timelineCard = document.getElementById('timelineEditorCard');
+            timelineCard.style.display = 'block';
+
+            const totalDur = getTotalTimelineDuration();
+            document.getElementById('timelineStatsBadge').textContent = `${currentScenesData.length} Clips (${formatTimecode(totalDur)} Total)`;
+            document.getElementById('monitorTimecode').textContent = `00:00.0 / ${formatTimecode(totalDur)}`;
+
+            // Attach event listeners for live styling updates
+            document.getElementById('timelineSubStyle').onchange = updatePreviewCaptionStyles;
+            document.getElementById('timelineSubPos').onchange = updatePreviewCaptionStyles;
+            document.getElementById('timelineVideoFx').onchange = updatePreviewCaptionStyles;
+            document.getElementById('timelineSubFont').onchange = updatePreviewCaptionStyles;
+            document.getElementById('timelineSubFontSize').oninput = updatePreviewCaptionStyles;
+            document.getElementById('timelineSubBgColor').onchange = updatePreviewCaptionStyles;
+            document.getElementById('timelineSubBgOpacity').oninput = updatePreviewCaptionStyles;
+
+            const videoTrack = document.getElementById('timelineVideoTrack');
+            const audioTrack = document.getElementById('timelineAudioTrack');
+
+            videoTrack.innerHTML = '';
+            audioTrack.innerHTML = '';
+
+            currentScenesData.forEach((item, idx) => {
+                const imgEl = document.getElementById(`sceneImg_${item.scene}`);
+                let imgSrc = imgEl && imgEl.src && !imgEl.src.endsWith('#') ? imgEl.src : '';
+                if (!imgSrc) {
+                    imgSrc = createDefaultBeatCanvas(item.scene, item.text);
+                }
+
+                // Video track block
+                const vBlock = document.createElement('div');
+                vBlock.id = `vBlock_${item.scene}`;
+                vBlock.style.cssText = `
+                    min-width: 140px;
+                    background: rgba(0,0,0,0.4);
+                    border: 1px solid var(--border-subtle);
+                    border-radius: 8px;
+                    padding: 6px;
+                    flex-shrink: 0;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 4px;
+                    cursor: pointer;
+                    transition: transform 0.2s ease;
+                `;
+                vBlock.onclick = () => previewSceneBeat(item.scene);
+                vBlock.innerHTML = `
+                    <div style="font-size:0.7rem; font-weight:800; color:var(--accent-red);">#${item.scene} (${item.timestamp})</div>
+                    <img src="${imgSrc}" style="width:128px; height:72px; border-radius:6px; object-fit:cover; border:1px solid var(--border-accent);" />
+                `;
+                videoTrack.appendChild(vBlock);
+
+                // Audio track block
+                const aBlock = document.createElement('div');
+                aBlock.style.cssText = `
+                    min-width: 140px;
+                    background: rgba(0,113,227,0.15);
+                    border: 1px solid var(--border-accent);
+                    border-radius: 8px;
+                    padding: 8px;
+                    flex-shrink: 0;
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    cursor: pointer;
+                `;
+                aBlock.onclick = () => previewSceneBeat(item.scene);
+                aBlock.innerHTML = `
+                    <span style="font-size:0.75rem; font-weight:700; color:var(--text-primary);">🎙️ Audio #${item.scene}</span>
+                    <span style="font-size:0.68rem; color:var(--accent-green); font-weight:700;">30ms Fade</span>
+                `;
+                audioTrack.appendChild(aBlock);
+            });
+
+            if (currentScenesData.length > 0) {
+                previewSceneBeat(currentScenesData[0].scene);
+            }
+
+            timelineCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            showNotification('🎞️ Loaded Live Preview Monitor! Click any clip to preview image, voiceover, and live captions.', 'info');
+        }
+
+        function toggleAllTransitionCheckboxes(val) {
+            document.querySelectorAll('.trans-cb').forEach(cb => cb.checked = val);
+        }
+
+        function getCheckedTransitions() {
+            const checked = [];
+            document.querySelectorAll('.trans-cb:checked').forEach(cb => checked.push(cb.value));
+            return checked.length > 0 ? checked : ['crossfade', 'zoomin', 'wipeleft', 'fadeblack'];
+        }
+
+        function applyCheckedTransitionsSequentially() {
+            const checked = getCheckedTransitions();
+            showNotification(`🔄 Sequencing cuts using ${checked.length} selected transitions in round-robin order!`, 'success');
+        }
+
+        async function renderMasterVideo() {
+            if (!currentScenesData || currentScenesData.length === 0) {
+                alert('No scene beats available to render video!');
+                return;
+            }
+
+            const btn = document.getElementById('btnRenderMasterVideo');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '⏳';
+            }
+
+            const subStyle = document.getElementById('timelineSubStyle').value;
+            const subPos = document.getElementById('timelineSubPos').value;
+            const videoFx = document.getElementById('timelineVideoFx').value;
+            const subFont = document.getElementById('timelineSubFont').value;
+            const subFontSize = document.getElementById('timelineSubFontSize').value;
+            const subBgColor = document.getElementById('timelineSubBgColor').value;
+            const subBgOpacity = document.getElementById('timelineSubBgOpacity').value;
+            const checkedTransitions = getCheckedTransitions();
+
+            jobStartTime = Date.now();
+            updateVoiceProgress(10, `Rendering Master Video (Font: ${subFont}, Subtitles: ${subStyle.toUpperCase()}, FX: ${videoFx.toUpperCase()}, Random Transitions)...`);
+            showNotification('🎬 Rendering Master Video with pop-free 30ms audio crossfades...', 'info');
+
+            try {
+                const res = await fetch('/api/render-final-video', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        job_id: currentJobId,
+                        scenes: currentScenesData,
+                        subtitle_style: subStyle,
+                        subtitle_pos: subPos,
+                        subtitle_font: subFont,
+                        subtitle_size: subFontSize,
+                        subtitle_bg_color: subBgColor,
+                        subtitle_bg_opacity: subBgOpacity,
+                        video_filter: videoFx,
+                        transition: 'random',
+                        allowed_transitions: checkedTransitions
+                    })
+                });
+                const data = await res.json();
+                if (data.videoUrl) {
+                    updateVoiceProgress(100, 'Master Video Render 100% Complete!');
+                    showNotification(`✅ Master video rendered successfully (${data.duration}s)!`, 'success');
+
+                    const container = document.getElementById('outputContainer');
+                    let masterCard = document.getElementById('masterVideoCard');
+                    if (!masterCard) {
+                        masterCard = document.createElement('div');
+                        masterCard.id = 'masterVideoCard';
+                        masterCard.style.cssText = `
+                            background: linear-gradient(135deg, rgba(255,45,85,0.1), rgba(0,113,227,0.1));
+                            border: 1px solid var(--border-accent);
+                            border-radius: var(--radius-lg);
+                            padding: 24px;
+                            margin-top: 24px;
+                            box-shadow: var(--shadow-card);
+                        `;
+                    }
+
+                    masterCard.innerHTML = `
+                        <div style="font-family:'Outfit',sans-serif; font-size:1.2rem; font-weight:800; color:var(--text-primary); margin-bottom:14px; display:flex; justify-content:space-between; align-items:center;">
+                            <span>🎬 Final Master Video (${data.duration}s)</span>
+                            <span style="font-size:0.8rem; color:var(--accent-green); font-weight:700;">✅ Pop-Free 30ms Audio & EBU R128 Mastered</span>
+                        </div>
+                        <video controls style="width:100%; max-height:480px; border-radius:12px; border:1px solid var(--border-subtle); box-shadow:0 8px 30px rgba(0,0,0,0.6);" src="${data.videoUrl}"></video>
+                        <div style="margin-top:16px; display:flex; justify-content:flex-end;">
+                            <a href="${data.videoUrl}" download="${data.filename}" style="background:var(--accent-red); color:white; padding:12px 24px; border-radius:30px; font-weight:700; font-size:0.9rem; text-decoration:none; display:inline-flex; align-items:center; gap:8px; box-shadow:0 4px 15px rgba(255,45,85,0.4);">⬇️ Download Master Video (MP4)</a>
+                        </div>
+                    `;
+
+                    container.appendChild(masterCard);
+                    masterCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                } else {
+                    alert('Error rendering video: ' + (data.error || 'Unknown error'));
+                }
+            } catch (err) {
+                console.error('Error rendering master video:', err);
+                alert('Error rendering master video: ' + err.message);
+            }
+
+            btn.disabled = false;
+            btn.innerHTML = '🎬';
         }
 
         function renderOutputScenes(scenes, topicInfo) {
