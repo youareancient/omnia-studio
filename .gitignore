@@ -8,4 +8,9 @@ studio.db
 *.db
 scratch/*.ass
 *.ass
+.env
+*.onnx
+*.bin
+*.wav
+*.mp3
 

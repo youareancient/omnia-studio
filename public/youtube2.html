@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube 2.0 — Next-Gen Production Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="/static/icon.png">
+    
+    <style>
+        :root {
+            --bg-base: #0a0a0c;
+            --bg-card: #141418;
+            --bg-card-hover: #1c1c22;
+            --bg-input: #1a1a20;
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --border-accent: rgba(255, 45, 85, 0.4);
+            --text-primary: #f5f5f7;
+            --text-secondary: #8e8e93;
+            --accent-red: #ff2d55;
+            --accent-red-hover: #ff3b30;
+            --accent-blue: #0071e3;
+            --accent-green: #34c759;
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --radius-sm: 8px;
+            --shadow-card: 0 8px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Glassmorphism Header */
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(18, 18, 22, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 14px 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .brand-logo {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 1.35rem;
+            background: linear-gradient(135deg, #ff2d55 0%, #ff9500 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .badge-20 {
+            background: linear-gradient(135deg, rgba(255, 45, 85, 0.2), rgba(255, 149, 0, 0.2));
+            color: var(--accent-red);
+            border: 1px solid var(--border-accent);
+            font-size: 0.72rem;
+            font-weight: 800;
+            padding: 3px 10px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .top-nav {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .btn-nav {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-primary);
+            border: 1px solid var(--border-subtle);
+            padding: 8px 16px;
+            border-radius: var(--radius-md);
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-nav:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-1px);
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1000px;
+            margin: 32px auto;
+            padding: 0 24px;
+            width: 100%;
+            flex: 1;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 32px;
+            box-shadow: var(--shadow-card);
+            margin-bottom: 24px;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .card-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .script-stats {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        textarea {
+            width: 100%;
+            background: var(--bg-input);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            padding: 16px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            outline: none;
+            resize: vertical;
+            min-height: 180px;
+            transition: border-color 0.2s ease;
+        }
+
+        textarea:focus {
+            border-color: var(--accent-red);
+        }
+
+        .action-bar {
+            margin-top: 20px;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .btn-scene-cut {
+            background: linear-gradient(135deg, #ff2d55 0%, #ff9500 100%);
+            color: #fff;
+            border: none;
+            padding: 14px 32px;
+            border-radius: var(--radius-md);
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 20px rgba(255, 45, 85, 0.4);
+        }
+
+        .btn-scene-cut:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(255, 45, 85, 0.6);
+        }
+
+        .btn-scene-cut:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-icon-pill {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            font-size: 1.25rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--border-subtle);
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            outline: none;
+        }
+
+        .btn-icon-pill:hover {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+        }
+
+        .btn-count-pill {
+            background: rgba(255, 45, 85, 0.15);
+            color: var(--accent-red);
+            border-color: var(--border-accent);
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 1.15rem;
+            cursor: default;
+        }
+
+        .btn-blue-pill {
+            background: rgba(0, 113, 227, 0.18);
+            border-color: rgba(0, 113, 227, 0.5);
+            color: #30b0ff;
+        }
+        .btn-blue-pill:hover {
+            background: rgba(0, 113, 227, 0.35);
+            box-shadow: 0 0 20px rgba(0, 113, 227, 0.5);
+        }
+
+        .btn-green-pill {
+            background: rgba(52, 199, 89, 0.18);
+            border-color: rgba(52, 199, 89, 0.5);
+            color: #34c759;
+        }
+        .btn-green-pill:hover {
+            background: rgba(52, 199, 89, 0.35);
+            box-shadow: 0 0 20px rgba(52, 199, 89, 0.5);
+        }
+
+        .btn-purple-pill {
+            background: rgba(175, 82, 222, 0.18);
+            border-color: rgba(175, 82, 222, 0.5);
+            color: #af52de;
+        }
+        .btn-purple-pill:hover {
+            background: rgba(175, 82, 222, 0.35);
+            box-shadow: 0 0 20px rgba(175, 82, 222, 0.5);
+        }
+
+        .custom-audio-player {
+            background: linear-gradient(135deg, rgba(175, 82, 222, 0.08) 0%, rgba(255, 45, 85, 0.08) 100%);
+            border: 1px solid var(--border-accent);
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-play-pause {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #af52de 0%, #ff2d55 100%);
+            border: none;
+            color: #fff;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(175, 82, 222, 0.4);
+            flex-shrink: 0;
+            padding: 0;
+        }
+
+        .btn-play-pause:hover {
+            transform: scale(1.08);
+            box-shadow: 0 6px 22px rgba(175, 82, 222, 0.6);
+        }
+
+        .audio-track-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .audio-title-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.78rem;
+            font-weight: 700;
+        }
+
+        .audio-title {
+            color: #af52de;
+        }
+
+        .audio-time {
+            color: var(--text-secondary);
+            font-family: monospace;
+            font-size: 0.75rem;
+        }
+
+        .audio-seekbar {
+            width: 100%;
+            height: 6px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .audio-seekbar::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #ff2d55;
+            box-shadow: 0 0 10px #ff2d55;
+            cursor: pointer;
+        }
+
+        .todo-item {
+            background: var(--bg-input);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 12px 16px;
+            transition: all 0.3s ease;
+        }
+
+        .todo-item.done {
+            background: rgba(52, 199, 89, 0.08);
+            border-color: rgba(52, 199, 89, 0.3);
+        }
+
+        .todo-item.done .todo-label {
+            text-decoration: line-through;
+            color: var(--text-secondary);
+            opacity: 0.75;
+        }
+
+        .todo-item.active {
+            background: rgba(255, 45, 85, 0.1);
+            border-color: var(--border-accent);
+            box-shadow: 0 4px 15px rgba(255, 45, 85, 0.15);
+        }
+
+        .todo-item.active .todo-label {
+            color: var(--text-primary);
+            font-weight: 700;
+        }
+
+        .todo-item-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.88rem;
+            font-weight: 600;
+        }
+
+        .todo-step-badge {
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-secondary);
+        }
+
+        .todo-item.done .todo-step-badge {
+            background: rgba(52, 199, 89, 0.2);
+            color: #34c759;
+        }
+
+        .todo-item.active .todo-step-badge {
+            background: rgba(255, 45, 85, 0.2);
+            color: var(--accent-red);
+        }
+
+        #topNotification {
+            position: fixed;
+            top: 80px;
+            right: 24px;
+            z-index: 1000;
+            padding: 12px 24px;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            font-size: 0.85rem;
+            display: none;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand-logo">
+            ⚡ YouTube 2.0 <span class="badge-20">Production Studio</span>
+        </div>
+        <div class="top-nav">
+            <a href="/" class="btn-nav">🏠 Back to Main App</a>
+        </div>
+    </header>
+
+    <div id="topNotification"></div>
+
+    <div class="container">
+        <!-- Script Box & Style Selection Card -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">📝 Full Video Script & Style</div>
+                <div class="script-stats" id="scriptStatsText">0 words • 0:00 est</div>
+            </div>
+
+            <!-- Visual Style Selection Dropdown -->
+            <div style="margin-bottom: 16px;">
+                <label style="font-size:0.8rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:8px;">🎨 Select Visual Art Style:</label>
+                <select id="visualStyleSelect" style="width:100%; background:var(--bg-input); border:1px solid var(--border-subtle); border-radius:var(--radius-md); color:var(--text-primary); padding:12px; font-size:0.9rem; font-weight:600; outline:none; cursor:pointer;">
+                    <option value="physical_economics_3d" selected>🏗️ Physical Economics 3D Miniature World (Financial Documentary)</option>
+                    <option value="vox_2d">🎨 Hand-Drawn 2D Vector Artwork (Vox / Explainer Style)</option>
+                    <option value="photoreal">📸 Hyperrealistic 8K Cinematic Film Photography</option>
+                    <option value="kurzgesagt">⚡ Kurzgesagt Geometric Vector Graphic</option>
+                    <option value="cyberpunk">🌃 Cyberpunk & Neon Anime Illustration</option>
+                    <option value="claymation">🧱 3D Claymation Stop-Motion Animation</option>
+                    <option value="oil_painting">🖼️ Renaissance Masterpiece Oil Painting</option>
+                    <option value="engraving">📜 19th Century Vintage Engraving</option>
+                    <option value="tech_vector">💻 3D Tech Isometric Graphic</option>
+                </select>
+            </div>
+
+            <!-- Voiceover Engine Selection Dropdown -->
+            <div style="margin-bottom: 16px;">
+                <label style="font-size:0.8rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:8px;">🎙️ Select Voiceover Engine & Voice:</label>
+                <select id="ttsEngineSelect" style="width:100%; background:var(--bg-input); border:1px solid var(--border-subtle); border-radius:var(--radius-md); color:var(--text-primary); padding:12px; font-size:0.9rem; font-weight:600; outline:none; cursor:pointer;">
+                    <optgroup label="⚡ Microsoft Edge TTS (Cloud Voices)">
+                        <option value="edge_andrew" selected>⚡ Edge TTS — Andrew (#1 Deep Male Documentary Voice)</option>
+                        <option value="edge_ava">⚡ Edge TTS — Ava (Expressive Modern Female Voice)</option>
+                        <option value="edge_emma">⚡ Edge TTS — Emma (Conversational Female Voice)</option>
+                        <option value="edge_christopher">⚡ Edge TTS — Christopher (Deep Cinematic Male)</option>
+                        <option value="edge_sonia">⚡ Edge TTS — Sonia (British Female Narrator)</option>
+                        <option value="edge_ryan">⚡ Edge TTS — Ryan (British Male Narrator)</option>
+                    </optgroup>
+                    <optgroup label="🎧 Kokoro 82M AI (Local Studio Voices)">
+                        <option value="kokoro_adam">🎧 Kokoro 82M — Adam (am_adam - #1 Deep Male)</option>
+                        <option value="kokoro_michael">🎧 Kokoro 82M — Michael (am_michael - Authoritative Male)</option>
+                        <option value="kokoro_heart">🎧 Kokoro 82M — Heart (af_heart - Warm Female)</option>
+                        <option value="kokoro_bella">🎧 Kokoro 82M — Bella (af_bella - Energetic Female)</option>
+                        <option value="kokoro_nicole">🎧 Kokoro 82M — Nicole (af_nicole - Broadcast Female)</option>
+                        <option value="kokoro_george">🎧 Kokoro 82M — George (bm_george - British Male)</option>
+                        <option value="kokoro_emma">🎧 Kokoro 82M — Emma (bf_emma - British Female)</option>
+                    </optgroup>
+                </select>
+            </div>
+
+            <textarea id="scriptInput" placeholder="Paste your full voiceover script here..." oninput="updateScriptStats()"></textarea>
+
+            <div class="action-bar" style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                    <button id="totalScenesCountBtn" class="btn-icon-pill btn-count-pill" style="display:none;" title="Total Scenes Count">0</button>
+                    <button class="btn-icon-pill btn-blue-pill" id="btnCopyPrompts" onclick="copyOnlyPrompts()" style="display:none;" title="Copy All Prompts">📋</button>
+                    <button class="btn-icon-pill btn-green-pill" id="btnUploadBatch" onclick="triggerBatchUpload()" style="display:none;" title="Upload Batch Images">📁</button>
+                    <button class="btn-icon-pill btn-purple-pill" id="btnGenerateAllVoice" onclick="generateAllBeatVoiceovers()" style="display:none;" title="Generate All Beat Voiceovers">🎙️</button>
+                    <input type="file" id="batchImageInput" multiple accept="image/*" style="display:none;" onchange="handleBatchImagesUpload(event)">
+                </div>
+                <button class="btn-scene-cut" id="btnSceneCut" onclick="handleSceneCut()" title="Start Scene Cut">✂️ Cut Scenes</button>
+            </div>
+        </div>
+
+        <!-- Minimal Production Progress Card -->
+        <div id="todoProgressCard" style="display: none; background: var(--bg-card); border: 1px solid var(--border-accent); border-radius: var(--radius-lg); padding: 20px 24px; margin-bottom: 24px; box-shadow: var(--shadow-card);">
+            <div style="font-family:'Outfit',sans-serif; font-size:1rem; font-weight:800; color:var(--text-primary); margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+                <span>⚡ Production Pipeline Status</span>
+                <span id="todoOverallTime" style="font-size:0.8rem; font-weight:600; color:var(--accent-red);">⏱️ est remaining: calculating...</span>
+            </div>
+
+            <!-- Single Active Progress Bar -->
+            <div id="activeStepProgressContainer" style="padding-top:4px;">
+                <div style="display:flex; justify-content:space-between; font-size:0.82rem; font-weight:700; color:var(--text-secondary); margin-bottom:6px;">
+                    <span id="activeStepLabel">Initializing pipeline...</span>
+                    <span id="activeStepPercent" style="color:var(--accent-red); font-weight:800;">0%</span>
+                </div>
+                <div style="width:100%; background:var(--bg-input); height:10px; border-radius:10px; overflow:hidden; border:1px solid var(--border-subtle);">
+                    <div id="activeStepBarFill" style="width:0%; height:100%; background:linear-gradient(135deg, #ff2d55 0%, #ff9500 100%); transition:width 0.3s ease; box-shadow: 0 0 12px rgba(255, 45, 85, 0.6);"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rendered Output Scenes -->
+        <div id="outputContainer" style="display: none;">
+            <!-- Output scenes will be rendered dynamically here -->
+        </div>
+    </div>
+
+    <script>
+        let currentJobId = '';
+        let currentScenesData = [];
+        let jobStartTime = 0;
+
+        function updateTodoProgress(progress, statusText) {
+            const card = document.getElementById('todoProgressCard');
+            card.style.display = 'block';
+
+            const now = Date.now();
+            const elapsedSec = (now - jobStartTime) / 1000;
+            
+            let estRemSec = 0;
+            if (progress > 0 && progress < 100) {
+                estRemSec = Math.max(0, Math.ceil((elapsedSec / progress) * (100 - progress)));
+            }
+            const min = Math.floor(estRemSec / 60);
+            const sec = estRemSec % 60;
+            document.getElementById('todoOverallTime').textContent = `⏱️ est remaining: ${min}:${sec < 10 ? '0' : ''}${sec}`;
+
+            document.getElementById('activeStepBarFill').style.width = `${progress}%`;
+            document.getElementById('activeStepPercent').textContent = `${progress}%`;
+            document.getElementById('activeStepLabel').textContent = statusText || 'Processing...';
+
+            function setStepState(stepNum, state) {
+                const el = document.getElementById(`todoStep${stepNum}`);
+                if (!el) return;
+                const icon = el.querySelector('.todo-status-icon');
+                const badge = el.querySelector('.todo-step-badge');
+                
+                el.className = `todo-item ${state}`;
+                if (state === 'done') {
+                    icon.textContent = '✅';
+                    badge.textContent = 'Completed';
+                } else if (state === 'active') {
+                    icon.textContent = '⏳';
+                    badge.textContent = 'In Progress';
+                } else {
+                    icon.textContent = '⚪';
+                    badge.textContent = 'Pending';
+                }
+            }
+
+            if (progress <= 15) {
+                setStepState(1, 'active');
+                setStepState(2, 'pending');
+                setStepState(3, 'pending');
+                setStepState(4, 'pending');
+                setStepState(5, 'pending');
+                setStepState(6, 'pending');
+            } else if (progress <= 50) {
+                setStepState(1, 'done');
+                setStepState(2, 'active');
+                setStepState(3, 'pending');
+                setStepState(4, 'pending');
+                setStepState(5, 'pending');
+                setStepState(6, 'pending');
+            } else if (progress <= 65) {
+                setStepState(1, 'done');
+                setStepState(2, 'done');
+                setStepState(3, 'active');
+                setStepState(4, 'pending');
+                setStepState(5, 'pending');
+                setStepState(6, 'pending');
+            } else if (progress <= 75) {
+                setStepState(1, 'done');
+                setStepState(2, 'done');
+                setStepState(3, 'done');
+                setStepState(4, 'done');
+                setStepState(5, 'active');
+                setStepState(6, 'pending');
+            } else if (progress < 100) {
+                setStepState(1, 'done');
+                setStepState(2, 'done');
+                setStepState(3, 'done');
+                setStepState(4, 'done');
+                setStepState(5, 'done');
+                setStepState(6, 'active');
+            } else {
+                setStepState(1, 'done');
+                setStepState(2, 'done');
+                setStepState(3, 'done');
+                setStepState(4, 'done');
+                setStepState(5, 'done');
+                setStepState(6, 'done');
+                document.getElementById('todoOverallTime').textContent = '✅ Production Pipeline 100% Complete!';
+            }
+        }
+
+        function copyOnlyPrompts() {
+            if (!currentScenesData || currentScenesData.length === 0) {
+                alert('No generated prompts available to copy! Please click Scene Cut first.');
+                return;
+            }
+
+            const formattedPrompts = currentScenesData.map((item, idx) => {
+                let promptText = item.prompt || '';
+                if (promptText.includes('IMAGE PROMPT:')) {
+                    const match = promptText.match(/IMAGE PROMPT:\s*([\s\S]*?)(?=\n\n[A-Z\s]+:|$)/);
+                    if (match && match[1]) {
+                        promptText = match[1].trim();
+                    }
+                }
+                promptText = promptText.replace(/\s+/g, ' ').trim();
+                return `${idx + 1}. ${promptText}`;
+            }).join('\n\n');
+
+            navigator.clipboard.writeText(formattedPrompts).then(() => {
+                showNotification('📋 All prompts copied to clipboard!', 'success');
+            }).catch(err => {
+                const textArea = document.createElement("textarea");
+                textArea.value = formattedPrompts;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand("copy");
+                document.body.removeChild(textArea);
+                showNotification('📋 All prompts copied to clipboard!', 'success');
+            });
+        }
+
+        function updateScriptStats() {
+            const text = document.getElementById('scriptInput').value.trim();
+            const words = text ? text.split(/\s+/).length : 0;
+            const estSec = Math.round(words / 2.5);
+            const min = Math.floor(estSec / 60);
+            const sec = estSec % 60;
+            document.getElementById('scriptStatsText').textContent = `${words} words • ${min}:${sec < 10 ? '0' : ''}${sec} est`;
+        }
+
+        function showNotification(msg, type = 'info') {
+            const el = document.getElementById('topNotification');
+            el.textContent = msg;
+            el.style.background = type === 'success' ? '#34c759' : (type === 'error' ? '#ff3b30' : '#ff2d55');
+            el.style.color = '#fff';
+            el.style.display = 'block';
+            setTimeout(() => { el.style.display = 'none'; }, 3500);
+        }
+
+        async function handleSceneCut() {
+            const script = document.getElementById('scriptInput').value.trim();
+            const style = document.getElementById('visualStyleSelect').value;
+            const btn = document.getElementById('btnSceneCut');
+
+            if (!script) {
+                alert('Please paste your full script into the script box first!');
+                return;
+            }
+
+            document.getElementById('totalScenesCountBtn').style.display = 'none';
+            document.getElementById('btnCopyPrompts').style.display = 'none';
+            document.getElementById('btnUploadBatch').style.display = 'none';
+            document.getElementById('btnGenerateAllVoice').style.display = 'none';
+
+            jobStartTime = Date.now();
+            updateTodoProgress(5, 'Starting pipeline...');
+
+            btn.disabled = true;
+            btn.textContent = '⏳ Processing Scene Cuts...';
+            showNotification('✂️ Segmenting script & generating styled prompts...', 'info');
+
+            const ttsEngine = document.getElementById('ttsEngineSelect').value;
+
+            try {
+                const res = await fetch('/api/start-job', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        text: script,
+                        visual_style: style,
+                        tts_engine: ttsEngine,
+                        mode: 'breakdown'
+                    })
+                });
+                const data = await res.json();
+                if (data.job_id) {
+                    currentJobId = data.job_id;
+                    pollJobStatus(data.job_id);
+                } else {
+                    alert('Error starting scene cut: ' + (data.error || 'Unknown error'));
+                    btn.disabled = false;
+                    btn.textContent = '✂️ Scene Cut';
+                }
+            } catch (err) {
+                alert('Connection error: ' + err.message);
+                btn.disabled = false;
+                btn.textContent = '✂️ Scene Cut';
+            }
+        }
+
+        async function pollJobStatus(jobId) {
+            try {
+                const res = await fetch(`/api/job-status?id=${jobId}`);
+                const data = await res.json();
+
+                if (data.progress) {
+                    updateTodoProgress(data.progress, data.status_text);
+                }
+
+                if (data.status === 'completed' && data.result && data.result.scenes) {
+                    updateTodoProgress(100, 'Pipeline Complete!');
+                    const btn = document.getElementById('btnSceneCut');
+                    btn.disabled = false;
+                    btn.textContent = '✂️ Scene Cut';
+                    renderOutputScenes(data.result.scenes, data.result.topic_info);
+                    showNotification('✅ Scene cuts & topic-locked prompts generated!', 'success');
+                } else if (data.status === 'failed') {
+                    const btn = document.getElementById('btnSceneCut');
+                    btn.disabled = false;
+                    btn.textContent = '✂️ Scene Cut';
+                    alert('Scene cut failed: ' + (data.error || 'Unknown error'));
+                } else {
+                    const btn = document.getElementById('btnSceneCut');
+                    if (data.status_text) {
+                        btn.textContent = `⏳ ${data.status_text.slice(0, 22)}...`;
+                    }
+                    setTimeout(() => pollJobStatus(jobId), 1000);
+                }
+            } catch (err) {
+                console.error('Poll error:', err);
+                setTimeout(() => pollJobStatus(jobId), 2000);
+            }
+        }
+
+        function triggerBatchUpload() {
+            document.getElementById('batchImageInput').click();
+        }
+
+        function handleBatchImagesUpload(event) {
+            const files = Array.from(event.target.files);
+            if (!files.length) return;
+
+            function getFileNumber(file) {
+                const numMatch = file.name.match(/\d+/);
+                return numMatch ? parseInt(numMatch[0], 10) : 9999;
+            }
+
+            files.sort((a, b) => getFileNumber(a) - getFileNumber(b));
+
+            let assignedCount = 0;
+            files.forEach((file, idx) => {
+                const beatNum = idx + 1;
+                const promptBlock = document.getElementById(`promptBlock_${beatNum}`);
+                const previewBlock = document.getElementById(`imagePreviewBlock_${beatNum}`);
+                const imgEl = document.getElementById(`sceneImg_${beatNum}`);
+                const imgNameEl = document.getElementById(`sceneImgName_${beatNum}`);
+
+                if (promptBlock && previewBlock && imgEl) {
+                    const objectUrl = URL.createObjectURL(file);
+                    imgEl.src = objectUrl;
+                    if (imgNameEl) imgNameEl.textContent = file.name;
+
+                    promptBlock.style.display = 'none';
+                    previewBlock.style.display = 'flex';
+                    assignedCount++;
+                }
+            });
+
+            if (assignedCount > 0) {
+                document.getElementById('btnCopyPrompts').style.display = 'none';
+                document.getElementById('btnGenerateAllVoice').style.display = 'inline-flex';
+
+                const gridContainer = document.getElementById('scenesGridContainer');
+                if (gridContainer) {
+                    gridContainer.style.display = 'grid';
+                    gridContainer.style.gridTemplateColumns = 'repeat(auto-fill, minmax(320px, 1fr))';
+                    gridContainer.style.gap = '20px';
+                }
+                showNotification(`✅ Successfully assigned ${assignedCount} images! Grid view active.`, 'success');
+            }
+        }
+
+        function togglePromptView(beatNum) {
+            const promptBlock = document.getElementById(`promptBlock_${beatNum}`);
+            if (promptBlock) {
+                if (promptBlock.style.display === 'none') {
+                    promptBlock.style.display = 'block';
+                } else {
+                    promptBlock.style.display = 'none';
+                }
+            }
+        }
+
+        function togglePlayPause(beatNum) {
+            const audio = document.getElementById(`audioElement_${beatNum}`);
+            const btn = document.getElementById(`playBtn_${beatNum}`);
+            if (!audio) return;
+
+            if (audio.paused) {
+                document.querySelectorAll('audio').forEach(a => {
+                    if (a !== audio) a.pause();
+                });
+                document.querySelectorAll('.btn-play-pause').forEach(b => {
+                    b.innerHTML = '▶';
+                });
+                audio.play();
+                if (btn) btn.innerHTML = '⏸';
+            } else {
+                audio.pause();
+                if (btn) btn.innerHTML = '▶';
+            }
+        }
+
+        function updateAudioProgress(beatNum) {
+            const audio = document.getElementById(`audioElement_${beatNum}`);
+            const seekbar = document.getElementById(`seekbar_${beatNum}`);
+            const timeEl = document.getElementById(`time_${beatNum}`);
+
+            if (audio && seekbar && timeEl) {
+                if (!isNaN(audio.duration) && audio.duration > 0) {
+                    const percent = (audio.currentTime / audio.duration) * 100;
+                    seekbar.value = percent;
+                    
+                    const curMin = Math.floor(audio.currentTime / 60);
+                    const curSec = Math.floor(audio.currentTime % 60);
+                    const durMin = Math.floor(audio.duration / 60);
+                    const durSec = Math.floor(audio.duration % 60);
+                    
+                    timeEl.textContent = `${curMin}:${curSec < 10 ? '0' : ''}${curSec} / ${durMin}:${durSec < 10 ? '0' : ''}${durSec}`;
+                }
+            }
+        }
+
+        function seekAudio(beatNum, val) {
+            const audio = document.getElementById(`audioElement_${beatNum}`);
+            if (audio && !isNaN(audio.duration) && audio.duration > 0) {
+                audio.currentTime = (val / 100) * audio.duration;
+            }
+        }
+
+        function onAudioEnded(beatNum) {
+            const btn = document.getElementById(`playBtn_${beatNum}`);
+            const seekbar = document.getElementById(`seekbar_${beatNum}`);
+            if (btn) btn.innerHTML = '▶';
+            if (seekbar) seekbar.value = 0;
+        }
+
+        function updateVoiceProgress(progress, statusText) {
+            const card = document.getElementById('todoProgressCard');
+            card.style.display = 'block';
+
+            const now = Date.now();
+            const elapsedSec = (now - jobStartTime) / 1000;
+            
+            let estRemSec = 0;
+            if (progress > 0 && progress < 100) {
+                estRemSec = Math.max(0, Math.ceil((elapsedSec / progress) * (100 - progress)));
+            }
+            const min = Math.floor(estRemSec / 60);
+            const sec = estRemSec % 60;
+            document.getElementById('todoOverallTime').textContent = progress === 100 ? '✅ 100% Complete!' : `⏱️ est remaining: ${min}:${sec < 10 ? '0' : ''}${sec}`;
+
+            document.getElementById('activeStepBarFill').style.width = `${progress}%`;
+            document.getElementById('activeStepPercent').textContent = `${progress}%`;
+            document.getElementById('activeStepLabel').textContent = statusText || 'Synthesizing voiceovers...';
+
+            function setStepState(stepNum, state) {
+                const el = document.getElementById(`todoStep${stepNum}`);
+                if (!el) return;
+                const icon = el.querySelector('.todo-status-icon');
+                const badge = el.querySelector('.todo-step-badge');
+                
+                el.className = `todo-item ${state}`;
+                if (state === 'done') {
+                    icon.textContent = '✅';
+                    badge.textContent = 'Completed';
+                } else if (state === 'active') {
+                    icon.textContent = '⏳';
+                    badge.textContent = 'In Progress';
+                } else {
+                    icon.textContent = '⚪';
+                    badge.textContent = 'Pending';
+                }
+            }
+
+            setStepState(1, 'done');
+            setStepState(2, 'done');
+            setStepState(3, 'done');
+            setStepState(4, 'done');
+            setStepState(5, 'done');
+            setStepState(6, progress === 100 ? 'done' : 'active');
+        }
+
+        async function generateAllBeatVoiceovers() {
+            if (!currentScenesData || currentScenesData.length === 0) {
+                alert('No scene cuts available!');
+                return;
+            }
+
+            const btn = document.getElementById('btnGenerateAllVoice');
+            btn.disabled = true;
+            btn.innerHTML = '⏳';
+
+            const selectedEngineVal = document.getElementById('ttsEngineSelect').value;
+            let voiceParam = 'andrew';
+            let engineParam = 'edge';
+
+            if (selectedEngineVal.startsWith('edge_')) {
+                engineParam = 'edge';
+                voiceParam = selectedEngineVal.replace('edge_', '');
+            } else if (selectedEngineVal.startsWith('kokoro_')) {
+                engineParam = selectedEngineVal;
+                voiceParam = selectedEngineVal;
+            } else if (selectedEngineVal === 'edge') {
+                engineParam = 'edge';
+                voiceParam = 'andrew';
+            }
+
+            let count = 0;
+            const total = currentScenesData.length;
+
+            jobStartTime = Date.now();
+            updateVoiceProgress(0, `Starting beat voiceovers (0/${total})...`);
+
+            for (let i = 0; i < total; i++) {
+                const item = currentScenesData[i];
+                const currentPct = Math.floor(((i + 1) / total) * 100);
+                updateVoiceProgress(currentPct, `Synthesizing beat voiceover #${item.scene} (${i + 1}/${total})...`);
+                showNotification(`🎙️ Generating voiceover for Beat #${item.scene} (${i + 1}/${total})...`, 'info');
+
+                try {
+                    const res = await fetch('/api/generate-beat-audio', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            job_id: currentJobId,
+                            scene_index: item.scene,
+                            scene_text: item.text,
+                            voice: voiceParam,
+                            rate: '-4%',
+                            tts_engine: engineParam
+                        })
+                    });
+                    const data = await res.json();
+                    if (data.audioUrl) {
+                        const slot = document.getElementById(`beatAudioSlot_${item.scene}`);
+                        if (slot) {
+                            slot.innerHTML = `
+                                <div class="custom-audio-player">
+                                    <button class="btn-play-pause" id="playBtn_${item.scene}" onclick="togglePlayPause(${item.scene})">▶</button>
+                                    <div class="audio-track-info">
+                                        <div class="audio-title-bar">
+                                            <span class="audio-title">🎙️ Beat #${item.scene} Voiceover</span>
+                                            <span class="audio-time" id="time_${item.scene}">0:00 / 0:00</span>
+                                        </div>
+                                        <input type="range" class="audio-seekbar" id="seekbar_${item.scene}" value="0" min="0" max="100" oninput="seekAudio(${item.scene}, this.value)">
+                                    </div>
+                                    <a href="${data.audioUrl}" download="beat_${item.scene}.mp3" style="color:var(--text-secondary); text-decoration:none; font-size:1rem; padding:4px;" title="Download MP3">⬇️</a>
+                                    <audio id="audioElement_${item.scene}" src="${data.audioUrl}" ontimeupdate="updateAudioProgress(${item.scene})" onended="onAudioEnded(${item.scene})"></audio>
+                                </div>
+                            `;
+                        }
+                        count++;
+                    }
+                } catch (err) {
+                    console.error(`Error generating beat #${item.scene} audio:`, err);
+                }
+            }
+
+            btn.disabled = false;
+            btn.innerHTML = '🎙️';
+            updateVoiceProgress(100, 'Voiceover Audio Generation 100% Complete!');
+            showNotification(`✅ Generated all ${count} beat voiceovers!`, 'success');
+        }
+
+        function renderOutputScenes(scenes, topicInfo) {
+            currentScenesData = scenes || [];
+            
+            const countBtn = document.getElementById('totalScenesCountBtn');
+            countBtn.textContent = scenes.length;
+            countBtn.style.display = 'inline-flex';
+
+            const copyBtn = document.getElementById('btnCopyPrompts');
+            copyBtn.style.display = 'inline-flex';
+
+            const uploadBtn = document.getElementById('btnUploadBatch');
+            uploadBtn.style.display = 'inline-flex';
+
+            const genVoiceBtn = document.getElementById('btnGenerateAllVoice');
+            genVoiceBtn.style.display = 'none'; // Appears ONLY after images are uploaded!
+
+            const container = document.getElementById('outputContainer');
+            const styleSelect = document.getElementById('visualStyleSelect');
+            const styleName = styleSelect.options[styleSelect.selectedIndex].text;
+            
+            let topicHeaderHtml = '';
+            if (topicInfo && topicInfo.topic) {
+                topicHeaderHtml = `
+                    <div style="background: linear-gradient(135deg, rgba(0, 113, 227, 0.15), rgba(255, 45, 85, 0.15)); border: 1px solid var(--border-accent); border-radius: var(--radius-md); padding: 16px 20px; margin-bottom: 20px;">
+                        <div style="font-size:0.8rem; font-weight:800; color:var(--accent-red); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">🎯 Script Analyzer Agent — Topic Lock Active</div>
+                        <div style="font-size:1.05rem; font-weight:800; color:var(--text-primary); margin-bottom:4px;">${topicInfo.topic}</div>
+                        <div style="font-size:0.82rem; color:var(--text-secondary);"><strong>Locked Domain Settings:</strong> ${topicInfo.domain_setting || topicInfo.topic}</div>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = `
+                ${topicHeaderHtml}
+                <h2 style="font-family:'Outfit',sans-serif; font-size:1.25rem; font-weight:800; margin-bottom:16px;">🎬 Generated Scene Cuts (${scenes.length}) — <span style="color:var(--accent-red);">${styleName}</span></h2>
+                <div id="scenesGridContainer" style="display: block;"></div>
+            `;
+
+            const gridContainer = document.getElementById('scenesGridContainer');
+
+            scenes.forEach(item => {
+                const card = document.createElement('div');
+                card.style.cssText = `
+                    background: var(--bg-card);
+                    border: 1px solid var(--border-subtle);
+                    border-radius: var(--radius-lg);
+                    padding: 18px;
+                    box-shadow: var(--shadow-card);
+                    display: flex;
+                    flex-direction: column;
+                    gap: 8px;
+                `;
+
+                card.innerHTML = `
+                    <div style="font-size:0.88rem; font-weight:800; color:var(--accent-red); display:flex; justify-content:space-between; align-items:center;">
+                        <span># Beat ${item.scene}</span>
+                        <span style="font-size:0.75rem; color:var(--text-secondary); font-weight:400;">⏱️ ${item.timestamp}</span>
+                    </div>
+
+                    <div id="imagePreviewBlock_${item.scene}" style="display:none; flex-direction:column; margin-top:4px; margin-bottom:8px; background:rgba(0,0,0,0.3); border:1px solid var(--border-subtle); border-radius:12px; padding:10px; align-items:center; gap:8px;">
+                        <img id="sceneImg_${item.scene}" src="" style="width:100%; height:180px; border-radius:8px; border:1px solid var(--border-accent); object-fit:cover; box-shadow:0 4px 15px rgba(0,0,0,0.5);" />
+                        <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+                            <span style="font-size:0.8rem; font-weight:800; color:var(--accent-green); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:180px;" id="sceneImgName_${item.scene}">✅ Assigned #${item.scene}</span>
+                            <button style="background:rgba(255,255,255,0.08); color:var(--text-primary); border:1px solid var(--border-subtle); padding:4px 8px; border-radius:6px; font-size:0.72rem; font-weight:600; cursor:pointer;" onclick="togglePromptView(${item.scene})">👁️ Prompt</button>
+                        </div>
+                    </div>
+                    
+                    <div style="font-weight:700; font-size:0.75rem; color:var(--text-secondary);">Script Line:</div>
+                    <div style="font-style:italic; font-size:0.88rem; color:var(--text-primary); background:rgba(0,0,0,0.25); padding:10px 12px; border-radius:8px; border-left:3px solid var(--accent-red);">"${item.text}"</div>
+
+                    <div id="beatAudioSlot_${item.scene}"></div>
+
+                    <div id="promptBlock_${item.scene}">
+                        <div style="font-weight:700; font-size:0.75rem; color:var(--text-secondary); margin-top:4px;">Generated Prompt (${styleName}):</div>
+                        <textarea readonly style="width:100%; min-height:80px; font-family:monospace; font-size:0.76rem; background:var(--bg-input); color:var(--text-primary); border:1px solid var(--border-subtle); border-radius:8px; padding:8px; resize:vertical;">${item.prompt}</textarea>
+                    </div>
+                `;
+                gridContainer.appendChild(card);
+            });
+
+            container.style.display = 'block';
+            container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    </script>
+</body>
+</html>

@@ -1277,8 +1277,11 @@
 
             <!-- Clean Hero CTA Badge & Action Buttons -->
             <div style="display:flex; gap:16px; justify-content:center; flex-wrap:wrap; margin-bottom:36px;">
+                <a href="/youtube-2.0" class="btn-apple" style="background:linear-gradient(135deg, #ff2d55, #ff9500); font-size:var(--text-base); font-weight:var(--fw-bold); padding:16px 36px; border-radius:var(--radius-full); text-decoration:none; color:#fff; box-shadow:0 4px 20px rgba(255,45,85,0.4); display:inline-flex; align-items:center; gap:8px;">
+                    ⚡ Open YouTube 2.0 →
+                </a>
                 <button class="btn-apple" style="background:linear-gradient(135deg, var(--accent-primary), var(--accent-primary-hover)); font-size:var(--text-base); font-weight:var(--fw-bold); padding:16px 36px; border-radius:var(--radius-full); box-shadow:var(--shadow-glow-md); cursor:pointer;" onclick="switchView('studio')">
-                    🚀 Launch Studio Workbench →
+                    🚀 Launch Classic Workbench →
                 </button>
                 <a href="#voice-samples" class="btn-apple btn-apple-secondary" style="font-size:var(--text-base); font-weight:var(--fw-bold); padding:16px 32px; border-radius:var(--radius-full); text-decoration:none; border:1px solid var(--border-subtle); color:var(--text-primary);">
                     🎧 Explore Voice Samples
@@ -3185,9 +3188,11 @@
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     const previewBox = document.getElementById('beatPreview_' + beatNum);
-                    const previewImg = document.getElementById('beatImg_' + beatNum);
-                    if (previewBox && previewImg) {
+                    const previewImg = document.getElementById('sceneImgPreview_' + beatNum) || document.getElementById('beatImg_' + beatNum);
+                    if (previewImg) {
                         previewImg.src = e.target.result;
+                    }
+                    if (previewBox) {
                         previewBox.style.display = 'block';
                     }
                 };
@@ -3263,9 +3268,11 @@
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     const previewBox = document.getElementById('beatPreview_' + beatNum);
-                    const previewImg = document.getElementById('beatImg_' + beatNum);
-                    if (previewBox && previewImg) {
+                    const previewImg = document.getElementById('sceneImgPreview_' + beatNum) || document.getElementById('beatImg_' + beatNum);
+                    if (previewImg) {
                         previewImg.src = e.target.result;
+                    }
+                    if (previewBox) {
                         previewBox.style.display = 'block';
                     }
                 };

@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Voiceover Studio — Production Workbench v2</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="/static/icon.png">
+    
+    <style>
+        :root {
+            --bg-base: #0a0a0c;
+            --bg-card: #141418;
+            --bg-card-hover: #1c1c22;
+            --bg-input: #1a1a20;
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --border-accent: rgba(0, 113, 227, 0.4);
+            --text-primary: #f5f5f7;
+            --text-secondary: #8e8e93;
+            --accent-apple: #0071e3;
+            --accent-apple-hover: #0077ed;
+            --accent-gold: #ff9500;
+            --accent-green: #34c759;
+            --accent-red: #ff3b30;
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --radius-sm: 8px;
+            --shadow-card: 0 8px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Glassmorphism Header */
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(18, 18, 22, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .brand-logo {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 1.25rem;
+            background: linear-gradient(135deg, #ffffff 0%, #8e8e93 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .badge-v2 {
+            background: rgba(0, 113, 227, 0.15);
+            color: var(--accent-apple);
+            border: 1px solid var(--border-accent);
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 20px;
+            text-transform: uppercase;
+        }
+
+        .top-nav {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .btn-apple {
+            background: var(--accent-apple);
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: var(--radius-md);
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-apple:hover {
+            background: var(--accent-apple-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-primary);
+            border: 1px solid var(--border-subtle);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        /* Layout Container */
+        .workbench-grid {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 24px;
+            max-width: 1400px;
+            margin: 24px auto;
+            padding: 0 24px;
+        }
+
+        @media (max-width: 900px) {
+            .workbench-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Sidebar Card */
+        .sidebar-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            box-shadow: var(--shadow-card);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .step-checklist {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .checklist-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: var(--radius-md);
+            background: var(--bg-input);
+            border: 1px solid var(--border-subtle);
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .checklist-item.active {
+            border-color: var(--accent-apple);
+            background: rgba(0, 113, 227, 0.1);
+        }
+
+        .checklist-item.complete {
+            border-color: var(--accent-green);
+        }
+
+        .step-num {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .checklist-item.active .step-num {
+            background: var(--accent-apple);
+            color: #fff;
+        }
+
+        .checklist-item.complete .step-num {
+            background: var(--accent-green);
+            color: #fff;
+        }
+
+        /* Main Workspace Canvas */
+        .main-canvas {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .card-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            box-shadow: var(--shadow-card);
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .panel-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Inputs & Textareas */
+        textarea, select, input[type="text"] {
+            width: 100%;
+            background: var(--bg-input);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            padding: 12px;
+            font-family: inherit;
+            font-size: 0.85rem;
+            outline: none;
+            transition: border-color 0.2s ease;
+        }
+
+        textarea:focus, select:focus, input[type="text"]:focus {
+            border-color: var(--accent-apple);
+        }
+
+        /* Breakdown Scene Card */
+        .beat-card {
+            background: var(--bg-input);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            margin-bottom: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            transition: border-color 0.2s ease;
+        }
+
+        .beat-card:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .beat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--accent-apple);
+        }
+
+        .beat-script {
+            font-style: italic;
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 10px;
+            border-radius: var(--radius-sm);
+            border-left: 3px solid var(--accent-apple);
+        }
+
+        /* Side-by-side Prompt & Visual Preview Slot */
+        .prompt-visual-row {
+            display: flex;
+            gap: 16px;
+            align-items: stretch;
+            flex-wrap: wrap;
+        }
+
+        .prompt-textarea {
+            flex: 1 1 280px;
+            min-height: 100px;
+            font-family: monospace;
+            font-size: 0.78rem;
+        }
+
+        .visual-preview-box {
+            flex: 0 0 160px;
+            max-width: 180px;
+            background: var(--bg-card);
+            border: 1.5px dashed var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            position: relative;
+        }
+
+        .visual-preview-box.has-image {
+            border-style: solid;
+            border-color: var(--accent-green);
+        }
+
+        .visual-preview-img {
+            width: 100%;
+            height: 90px;
+            object-fit: cover;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .visual-preview-placeholder {
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+        }
+
+        /* Notification Banner */
+        #topNotification {
+            position: fixed;
+            top: 70px;
+            right: 24px;
+            z-index: 1000;
+            padding: 12px 20px;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            font-size: 0.85rem;
+            display: none;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Glassmorphic Header -->
+    <header>
+        <div class="brand-logo">
+            🎬 YouTube Voiceover Studio <span class="badge-v2">Workbench v2</span>
+        </div>
+        <div class="top-nav">
+            <select id="projectSelector" style="width: auto; font-size: 0.8rem; padding: 6px 12px;">
+                <option value="default">Default Project (Active)</option>
+            </select>
+            <a href="/" class="btn-apple btn-secondary">🏠 Back to Main App</a>
+        </div>
+    </header>
+
+    <div id="topNotification"></div>
+
+    <!-- Main Grid -->
+    <div class="workbench-grid">
+        
+        <!-- Sidebar Navigation Checklist -->
+        <div class="sidebar-card">
+            <div>
+                <h3 style="font-family:'Outfit',sans-serif; font-size:1rem; margin-bottom:4px;">Workflow Steps</h3>
+                <p style="font-size:0.75rem; color:var(--text-secondary);">Complete each stage sequentially</p>
+            </div>
+
+            <div class="step-checklist">
+                <div id="stepItem1" class="checklist-item active" onclick="scrollToStep(1)">
+                    <div class="step-num">1</div>
+                    <div>
+                        <div>Script & Voice</div>
+                        <div style="font-size:0.7rem; color:var(--text-secondary); font-weight:400;">Input script & pick voice</div>
+                    </div>
+                </div>
+
+                <div id="stepItem2" class="checklist-item" onclick="scrollToStep(2)">
+                    <div class="step-num">2</div>
+                    <div>
+                        <div>Scene Breakdown</div>
+                        <div style="font-size:0.7rem; color:var(--text-secondary); font-weight:400;">Prompts & images per beat</div>
+                    </div>
+                </div>
+
+                <div id="stepItem3" class="checklist-item" onclick="scrollToStep(3)">
+                    <div class="step-num">3</div>
+                    <div>
+                        <div>Voiceover & Clips</div>
+                        <div style="font-size:0.7rem; color:var(--text-secondary); font-weight:400;">Synthesize line audio & video</div>
+                    </div>
+                </div>
+
+                <div id="stepItem4" class="checklist-item" onclick="scrollToStep(4)">
+                    <div class="step-num">4</div>
+                    <div>
+                        <div>Master Export</div>
+                        <div style="font-size:0.7rem; color:var(--text-secondary); font-weight:400;">Timeline assembly & 1080p MP4</div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top:auto; padding-top:16px; border-top:1px solid var(--border-subtle); font-size:0.75rem; color:var(--text-secondary);">
+                ⚡ Status: <span id="studioStatusText" style="color:var(--accent-green); font-weight:700;">Ready</span>
+            </div>
+        </div>
+
+        <!-- Main Workspace Canvas -->
+        <div class="main-canvas">
+
+            <!-- Step 1: Script & Voice Setup -->
+            <div id="panelStep1" class="card-panel">
+                <div class="panel-header">
+                    <div class="panel-title">📝 Step 1: Script Input & Voice Selector</div>
+                    <span style="font-size:0.75rem; color:var(--text-secondary);" id="scriptStatsText">0 words • 0:00 est</span>
+                </div>
+
+                <div style="margin-bottom: 14px;">
+                    <label style="font-size:0.78rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:6px;">Voice Narrator Preset:</label>
+                    <select id="voicePresetSelect">
+                        <option value="andrew">Andrew (YouTube Documentary) — High Energy & Engaging</option>
+                        <option value="christopher">Christopher (Deep Storyteller) — Cinematic & Authoritative</option>
+                        <option value="ava">Ava (Modern Expressive) — Clear Tech Narrator</option>
+                        <option value="guy">Guy (News & Commentary) — Broadcaster</option>
+                        <option value="brian">Brian (Viral Shorts) — Young & Dynamic</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label style="font-size:0.78rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:6px;">Video Script Text:</label>
+                    <textarea id="scriptInput" rows="6" placeholder="Paste your video essay script here... (e.g. 'Ancient Rome was standardly governed by the Senate. But behind closed doors, power shifted rapidly...')" oninput="updateScriptStats()"></textarea>
+                </div>
+
+                <div style="margin-top: 14px; text-align: right;">
+                    <button class="btn-apple" onclick="startScriptBreakdown()">⚡ Generate Scene Cuts & Prompts</button>
+                </div>
+            </div>
+
+            <!-- Step 2: Scene Breakdown Workbench -->
+            <div id="panelStep2" class="card-panel" style="display: none;">
+                <div class="panel-header">
+                    <div class="panel-title">🎨 Step 2: Beat Prompts & Image Attachment</div>
+                    <div style="display:flex; gap:8px;">
+                        <input type="file" id="batchZipInput" accept=".zip,image/*" multiple style="display:none;" onchange="handleBatchImagesUpload(this.files)">
+                        <button class="btn-apple btn-secondary" onclick="document.getElementById('batchZipInput').click()">📁 Batch Upload Images / ZIP</button>
+                    </div>
+                </div>
+
+                <div id="scenesContainer">
+                    <!-- Dynamic Beat Cards rendered here -->
+                </div>
+            </div>
+
+            <!-- Step 3: Audio & Video Batch Controls -->
+            <div id="panelStep3" class="card-panel" style="display: none;">
+                <div class="panel-header">
+                    <div class="panel-title">🎙️ Step 3: Voiceover & Mini-Clip Synthesis</div>
+                </div>
+                <p style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:14px;">Automate audio generation and video clip creation across all scenes.</p>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                    <button class="btn-apple btn-secondary" onclick="generateAllVoiceovers()">🎙️ Synthesize All Line Voiceovers</button>
+                    <button class="btn-apple" onclick="generateAllMiniClips()">🎬 Render All Scene Mini-Clips</button>
+                </div>
+            </div>
+
+            <!-- Step 4: Export Panel -->
+            <div id="panelStep4" class="card-panel" style="display: none;">
+                <div class="panel-header">
+                    <div class="panel-title">🚀 Step 4: Master Video Export</div>
+                </div>
+                <div style="margin-bottom:14px;">
+                    <label style="font-size:0.78rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:6px;">Subtitle Overlay Preset:</label>
+                    <select id="subtitlePresetSelect">
+                        <option value="hormozi">Hormozi (Bold Yellow Accent)</option>
+                        <option value="cinematic">Cinematic (Minimal White)</option>
+                        <option value="clean">Clean Modern</option>
+                    </select>
+                </div>
+                <button class="btn-apple" style="width:100%; justify-content:center; padding:14px; font-size:1rem;" onclick="assembleMasterVideo()">🎬 Assemble & Download 1080p Master Video</button>
+                <div id="finalVideoBox" style="margin-top:16px; display:none;">
+                    <video id="masterVideoPlayer" controls style="width:100%; border-radius:var(--radius-md);"></video>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Lightbox Modal -->
+    <div id="imageLightbox" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.9); z-index:9999; align-items:center; justify-content:center;" onclick="this.style.display='none'">
+        <img id="lightboxImg" style="max-width:90%; max-height:90%; border-radius:12px; border:2px solid var(--accent-apple);" src="">
+    </div>
+
+    <script>
+        let currentJobId = '';
+        let scenesData = [];
+        let perBeatImages = {};
+
+        function showNotification(msg, type = 'info') {
+            const el = document.getElementById('topNotification');
+            el.textContent = msg;
+            el.style.background = type === 'success' ? '#34c759' : (type === 'error' ? '#ff3b30' : '#0071e3');
+            el.style.color = '#fff';
+            el.style.display = 'block';
+            setTimeout(() => { el.style.display = 'none'; }, 3000);
+        }
+
+        function updateScriptStats() {
+            const text = document.getElementById('scriptInput').value.trim();
+            const words = text ? text.split(/\s+/).length : 0;
+            const estSec = Math.round(words / 2.5);
+            const min = Math.floor(estSec / 60);
+            const sec = estSec % 60;
+            document.getElementById('scriptStatsText').textContent = `${words} words • ${min}:${sec < 10 ? '0' : ''}${sec} est`;
+        }
+
+        async function startScriptBreakdown() {
+            const script = document.getElementById('scriptInput').value.trim();
+            const voice = document.getElementById('voicePresetSelect').value;
+
+            if (!script) {
+                alert('Please enter a script before generating scene cuts!');
+                return;
+            }
+
+            showNotification('⚡ Generating Scene Cuts & Prompts...', 'info');
+
+            try {
+                const res = await fetch('/api/start-job', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        script_text: script,
+                        voice: voice,
+                        mode: 'breakdown'
+                    })
+                });
+                const data = await res.json();
+                if (data.status === 'started' && data.job_id) {
+                    currentJobId = data.job_id;
+                    pollJobStatus(data.job_id);
+                } else {
+                    alert('Error starting job: ' + (data.error || 'Unknown error'));
+                }
+            } catch (err) {
+                alert('Connection error: ' + err.message);
+            }
+        }
+
+        async function pollJobStatus(jobId) {
+            try {
+                const res = await fetch(`/api/job-status?job_id=${jobId}`);
+                const data = await res.json();
+
+                if (data.status === 'completed' && data.result && data.result.scenes) {
+                    scenesData = data.result.scenes;
+                    renderSceneCards();
+                    document.getElementById('panelStep2').style.display = 'block';
+                    document.getElementById('panelStep3').style.display = 'block';
+                    document.getElementById('panelStep4').style.display = 'block';
+                    document.getElementById('stepItem1').classList.add('complete');
+                    document.getElementById('stepItem2').classList.add('active');
+                    showNotification('✅ Scene Cuts & Prompts Generated Successfully!', 'success');
+                } else if (data.status === 'failed') {
+                    alert('Job failed: ' + (data.error || 'Error processing script'));
+                } else {
+                    setTimeout(() => pollJobStatus(jobId), 1000);
+                }
+            } catch (err) {
+                console.error('Polling error:', err);
+            }
+        }
+
+        function renderSceneCards() {
+            const container = document.getElementById('scenesContainer');
+            container.innerHTML = '';
+
+            scenesData.forEach(item => {
+                const beatNum = item.scene;
+                const card = document.createElement('div');
+                card.className = 'beat-card';
+
+                let initialImgSrc = '';
+                if (perBeatImages[beatNum]) {
+                    initialImgSrc = URL.createObjectURL(perBeatImages[beatNum]);
+                } else if (item.image_url) {
+                    initialImgSrc = item.image_url;
+                }
+
+                card.innerHTML = `
+                    <div class="beat-header">
+                        <span># Beat ${beatNum}</span>
+                        <span style="font-size:0.75rem; color:var(--text-secondary);">${item.timestamp || ''}</span>
+                    </div>
+
+                    <div class="beat-script">"${item.text}"</div>
+
+                    <div style="font-weight:700; font-size:0.78rem; color:var(--text-secondary);">Image Prompt & Visual Attachment:</div>
+
+                    <div class="prompt-visual-row">
+                        <textarea id="promptText_${beatNum}" class="prompt-textarea">${item.prompt}</textarea>
+
+                        <div id="beatPreview_${beatNum}" class="visual-preview-box ${initialImgSrc ? 'has-image' : ''}">
+                            ${initialImgSrc ? 
+                                `<img id="sceneImgPreview_${beatNum}" class="visual-preview-img" src="${initialImgSrc}" onclick="openLightbox('${initialImgSrc}')" title="Click to Expand" />` :
+                                `<img id="sceneImgPreview_${beatNum}" class="visual-preview-img" style="display:none;" onclick="openLightbox(this.src)" />
+                                 <span id="placeholderText_${beatNum}" class="visual-preview-placeholder">📷 Upload or Render Image</span>`
+                            }
+                        </div>
+                    </div>
+
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-top:6px;">
+                        <input type="file" accept="image/*" style="font-size:0.75rem; max-width:200px;" onchange="handlePerBeatImageUpload(${beatNum}, this)" />
+                        <button class="btn-apple btn-secondary" style="font-size:0.75rem; padding:4px 10px;" onclick="renderFluxImage(${beatNum})">⚡ AI Render Visual</button>
+                        <button class="btn-apple btn-secondary" style="font-size:0.75rem; padding:4px 10px;" onclick="generateBeatAudio(${beatNum})">🎙️ Line Voiceover</button>
+                        <button class="btn-apple" style="font-size:0.75rem; padding:4px 10px;" onclick="generateBeatClip(${beatNum})">🎬 Render Clip</button>
+                    </div>
+
+                    <div id="audioBox_${beatNum}" style="display:none; margin-top:6px;">
+                        <audio id="audioPlayer_${beatNum}" controls style="width:100%; height:32px;"></audio>
+                    </div>
+
+                    <div id="videoBox_${beatNum}" style="display:none; margin-top:6px;">
+                        <video id="videoPlayer_${beatNum}" controls style="width:100%; max-height:160px; border-radius:8px;"></video>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function handlePerBeatImageUpload(beatNum, inputEl) {
+            if (inputEl.files && inputEl.files[0]) {
+                const file = inputEl.files[0];
+                perBeatImages[beatNum] = file;
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const imgEl = document.getElementById(`sceneImgPreview_${beatNum}`);
+                    const box = document.getElementById(`beatPreview_${beatNum}`);
+                    const ph = document.getElementById(`placeholderText_${beatNum}`);
+                    if (imgEl) {
+                        imgEl.src = e.target.result;
+                        imgEl.style.display = 'block';
+                    }
+                    if (ph) ph.style.display = 'none';
+                    if (box) box.classList.add('has-image');
+                };
+                reader.readAsDataURL(file);
+                showNotification(`📷 Image attached to Beat #${beatNum}`, 'success');
+            }
+        }
+
+        function openLightbox(src) {
+            document.getElementById('lightboxImg').src = src;
+            document.getElementById('imageLightbox').style.display = 'flex';
+        }
+
+        async function handleBatchImagesUpload(files) {
+            if (!files || files.length === 0) return;
+            let count = 0;
+            Array.from(files).forEach((file, index) => {
+                const match = file.name.match(/\d+/);
+                const beatNum = match ? parseInt(match[0], 10) : (index + 1);
+                perBeatImages[beatNum] = file;
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const imgEl = document.getElementById(`sceneImgPreview_${beatNum}`);
+                    const box = document.getElementById(`beatPreview_${beatNum}`);
+                    const ph = document.getElementById(`placeholderText_${beatNum}`);
+                    if (imgEl) {
+                        imgEl.src = e.target.result;
+                        imgEl.style.display = 'block';
+                    }
+                    if (ph) ph.style.display = 'none';
+                    if (box) box.classList.add('has-image');
+                };
+                reader.readAsDataURL(file);
+                count++;
+            });
+            showNotification(`📁 Assigned ${count} images to scene beats!`, 'success');
+        }
+
+        async function generateBeatAudio(beatNum) {
+            showNotification(`🎙️ Generating voiceover for Beat #${beatNum}...`, 'info');
+            try {
+                const res = await fetch('/api/generate-beat-audio', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        job_id: currentJobId,
+                        scene_index: beatNum
+                    })
+                });
+                const data = await res.json();
+                if (data.status === 'success' && data.audioUrl) {
+                    const playerBox = document.getElementById(`audioBox_${beatNum}`);
+                    const player = document.getElementById(`audioPlayer_${beatNum}`);
+                    if (playerBox && player) {
+                        player.src = data.audioUrl;
+                        playerBox.style.display = 'block';
+                    }
+                    showNotification(`🎙️ Audio ready for Beat #${beatNum}!`, 'success');
+                }
+            } catch (err) {
+                alert('Audio error: ' + err.message);
+            }
+        }
+
+        async function generateBeatClip(beatNum) {
+            if (!perBeatImages[beatNum]) {
+                alert(`Please upload or render an image for Beat #${beatNum} first!`);
+                return;
+            }
+            showNotification(`🎬 Rendering Mini-Clip #${beatNum}...`, 'info');
+            try {
+                const formData = new FormData();
+                formData.append('job_id', currentJobId);
+                formData.append('scene_index', beatNum);
+                formData.append('image', perBeatImages[beatNum]);
+
+                const res = await fetch('/api/generate-beat-clip', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                if (data.status === 'success' && data.clipUrl) {
+                    const videoBox = document.getElementById(`videoBox_${beatNum}`);
+                    const player = document.getElementById(`videoPlayer_${beatNum}`);
+                    if (videoBox && player) {
+                        player.src = data.clipUrl;
+                        videoBox.style.display = 'block';
+                    }
+                    showNotification(`🎬 Mini-Clip ready for Beat #${beatNum}!`, 'success');
+                }
+            } catch (err) {
+                alert('Clip error: ' + err.message);
+            }
+        }
+
+        async function assembleMasterVideo() {
+            showNotification('🎬 Assembling Master 1080p Video...', 'info');
+            const formData = new FormData();
+            formData.append('job_id', currentJobId);
+
+            for (const beatNum in perBeatImages) {
+                formData.append(`beat_image_${beatNum}`, perBeatImages[beatNum]);
+            }
+
+            try {
+                const res = await fetch('/api/assemble-video', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                if (data.status === 'success' && data.videoUrl) {
+                    document.getElementById('finalVideoBox').style.display = 'block';
+                    document.getElementById('masterVideoPlayer').src = data.videoUrl;
+                    showNotification('🎉 Master Video Assembled Successfully!', 'success');
+                }
+            } catch (err) {
+                alert('Assembly error: ' + err.message);
+            }
+        }
+    </script>
+</body>
+</html>

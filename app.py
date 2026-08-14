@@ -13,6 +13,15 @@ PORT = int(os.environ.get("PORT", 7860))
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
 
 STUDIO_DIR = os.path.dirname(os.path.abspath(__file__))
+env_file = os.path.join(STUDIO_DIR, ".env")
+if os.path.exists(env_file):
+    with open(env_file, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                k, v = line.split("=", 1)
+                os.environ[k.strip()] = v.strip().strip('"\'')
+
 STATIC_DIR = os.path.join(STUDIO_DIR, "public")
 DOWNLOADS_DIR = os.path.join(STATIC_DIR, "generated")
 os.makedirs(DOWNLOADS_DIR, exist_ok=True)
@@ -245,10 +254,11 @@ def split_script_into_scenes(raw_text):
     scenes = []
     for sent in raw_sentences:
         words = sent.split()
-        if len(words) <= 12:
+        if len(words) <= 14:
+            # Each sentence is strictly its own independent scene beat
             scenes.append(sent)
         else:
-            # Group into natural 7-10 word meaningful clause scenes
+            # Split long sentence at clause pauses (comma, semicolon, dash)
             clauses = re.split(r'(?<=[,;:—])\s+', sent)
             curr = []
             for c in clauses:
@@ -257,14 +267,56 @@ def split_script_into_scenes(raw_text):
                     scenes.append(" ".join(curr))
                     curr = []
             if curr:
-                if len(curr) <= 3 and scenes:
-                    scenes[-1] += " " + " ".join(curr)
-                else:
-                    scenes.append(" ".join(curr))
+                scenes.append(" ".join(curr))
                 
     return scenes if scenes else [raw_text]
 
-async def call_groq_ai_prompt_engineer(session, scene_text, scene_number, niche="economics", visual_style="vox_2d", groq_key=""):
+async def analyze_script_topic_async(session, full_script_text, groq_key=""):
+    api_key = groq_key.strip() or os.environ.get("GROQ_API_KEY", "").strip()
+    if not api_key:
+        return None
+
+    system_prompt = """You are an expert Script Analyzer & Topic Director for documentary YouTube channels.
+Analyze the provided full video script and determine:
+1. "topic": The precise core subject/business/industry domain of the video (e.g., "Economics of Owning a Data Center", "Commercial Airline Flight Operations", "High-End Restaurant Management").
+2. "domain_setting": The specific physical environments, facilities, equipment, and stores relevant to this domain (e.g., "Hyperscale data center server rooms, microchip hardware counters, cooling tower facilities, fiber optic power grids").
+
+Respond STRICTLY in JSON:
+{
+  "topic": "...",
+  "domain_setting": "..."
+}"""
+
+    user_prompt = f"Full Video Script:\n\"\"\"{full_script_text[:4000]}\"\"\""
+
+    for model in ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"]:
+        try:
+            payload = {
+                "model": model,
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                "temperature": 0.3,
+                "response_format": {"type": "json_object"}
+            }
+            headers = {
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json"
+            }
+            async with session.post("https://api.groq.com/openai/v1/chat/completions", json=payload, headers=headers, timeout=10) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    content = data["choices"][0]["message"]["content"]
+                    parsed = json.loads(content)
+                    if parsed.get("topic"):
+                        return parsed
+        except Exception as e:
+            print(f"Script Topic Analyzer exception: {e}")
+
+    return None
+
+async def call_groq_ai_prompt_engineer(session, scene_text, scene_number, niche="economics", visual_style="vox_2d", groq_key="", script_topic_info=None):
     api_key = groq_key.strip() or os.environ.get("GROQ_API_KEY", "").strip()
     if not api_key:
         return None
@@ -277,6 +329,17 @@ async def call_groq_ai_prompt_engineer(session, scene_text, scene_number, niche=
     }
     niche_directive = niche_context_map.get(niche, niche_context_map["economics"])
 
+    topic_lock_directive = ""
+    if script_topic_info and isinstance(script_topic_info, dict) and script_topic_info.get("topic"):
+        topic_name = script_topic_info.get("topic")
+        setting_name = script_topic_info.get("domain_setting", topic_name)
+        topic_lock_directive = f"""
+STRICT DOCUMENTARY TOPIC & DOMAIN LOCKING:
+LOCKED DOCUMENTARY TOPIC: {topic_name}
+LOCKED DOMAIN SETTINGS & FACILITIES: {setting_name}
+MANDATORY DOMAIN RULE: Every single visual metaphor, store, customer interaction, machine, and character MUST be explicitly themed around this topic ({topic_name}). DO NOT use generic off-topic stores (such as grocery stores, coffee shops, or generic retail stores) when illustrating abstract concepts like demand, costs, or lines. For example, if illustrating "longer lines" for a data center video, depict a microchip/server hardware store or cloud server provisioning counter with long queues of tech buyers.
+"""
+
     style_aesthetic_map = {
         "vox_2d": "Hand-drawn professional educational cartoon illustration, clean studio-quality digital vector artwork with thick, smooth black outlines, crisp linework, soft flat colors, and polished modern explainer-animation aesthetics. Clean white background with generous negative space.",
         "kurzgesagt": "Kurzgesagt flat vector illustration, vibrant neon gradient palette, clean geometric shapes, high contrast educational graphic aesthetic, polished vector finish with bold visual hierarchy.",
@@ -287,15 +350,54 @@ async def call_groq_ai_prompt_engineer(session, scene_text, scene_number, niche=
         "cyberpunk": "Cyberpunk anime cell-shaded webtoon illustration, vibrant glowing neon laser lights, futuristic dark cityscape aesthetic, sharp high-contrast cell shading.",
         "tech_vector": "Modern tech 3D isometric vector render, clean glossy plastic surfaces, vibrant corporate tech color scheme, 8K clean studio lighting render with sharp 3D perspective.",
         "oil_painting": "Masterpiece Renaissance oil painting, rich impasto canvas brushstrokes, dramatic Rembrandt chiaroscuro lighting, deep classic golden oil tones on textured canvas.",
-        "midjourney_raw": "Cinematic widescreen raw photography, award-winning composition, natural realistic lighting, shallow depth of field --ar 16:9 --style raw"
+        "midjourney_raw": "Cinematic widescreen raw photography, award-winning composition, natural realistic lighting, shallow depth of field --ar 16:9 --style raw",
+        "physical_economics_3d": "BUILD THE ECONOMICS AS A PHYSICAL MINIATURE WORLD. Premium cinematic handcrafted 3D clay miniature + architectural model + stop-motion production design + macro cinematography + physical living infographic. Handcrafted tactile adult documentary miniature aesthetic with sculpted clay, clear acrylic, painted metal, wood, resin, and subtle handcrafted imperfections (fingerprints, sculpting marks). Physical representation of economics: revenue as flowing coins, costs as heavy blocks, bottlenecks as narrow passages, margins as physical gaps."
     }
     style_directive = style_aesthetic_map.get(visual_style, style_aesthetic_map["vox_2d"])
 
-    system_prompt = f"""MASTER PROMPT — YOUTUBE EXPLAINER HIGH-RETENTION IMAGE PROMPT GENERATOR
+    if visual_style == "physical_economics_3d":
+        system_prompt = f"""MASTER PROMPT — PHYSICAL ECONOMICS 3D MINIATURE UNIVERSE (ULTRA HIGH-DETAIL EDITION)
+
+You are an elite visual prompt director and cinematic 3D miniature art director specializing in "The Economics of..." documentary-style YouTube videos.
+Your task is to transform the script beat into an EXCEPTIONALLY DETAILED, MULTI-SENTENCE STANDALONE IMAGE PROMPT (120-200 words) belonging to one consistent visual universe.
+
+{topic_lock_directive}
+
+CORE PHILOSOPHY: BUILD THE ECONOMICS AS A PHYSICAL WORLD.
+Do not merely illustrate the subject. Create an impossibly detailed miniature physical world in which revenue, costs, customers, workers, infrastructure, resources, capacity, demand, margins, cash flow, bottlenecks, and economic relationships are visually understood through physical objects, environments, characters, architecture, movement, scale, and visual metaphors.
+
+MATERIAL SCIENCE & MODELMAKING SPECIFICATIONS:
+- Tactile sculpted matte polymer clay structures, 1/87 scale detailed miniature human figures, laser-etched clear acrylic resin blocks for digital/financial charts.
+- Painted brass and aluminum miniature industrial machinery, real miniature wood textures, frosted glass partitions, silicone rubber wiring.
+- Include subtle handcrafted evidence: tiny finger-print micro-textures on clay surfaces, subtle sculpting marks, precision laser joins.
+
+MACRO CINEMATOGRAPHY & LIGHTING SPECIFICATIONS:
+- Shot on ARRI Alexa Mini with 35mm f/2.8 macro cinema lens, tilt-shift miniature depth of field, razor-sharp focal plane on primary subject.
+- 3200K warm tungsten studio key lighting with soft fill, volumetric rim lighting, ambient occlusion, realistic contact shadows on miniature ground plane.
+
+PHYSICAL ECONOMICS CONVERSIONS:
+- REVENUE -> flowing streams of 3D miniature golden coins, currency tokens
+- COST -> heavy textured slate/clay blocks, leaking pipes, resource-consuming furnaces
+- MARGIN -> physical gap distance between revenue streams and cost blocks
+- DEMAND -> dense queues of miniature figures, overflowing order bins
+- BOTTLENECK -> narrow physical funnel or archway accumulating miniature traffic
+- NUMBERS/STATS -> laser-etched transparent acrylic plaques displaying clear numbers
+
+COMPOSITION & HYPER-DETAIL REQUIREMENT:
+Write a rich, multi-sentence prompt (120-200 words). Detail the foreground, middle ground, background, exact spatial layout, lighting direction, color palette, and micro-storytelling details.
+
+Respond STRICTLY in JSON format:
+{{
+  "prompt": "SCENE: [short description of what scene communicates]\\n\\nIMAGE PROMPT: Cinematic handcrafted 3D clay miniature + architectural model + macro cinematography physical infographic style. [Complete, hyper-detailed 120-200 word multi-sentence prompt detailing exact miniature layout, materials, physical economic representations, characters, macro lens lighting, camera angle, and quality finish]\\n\\nEMOTION: [emotional quality]\\n\\nVISUAL PURPOSE: [what the viewer should understand economically]"
+}}"""
+    else:
+        system_prompt = f"""MASTER PROMPT — YOUTUBE EXPLAINER HIGH-RETENTION IMAGE PROMPT GENERATOR
 
 You are a 10+ year veteran AI Image Prompt Engineer, Visual Director, and Storyteller for top YouTube channels like @misterfinanceyt, @TheWealthCortexx, and @millyproblems.
 
 Your task is to transform the script line into a SINGLE, HIGHLY DETAILED, MULTI-SENTENCE STANDALONE IMAGE PROMPT strictly locked to the specified NICHE and VISUAL ART STYLE.
+
+{topic_lock_directive}
 
 NICHE CONTEXT: {niche_directive}
 VISUAL ART STYLE: {style_directive}
@@ -338,7 +440,6 @@ Respond STRICTLY in JSON format:
                     prompt_val = parsed.get("prompt")
                     if prompt_val and len(prompt_val) > 30:
                         clean_prompt = re.sub(r'@[a-zA-Z0-9_]+', '', prompt_val)
-                        clean_prompt = re.sub(r'[\r\n]+', ' ', clean_prompt)
                         clean_prompt = re.sub(r'\s+', ' ', clean_prompt).strip()
                         return clean_prompt
         except Exception as e:
@@ -367,6 +468,21 @@ STOPWORDS = {
 def build_vector_art_scene_prompt_fallback(text, niche="economics", visual_style="vox_2d"):
     clean_line = re.sub(r'\s+', ' ', text).strip()
     
+    if visual_style == "physical_economics_3d":
+        money_match = re.search(r'(\$?\d+[\d,.]*\s*(million|billion|thousand|k|m)?)', clean_line, re.IGNORECASE)
+        money_callout = f" A laser-etched clear acrylic plaque engraved with \"{money_match.group(0).upper()}\" stands prominently in the middle ground." if money_match else ""
+        
+        return (
+            f"SCENE: Physical Miniature World — {clean_line[:60]}\n\n"
+            f"IMAGE PROMPT: Cinematic handcrafted 3D clay miniature + architectural model + macro cinematography physical infographic style. "
+            f"An extraordinarily detailed 1/87 scale miniature physical environment visually constructing the economics of: \"{clean_line}\". "
+            f"The primary subject is a handcrafted architectural facility built from matte polymer clay, clear acrylic resin, and painted miniature brass. "
+            f"Abstract financial forces are physically represented: revenue flows as streams of miniature golden coins, costs manifest as heavy textured slate blocks, and demand appears as an orderly queue of 1/87 scale miniature figures. "
+            f"Shot on 35mm f/2.8 macro cinema lens, tilt-shift miniature depth-of-field, warm 3200K tungsten studio key lighting with soft fill, volumetric rim lighting, ambient occlusion, realistic physical contact shadows, and subtle handcrafted sculpting micro-textures.{money_callout}\n\n"
+            f"EMOTION: Intelligent, analytical, tactile, cinematic documentary.\n\n"
+            f"VISUAL PURPOSE: High-retention physical miniature visualization of: {clean_line}"
+        )
+    
     style_header_map = {
         "claymation": "3D claymation stop-motion animation style, tactile plasticine clay figures, dramatic chiaroscuro studio lighting, detailed handmade clay textures.",
         "photoreal": "Hyperrealistic 8K 35mm film documentary photograph, shallow depth of field, anamorphic lens flare, natural volumetric lighting, award-winning movie still photography.",
@@ -377,6 +493,7 @@ def build_vector_art_scene_prompt_fallback(text, niche="economics", visual_style
         "tech_vector": "Modern tech 3D isometric vector render, clean glossy plastic surfaces, corporate tech color palette, 8K studio lighting.",
         "oil_painting": "Masterpiece Renaissance oil painting, rich impasto canvas brushstrokes, dramatic Rembrandt chiaroscuro lighting, deep golden oil tones.",
         "midjourney_raw": "Cinematic widescreen raw photography, award-winning composition, natural realistic lighting --ar 16:9 --style raw",
+        "physical_economics_3d": "SCENE: Physical Miniature Business Model.\nIMAGE PROMPT: Premium cinematic handcrafted 3D clay miniature + architectural model + macro cinematography physical infographic style. A miniature physical world depicting the economics of: \"{clean_line}\". Abstract economic concepts are built as physical objects: revenue as flowing coins, costs as heavy blocks, capacity as miniature infrastructure, and margins as physical gaps. Tactile sculpted clay, clear acrylic, painted metal, and subtle handcrafted fingerprints.\nEMOTION: Intelligent, analytical, tactile, cinematic documentary.\nVISUAL PURPOSE: Visualizes the physical economics of the scene line.",
         "vox_2d": "Hand-drawn professional educational cartoon illustration, clean studio-quality digital vector artwork with thick, smooth black outlines, crisp linework, soft flat colors, clean white background with generous negative space."
     }
 
@@ -393,7 +510,80 @@ def build_vector_art_scene_prompt_fallback(text, niche="economics", visual_style
 
     return prompt_str
 
-async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode, niche="economics", visual_style="vox_2d", groq_key=""):
+def generate_kokoro_tts_audio(text, voice_key="kokoro_adam", out_filepath="output.mp3"):
+    try:
+        voice_map = {
+            "kokoro_adam": "am_adam",
+            "kokoro_michael": "am_michael",
+            "kokoro_heart": "af_heart",
+            "kokoro_bella": "af_bella",
+            "kokoro_nicole": "af_nicole",
+            "kokoro_george": "bm_george",
+            "kokoro_emma": "bf_emma"
+        }
+        k_voice = voice_map.get(voice_key, "am_adam")
+
+        # Option A: kokoro_onnx (Fastest & precompiled)
+        try:
+            from kokoro_onnx import Kokoro
+            import soundfile as sf
+            import subprocess
+
+            onnx_path = os.path.join(STUDIO_DIR, "kokoro-v1.0.onnx")
+            voices_path = os.path.join(STUDIO_DIR, "voices-v1.0.bin")
+
+            if os.path.exists(onnx_path) and os.path.exists(voices_path):
+                kokoro_engine = Kokoro(onnx_path, voices_path)
+                samples, sample_rate = kokoro_engine.create(text, voice=k_voice, speed=1.0, lang="en-us")
+                
+                wav_path = out_filepath.replace(".mp3", ".wav")
+                sf.write(wav_path, samples, sample_rate)
+                if out_filepath.endswith(".mp3"):
+                    conv_cmd = ["ffmpeg", "-y", "-i", wav_path, "-c:a", "libmp3lame", "-b:a", "192k", out_filepath]
+                    subprocess.run(conv_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    if os.path.exists(wav_path):
+                        try:
+                            os.remove(wav_path)
+                        except Exception:
+                            pass
+                return True
+        except Exception as e_onnx:
+            print(f"[Kokoro-ONNX Info]: {e_onnx}")
+
+        # Option B: PyTorch Kokoro
+        from kokoro import KPipeline
+        import soundfile as sf
+        import numpy as np
+        import subprocess
+
+        pipeline = KPipeline(lang_code='a')
+        generator = pipeline(text, voice=k_voice, speed=1.0)
+        
+        all_audio = []
+        for i, (gs, ps, audio) in enumerate(generator):
+            if audio is not None:
+                all_audio.append(audio)
+                
+        if all_audio:
+            combined = np.concatenate(all_audio)
+            wav_path = out_filepath.replace(".mp3", ".wav")
+            sf.write(wav_path, combined, 24000)
+            
+            if out_filepath.endswith(".mp3"):
+                conv_cmd = ["ffmpeg", "-y", "-i", wav_path, "-c:a", "libmp3lame", "-b:a", "192k", out_filepath]
+                subprocess.run(conv_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                if os.path.exists(wav_path):
+                    try:
+                        os.remove(wav_path)
+                    except Exception:
+                        pass
+            return True
+    except Exception as e:
+        print(f"[Kokoro TTS Engine Exception]: {e}")
+        return False
+    return False
+
+async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode, niche="economics", visual_style="vox_2d", groq_key="", tts_engine="edge"):
     try:
         BACKGROUND_JOBS[job_id] = {
             "status": "processing",
@@ -424,83 +614,55 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
         communicate = edge_tts.Communicate(full_humanized_text, voice_id, rate=rate, pitch="+0Hz")
 
         BACKGROUND_JOBS[job_id]["progress"] = 15
-        BACKGROUND_JOBS[job_id]["status_text"] = "Generating HD Voiceover & frame-perfect timing analysis..."
+        
+        kokoro_success = False
+        if tts_engine and tts_engine.startswith("kokoro"):
+            BACKGROUND_JOBS[job_id]["status_text"] = f"Generating Studio Audio with Kokoro 82M AI ({tts_engine})..."
+            kokoro_success = await asyncio.to_thread(generate_kokoro_tts_audio, full_humanized_text, tts_engine, out_filepath)
 
-        with open(out_filepath, "wb") as f:
-            async for chunk in communicate.stream():
-                if chunk["type"] == "audio":
-                    f.write(chunk["data"])
-                elif chunk["type"] == "WordBoundary":
-                    submaker.feed(chunk)
+        if not kokoro_success:
+            BACKGROUND_JOBS[job_id]["status_text"] = "Generating HD Voiceover & frame-perfect timing analysis..."
+            with open(out_filepath, "wb") as f:
+                async for chunk in communicate.stream():
+                    if chunk["type"] == "audio":
+                        f.write(chunk["data"])
+                    elif chunk["type"] == "WordBoundary":
+                        submaker.feed(chunk)
 
         if mode == "breakdown":
             BACKGROUND_JOBS[job_id]["progress"] = 50
-            BACKGROUND_JOBS[job_id]["status_text"] = "STEP 1: Computing natural 3-5 second scene cuts..."
+            BACKGROUND_JOBS[job_id]["status_text"] = "STEP 1: Computing natural scene cuts..."
 
-            cues = submaker.cues
+            scene_lines = split_script_into_scenes(raw_text)
             scenes_raw = []
-            
-            if cues:
-                curr_words = []
-                start_ms = cues[0].start
-                end_ms = cues[0].end
-                
-                for cue in cues:
-                    word = cue.text.strip()
-                    curr_words.append(word)
-                    end_ms = cue.end
-                    
-                    duration_sec = (end_ms - start_ms) / 1000.0
-                    is_punct = bool(re.search(r'[.!?]$', word))
-                    
-                    if (len(curr_words) >= 8 or duration_sec >= 3.5 or (is_punct and len(curr_words) >= 6)):
-                        scene_text = " ".join(curr_words)
-                        time_str = f"{format_timestamp(start_ms)} -> {format_timestamp(end_ms)}"
-                        scenes_raw.append({
-                            "text": scene_text,
-                            "time_str": time_str,
-                            "start_ms": start_ms,
-                            "end_ms": end_ms,
-                            "dur_sec": round((end_ms - start_ms) / 1000.0, 3)
-                        })
-                        curr_words = []
-                        start_ms = end_ms
-                        
-                if curr_words:
-                    scene_text = " ".join(curr_words)
-                    time_str = f"{format_timestamp(start_ms)} -> {format_timestamp(end_ms)}"
-                    scenes_raw.append({
-                        "text": scene_text,
-                        "time_str": time_str,
-                        "start_ms": start_ms,
-                        "end_ms": end_ms,
-                        "dur_sec": round((end_ms - start_ms) / 1000.0, 3)
-                    })
-            
-            if not scenes_raw:
-                scene_lines = split_script_into_scenes(raw_text)
-                est_sec = 0.0
-                for line in scene_lines:
-                    dur = (len(line.split()) / 150.0) * 60.0
-                    t_start = format_timestamp(int(est_sec * 1000))
-                    t_start_ms = int(est_sec * 1000)
-                    est_sec += dur
-                    t_end = format_timestamp(int(est_sec * 1000))
-                    t_end_ms = int(est_sec * 1000)
-                    scenes_raw.append({
-                        "text": line,
-                        "time_str": f"{t_start} -> {t_end}",
-                        "start_ms": t_start_ms,
-                        "end_ms": t_end_ms,
-                        "dur_sec": round(dur, 3)
-                    })
+            est_sec = 0.0
+            for line in scene_lines:
+                dur = max(2.5, (len(line.split()) / 150.0) * 60.0)
+                t_start = format_timestamp(int(est_sec * 1000))
+                t_start_ms = int(est_sec * 1000)
+                est_sec += dur
+                t_end = format_timestamp(int(est_sec * 1000))
+                t_end_ms = int(est_sec * 1000)
+                scenes_raw.append({
+                    "text": line,
+                    "time_str": f"{t_start} -> {t_end}",
+                    "start_ms": t_start_ms,
+                    "end_ms": t_end_ms,
+                    "dur_sec": round(dur, 3)
+                })
 
-            BACKGROUND_JOBS[job_id]["progress"] = 65
-            BACKGROUND_JOBS[job_id]["status_text"] = f"STEP 2: Speech Alignment Agent mapping {len(scenes_raw)} spoken scene beats to AI prompts..."
+            BACKGROUND_JOBS[job_id]["progress"] = 55
+            BACKGROUND_JOBS[job_id]["status_text"] = "STEP 1: Script Analyzer Agent identifying core documentary topic..."
 
             async with ClientSession() as http_session:
+                topic_info = await analyze_script_topic_async(http_session, raw_text, groq_key=groq_key)
+                
+                topic_name = topic_info.get("topic") if (topic_info and topic_info.get("topic")) else "General Business & Economics"
+                BACKGROUND_JOBS[job_id]["progress"] = 65
+                BACKGROUND_JOBS[job_id]["status_text"] = f"STEP 2: Topic-Locked Agent ({topic_name[:30]}) mapping {len(scenes_raw)} scene beats..."
+
                 tasks = [
-                    call_groq_ai_prompt_engineer(http_session, sitem["text"], idx, niche=niche, visual_style=visual_style, groq_key=groq_key)
+                    call_groq_ai_prompt_engineer(http_session, sitem["text"], idx, niche=niche, visual_style=visual_style, groq_key=groq_key, script_topic_info=topic_info)
                     for idx, (sitem) in enumerate(scenes_raw, start=1)
                 ]
                 ai_prompts = await asyncio.gather(*tasks)
@@ -523,12 +685,13 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
             BACKGROUND_JOBS[job_id] = {
                 "status": "completed",
                 "progress": 100,
-                "status_text": f"Generated Voiceover MP3 & {len(scenes)} natural 2D doodle prompts!",
+                "status_text": f"Generated Voiceover & {len(scenes)} topic-locked prompts!",
                 "mode": "breakdown",
                 "result": {
                     "filename": filename,
                     "audioUrl": f"/static/generated/{filename}",
-                    "scenes": scenes
+                    "scenes": scenes,
+                    "topic_info": topic_info
                 }
             }
             return
@@ -576,6 +739,8 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
             "result": None
         }
 
+STUDIO_HTML_PATH = os.path.join(STATIC_DIR, "studio.html")
+
 async def handle_index(request):
     headers = {
         "Cache-Control": "no-cache, no-store, must-revalidate",
@@ -587,6 +752,42 @@ async def handle_index(request):
             content = f.read()
         return web.Response(text=content, content_type="text/html", charset="utf-8", headers=headers)
     return web.Response(text="<h1>YouTube Voiceover Studio</h1><p>Initializing...</p>", content_type="text/html", headers=headers)
+
+STUDIO_HTML_PATH = os.path.join(STATIC_DIR, "studio.html")
+
+async def handle_studio(request):
+    headers = {
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0"
+    }
+    if os.path.exists(STUDIO_HTML_PATH):
+        with open(STUDIO_HTML_PATH, "r", encoding="utf-8") as f:
+            content = f.read()
+        return web.Response(text=content, content_type="text/html", charset="utf-8", headers=headers)
+    return web.Response(text="<h1>YouTube Voiceover Studio - Modular Workbench</h1><p>Initializing studio.html...</p>", content_type="text/html", headers=headers)
+
+YOUTUBE2_HTML_PATH = os.path.join(STATIC_DIR, "youtube2.html")
+
+async def handle_youtube2(request):
+    headers = {
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0"
+    }
+    if os.path.exists(YOUTUBE2_HTML_PATH):
+        with open(YOUTUBE2_HTML_PATH, "r", encoding="utf-8") as f:
+            content = f.read()
+        return web.Response(text=content, content_type="text/html", charset="utf-8", headers=headers)
+    return web.Response(text="<h1>YouTube 2.0 Studio</h1><p>Initializing youtube2.html...</p>", content_type="text/html", headers=headers)
+
+async def handle_fallback(request):
+    path = request.path.lower()
+    if 'youtube' in path or '2.0' in path:
+        return await handle_youtube2(request)
+    if 'studio' in path:
+        return await handle_studio(request)
+    return await handle_index(request)
 
 async def handle_voices(request):
     return web.json_response(VOICE_PRESETS)
@@ -600,17 +801,23 @@ async def handle_start_job(request):
         filename = data.get("filename", "").strip()
         mode = data.get("mode", "audio")
         niche = data.get("niche", "economics")
-        visual_style = data.get("visual_style", "vox_2d")
+        visual_style = data.get("visual_style", "physical_economics_3d")
         groq_key = data.get("groq_key", "").strip()
+        tts_engine = data.get("tts_engine", "edge")
+
+        if tts_engine and tts_engine.startswith("edge_"):
+            voice_preset = tts_engine.replace("edge_", "")
+            tts_engine = "edge"
 
         if not raw_text:
             return web.json_response({"error": "Script text cannot be empty"}, status=400)
 
         job_id = str(uuid.uuid4())
-        asyncio.create_task(process_job_async(job_id, raw_text, voice_preset, rate, filename, mode, niche, visual_style, groq_key))
+        asyncio.create_task(process_job_async(job_id, raw_text, voice_preset, rate, filename, mode, niche, visual_style, groq_key, tts_engine))
 
         return web.json_response({"job_id": job_id, "status": "processing"})
     except Exception as e:
+        print(f"[handle_start_job exception]: {e}")
         return web.json_response({"error": str(e)}, status=500)
 
 async def handle_job_status(request):
@@ -1177,8 +1384,11 @@ async def handle_generate_beat_audio(request):
         data = await request.json()
         job_id = data.get("job_id", "")
         scene_idx = int(data.get("scene_index", 1))
+        scene_text = data.get("scene_text", "").strip()
         voice = data.get("voice", "andrew").lower()
         rate = str(data.get("rate", "-4%")).strip()
+        tts_engine = str(data.get("tts_engine", "edge")).lower()
+
         if rate in ["+1%", "+0%", "0%"]:
             rate = "-4%"
         if not rate.startswith("+") and not rate.startswith("-"):
@@ -1186,54 +1396,34 @@ async def handle_generate_beat_audio(request):
 
         preset = VOICE_PRESETS.get(voice, {})
         voice_id = preset.get("id", "en-US-AndrewNeural")
-        
-        job = BACKGROUND_JOBS.get(job_id)
-        scene_text = ""
-        master_audio_filepath = None
-        start_ms = 0
-        end_ms = 0
 
-        if job and job.get("result") and job["result"].get("scenes"):
-            scenes = job["result"]["scenes"]
-            audio_fn = job["result"].get("filename")
-            if audio_fn:
-                master_audio_filepath = os.path.join(DOWNLOADS_DIR, audio_fn)
-            if 1 <= scene_idx <= len(scenes):
-                sc = scenes[scene_idx - 1]
-                scene_text = sc.get("text", "")
-                start_ms = sc.get("start_ms", 0)
-                end_ms = sc.get("end_ms", 0)
+        if not scene_text:
+            job = BACKGROUND_JOBS.get(job_id)
+            if job and job.get("result") and job["result"].get("scenes"):
+                scenes = job["result"]["scenes"]
+                if 1 <= scene_idx <= len(scenes):
+                    sc = scenes[scene_idx - 1]
+                    scene_text = sc.get("text", "")
 
         if not scene_text:
             return web.json_response({"error": "Scene line text not found."}, status=400)
 
-        out_filename = f"beat_audio_{job_id[:6]}_{scene_idx:02d}.mp3"
+        out_filename = f"beat_audio_{job_id[:6] if job_id else 'beat'}_{scene_idx:02d}.mp3"
         out_filepath = os.path.join(DOWNLOADS_DIR, out_filename)
 
-        sliced_from_master = False
-        if master_audio_filepath and os.path.exists(master_audio_filepath) and end_ms > start_ms:
-            try:
-                st_sec = start_ms / 1000.0
-                dur_sec_val = (end_ms - start_ms) / 1000.0
-                slice_cmd = [
-                    "ffmpeg", "-y",
-                    "-ss", f"{st_sec:.3f}", "-t", f"{dur_sec_val:.3f}",
-                    "-i", master_audio_filepath,
-                    "-c:a", "libmp3lame", "-b:a", "192k",
-                    out_filepath
-                ]
-                proc_slice = await asyncio.create_subprocess_exec(*slice_cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
-                await proc_slice.communicate()
-                if os.path.exists(out_filepath) and os.path.getsize(out_filepath) > 100:
-                    sliced_from_master = True
-            except Exception as slice_err:
-                print(f"Master audio slice fallback for beat {scene_idx}:", slice_err)
+        cleaned_text = humanize_script(scene_text)
 
-        if not sliced_from_master:
-            cleaned_text = humanize_script(scene_text)
+        # Synthesize audio specifically for this scene text line
+        generated_ok = False
+        if tts_engine and tts_engine.startswith("kokoro"):
+            generated_ok = await asyncio.to_thread(generate_kokoro_tts_audio, cleaned_text, tts_engine, out_filepath)
+
+        if not generated_ok:
             await safe_edge_tts_save(cleaned_text, voice_id, rate, out_filepath)
-            await trim_trailing_audio_silence(out_filepath)
-            await append_natural_pause_padding(out_filepath, 0.28)
+
+        # Trim trailing silence & append natural 0.35s pause
+        await trim_trailing_audio_silence(out_filepath)
+        await append_natural_pause_padding(out_filepath, 0.35)
 
         dur_sec = await get_media_duration_sec(out_filepath)
 
@@ -1245,6 +1435,7 @@ async def handle_generate_beat_audio(request):
             "durSec": round(dur_sec, 2)
         })
     except Exception as e:
+        print("[handle_generate_beat_audio error]:", e)
         return web.json_response({"error": str(e)}, status=500)
 
 def format_ass_timestamp(seconds: float) -> str:
@@ -1737,6 +1928,13 @@ def create_app():
     app.router.add_get("", handle_index)
     app.router.add_get("/", handle_index)
     app.router.add_get("/index.html", handle_index)
+    app.router.add_get("/studio", handle_studio)
+    app.router.add_get("/studio.html", handle_studio)
+    app.router.add_get("/youtube-2.0", handle_youtube2)
+    app.router.add_get("/youtube%202.0", handle_youtube2)
+    app.router.add_get("/youtube 2.0", handle_youtube2)
+    app.router.add_get("/youtube2.html", handle_youtube2)
+    app.router.add_get("/youtube2", handle_youtube2)
     app.router.add_post("/api/start-job", handle_start_job)
     app.router.add_get("/api/job-status", handle_job_status)
     app.router.add_get("/api/voices", handle_voices)
@@ -1751,8 +1949,8 @@ def create_app():
     app.router.add_get("/api/projects", handle_list_projects)
     app.router.add_get("/api/projects/{id}", handle_get_project)
     app.router.add_post("/api/projects", handle_save_project)
-    app.router.add_post("/telegram-webhook", handle_telegram_webhook)
     app.router.add_static("/static/", STATIC_DIR)
+    app.router.add_get("/{path:.*}", handle_fallback)
     return app
 
 if __name__ == "__main__":
