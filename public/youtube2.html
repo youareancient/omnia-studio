@@ -60,6 +60,30 @@
             -webkit-font-smoothing: antialiased;
         }
 
+        /* High Contrast Rock-Solid Select & Option Dropdown Styling */
+        select {
+            color: #ffffff !important;
+            background-color: #16161e !important;
+            border: 1px solid var(--border-accent) !important;
+            border-radius: var(--radius-md) !important;
+            padding: 8px 12px !important;
+            font-size: 0.85rem !important;
+            font-weight: 700 !important;
+            outline: none !important;
+        }
+
+        select option, select optgroup {
+            background-color: #121218 !important;
+            color: #ffffff !important;
+            font-weight: 700 !important;
+            padding: 10px 14px !important;
+        }
+
+        select option:hover, select option:focus, select option:checked {
+            background-color: #ff2d55 !important;
+            color: #ffffff !important;
+        }
+
         /* Glassmorphism Header */
         header {
             position: sticky;
