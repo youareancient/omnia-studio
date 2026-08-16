@@ -474,15 +474,44 @@
 
             <!-- Voiceover Engine Selection Dropdown -->
             <div style="margin-bottom: 16px;">
-                <label style="font-size:0.8rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:8px;">🎙️ Select Voiceover Engine & Voice:</label>
+                <label style="font-size:0.8rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:8px;">🎙️ Select Voiceover Engine & OmniVoice Preset:</label>
                 <select id="ttsEngineSelect" style="width:100%; background:var(--bg-input); border:1px solid var(--border-subtle); border-radius:var(--radius-md); color:var(--text-primary); padding:12px; font-size:0.9rem; font-weight:600; outline:none; cursor:pointer;">
-                    <optgroup label="⚡ Microsoft Edge TTS (Cloud Voices)">
-                        <option value="edge_andrew" selected>⚡ Edge TTS — Andrew (#1 Deep Male Documentary Voice)</option>
-                        <option value="edge_ava">⚡ Edge TTS — Ava (Expressive Modern Female Voice)</option>
-                        <option value="edge_emma">⚡ Edge TTS — Emma (Conversational Female Voice)</option>
-                        <option value="edge_christopher">⚡ Edge TTS — Christopher (Deep Cinematic Male)</option>
-                        <option value="edge_sonia">⚡ Edge TTS — Sonia (British Female Narrator)</option>
-                        <option value="edge_ryan">⚡ Edge TTS — Ryan (British Male Narrator)</option>
+                    <optgroup label="🎥 True Crime & Documentary Essays">
+                        <option value="andrew" selected>🎥 Andrew (YouTube Documentary Essay — #1 Voice)</option>
+                        <option value="christopher">🎥 Christopher (Deep Business & Mystery Narrator)</option>
+                        <option value="eric">🎥 Eric (True Crime & Unsolved Cases)</option>
+                        <option value="roger">🎥 Roger (Authoritative History Documentarian)</option>
+                        <option value="ryan">🎥 Ryan (British History & War Documentaries)</option>
+                        <option value="thomas">🎥 Thomas (British True Crime Narrator)</option>
+                        <option value="asreflect">🎥 Asilia (Nature & Wildlife Documentary)</option>
+                    </optgroup>
+                    <optgroup label="🎮 Gaming & Cinematic Trailers">
+                        <option value="steffan">🎮 Steffan (Cinematic Trailer & Game Reviews)</option>
+                        <option value="steffen">🎮 Steffen (High-Octane Action & Thriller)</option>
+                        <option value="movie_trailer">🎮 Movie Trailer Epic Voice (Announcer Tone)</option>
+                    </optgroup>
+                    <optgroup label="📱 Viral Shorts & TikTok Reels">
+                        <option value="brian">📱 Brian (Viral Shorts & TikTok Creator)</option>
+                        <option value="michelle">📱 Michelle (Viral Reels & Storytelling)</option>
+                        <option value="ava">📱 Ava (Expressive Modern Female Narrator)</option>
+                        <option value="viral_hype">📱 Viral Hype Creator (Fast Gen-Z Pacing)</option>
+                    </optgroup>
+                    <optgroup label="💡 Tech & AI Breakdown">
+                        <option value="guy">💡 Guy (News & Tech Commentary)</option>
+                        <option value="jenny">💡 Jenny (Friendly Tech Explainer)</option>
+                        <option value="aria">💡 Aria (Educational & AI Essayist)</option>
+                        <option value="sam">💡 Sam (Global Tech Journalist)</option>
+                    </optgroup>
+                    <optgroup label="💼 Finance, Business & Mindset">
+                        <option value="emma">💼 Emma (Conversational Personal Finance)</option>
+                        <option value="sonia">💼 Sonia (British Art & Business Culture)</option>
+                        <option value="william">💼 William (Australian Outdoor & Business)</option>
+                        <option value="liam">💼 Liam (Canadian Dynamic Podcast)</option>
+                    </optgroup>
+                    <optgroup label="🎭 Special Emotional Tones">
+                        <option value="whisper_doc">🤫 Whispering Suspense Narrator (Creepy Audio)</option>
+                        <option value="horror_crime">😱 Creepypasta Horror Story Reader</option>
+                        <option value="ana">🎭 Ana (Playful Animated Storytelling)</option>
                     </optgroup>
                     <optgroup label="🎧 Kokoro 82M AI (Local Studio Voices)">
                         <option value="kokoro_adam">🎧 Kokoro 82M — Adam (am_adam - #1 Deep Male)</option>
@@ -490,10 +519,24 @@
                         <option value="kokoro_heart">🎧 Kokoro 82M — Heart (af_heart - Warm Female)</option>
                         <option value="kokoro_bella">🎧 Kokoro 82M — Bella (af_bella - Energetic Female)</option>
                         <option value="kokoro_nicole">🎧 Kokoro 82M — Nicole (af_nicole - Broadcast Female)</option>
-                        <option value="kokoro_george">🎧 Kokoro 82M — George (bm_george - British Male)</option>
-                        <option value="kokoro_emma">🎧 Kokoro 82M — Emma (bf_emma - British Female)</option>
+                    </optgroup>
+                    <optgroup label="🎙️ Custom Zero-Shot Cloned Voices" id="clonedVoicesOptGroup">
+                        <!-- Dynamically populated via JavaScript -->
                     </optgroup>
                 </select>
+            </div>
+
+            <!-- Inline Emotion Cues Bar & Voice Cloner Toolbar -->
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
+                <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                    <span style="font-size:0.75rem; font-weight:800; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.04em;">🎭 Script Emotion Cues:</span>
+                    <button type="button" onclick="insertEmotionCue('[dramatic] ')" style="background:rgba(255,45,85,0.12); color:#ff2d55; border:1px solid rgba(255,45,85,0.3); border-radius:12px; padding:3px 9px; font-size:0.72rem; font-weight:700; cursor:pointer;" title="Insert Dramatic Emotion Cue">🎭 Dramatic</button>
+                    <button type="button" onclick="insertEmotionCue('[whisper] ')" style="background:rgba(94,92,230,0.12); color:#5e5ce6; border:1px solid rgba(94,92,230,0.3); border-radius:12px; padding:3px 9px; font-size:0.72rem; font-weight:700; cursor:pointer;" title="Insert Whisper Emotion Cue">🤫 Whisper</button>
+                    <button type="button" onclick="insertEmotionCue('[excited] ')" style="background:rgba(255,149,0,0.12); color:#ff9500; border:1px solid rgba(255,149,0,0.3); border-radius:12px; padding:3px 9px; font-size:0.72rem; font-weight:700; cursor:pointer;" title="Insert Excited Emotion Cue">🔥 Excited</button>
+                    <button type="button" onclick="insertEmotionCue('[suspense] ')" style="background:rgba(175,82,222,0.12); color:#af52de; border:1px solid rgba(175,82,222,0.3); border-radius:12px; padding:3px 9px; font-size:0.72rem; font-weight:700; cursor:pointer;" title="Insert Suspense Emotion Cue">😱 Suspense</button>
+                    <button type="button" onclick="insertEmotionCue('[authoritative] ')" style="background:rgba(0,113,226,0.12); color:#0071e2; border:1px solid rgba(0,113,226,0.3); border-radius:12px; padding:3px 9px; font-size:0.72rem; font-weight:700; cursor:pointer;" title="Insert Authoritative Emotion Cue">💼 Authoritative</button>
+                </div>
+                <button type="button" onclick="openVoiceClonerModal()" style="background:linear-gradient(135deg, #ff2d55, #ff9500); color:#fff; border:none; border-radius:20px; padding:5px 14px; font-size:0.75rem; font-weight:800; cursor:pointer; box-shadow:0 2px 10px rgba(255,45,85,0.3);" title="Upload 3-5s sample to clone custom voice">🎙️ Clone Custom Voice</button>
             </div>
 
             <textarea id="scriptInput" placeholder="Paste your full voiceover script here..." oninput="updateScriptStats()"></textarea>
@@ -2482,7 +2525,114 @@
             </div>
             <img id="lightboxImg" src="" style="max-width:88vw; max-height:72vh; object-fit:contain; border-radius:10px; border:1px solid var(--border-subtle); box-shadow:0 8px 30px rgba(0,0,0,0.8);" />
             <div id="lightboxCaption" style="margin-top:12px; font-size:0.8rem; color:var(--text-secondary); text-align:center; max-width:750px; max-height:60px; overflow-y:auto; font-style:italic;"></div>
+    <!-- Voice Cloner Modal -->
+    <div id="voiceClonerModal" style="display:none; position:fixed; inset:0; z-index:99999; background:rgba(0,0,0,0.85); backdrop-filter:blur(12px); flex-direction:column; align-items:center; justify-content:center; padding:20px;">
+        <div style="background:var(--bg-card); border:1px solid var(--border-accent); border-radius:24px; padding:32px; max-width:480px; width:92%; box-shadow:0 25px 60px rgba(0,0,0,0.9);" onclick="event.stopPropagation()">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid var(--border-subtle); padding-bottom:12px;">
+                <h3 style="font-family:'Outfit',sans-serif; font-size:1.2rem; font-weight:900; color:var(--text-primary); margin:0; display:flex; align-items:center; gap:8px;">
+                    🎙️ Zero-Shot Voice Cloner
+                </h3>
+                <button onclick="closeVoiceClonerModal()" style="background:rgba(255,45,85,0.15); border:1px solid rgba(255,45,85,0.3); color:#ff2d55; width:30px; height:30px; border-radius:50%; font-weight:800; cursor:pointer;">✕</button>
+            </div>
+            <p style="font-size:0.8rem; color:var(--text-secondary); line-height:1.5; margin-bottom:20px;">Upload a 3-5 second clear audio sample (.wav or .mp3) of any narrator to clone their voice instantly into your studio.</p>
+            
+            <div style="margin-bottom:14px;">
+                <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:4px;">Voice Name:</label>
+                <input type="text" id="cloneVoiceNameInput" placeholder="e.g. My Cloned Studio Narrator" style="width:100%; background:var(--bg-input); border:1px solid var(--border-subtle); border-radius:10px; color:var(--text-primary); padding:10px 12px; font-size:0.85rem; outline:none;">
+            </div>
+
+            <div style="margin-bottom:24px;">
+                <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:4px;">Audio Sample File (3-5 sec .wav/.mp3):</label>
+                <input type="file" id="cloneVoiceFileInput" accept="audio/*" style="width:100%; background:var(--bg-input); border:1px solid var(--border-subtle); border-radius:10px; color:var(--text-primary); padding:10px 12px; font-size:0.8rem;">
+            </div>
+
+            <button onclick="submitVoiceClone()" style="width:100%; background:linear-gradient(135deg, #ff2d55, #ff9500); color:#fff; border:none; border-radius:30px; padding:14px; font-size:0.9rem; font-weight:800; cursor:pointer; box-shadow:0 6px 20px rgba(255,45,85,0.4);">⚡ Clone & Register Voice Now</button>
         </div>
     </div>
+
+    <script>
+        function insertEmotionCue(tag) {
+            const txtArea = document.getElementById('scriptInput');
+            if (!txtArea) return;
+            const start = txtArea.selectionStart;
+            const end = txtArea.selectionEnd;
+            const val = txtArea.value;
+            txtArea.value = val.substring(0, start) + tag + val.substring(end);
+            txtArea.selectionStart = txtArea.selectionEnd = start + tag.length;
+            txtArea.focus();
+            if (typeof updateScriptStats === 'function') updateScriptStats();
+        }
+
+        function openVoiceClonerModal() {
+            const modal = document.getElementById('voiceClonerModal');
+            if (modal) modal.style.display = 'flex';
+        }
+
+        function closeVoiceClonerModal() {
+            const modal = document.getElementById('voiceClonerModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        async function submitVoiceClone() {
+            const nameInput = document.getElementById('cloneVoiceNameInput');
+            const fileInput = document.getElementById('cloneVoiceFileInput');
+            if (!nameInput || !nameInput.value.trim()) {
+                alert('Please enter a name for your cloned voice!');
+                return;
+            }
+            if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+                alert('Please select a 3-5 second audio sample file!');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('name', nameInput.value.trim());
+            formData.append('description', 'User zero-shot clone');
+            formData.append('file', fileInput.files[0]);
+
+            if (typeof showTopNotification === 'function') showTopNotification('🎙️ Cloning voice sample...', 3000);
+            try {
+                const res = await fetch('/api/clone-voice', { method: 'POST', body: formData });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    if (typeof showTopNotification === 'function') showTopNotification('✅ Voice cloned successfully!', 4000);
+                    closeVoiceClonerModal();
+                    loadStudioVoices();
+                } else {
+                    alert('Cloning failed: ' + (data.error || 'Unknown error'));
+                }
+            } catch (e) {
+                alert('Cloning error: ' + e.message);
+            }
+        }
+
+        async function loadStudioVoices() {
+            try {
+                const res = await fetch('/api/voices');
+                const data = await res.json();
+                if (data.status === 'success' && data.voices) {
+                    const clonedOptGroup = document.getElementById('clonedVoicesOptGroup');
+                    if (clonedOptGroup) {
+                        clonedOptGroup.innerHTML = '';
+                        Object.keys(data.voices).forEach(vKey => {
+                            const v = data.voices[vKey];
+                            if (v.is_cloned) {
+                                const opt = document.createElement('option');
+                                opt.value = vKey;
+                                opt.textContent = v.name;
+                                clonedOptGroup.appendChild(opt);
+                            }
+                        });
+                    }
+                }
+            } catch (e) {
+                console.log('[loadStudioVoices error]:', e);
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', function() {
+            loadStudioVoices();
+        });
+    </script>
 </body>
 </html>

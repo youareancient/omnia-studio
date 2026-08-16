@@ -32,18 +32,42 @@ os.makedirs(DOWNLOADS_DIR, exist_ok=True)
 INDEX_HTML_PATH = os.path.join(STATIC_DIR, "index.html")
 
 VOICE_PRESETS = {
-    "andrew": {"id": "en-US-AndrewNeural", "name": "Andrew (YouTube Documentary)", "desc": "High energy, warm & engaging (#1 for Documentary Essays)"},
-    "christopher": {"id": "en-US-ChristopherNeural", "name": "Christopher (Deep Storyteller)", "desc": "Deep, authoritative, cinematic business tone"},
-    "ava": {"id": "en-US-AvaNeural", "name": "Ava (Modern Expressive)", "desc": "Clear, modern, expressive narrator voice (#1 Tech)"},
-    "guy": {"id": "en-US-GuyNeural", "name": "Guy (News & Commentary)", "desc": "Clear American news broadcaster style"},
-    "brian": {"id": "en-US-BrianNeural", "name": "Brian (Viral Shorts & Tech)", "desc": "Young, energetic, engaging creator tone"},
-    "emma": {"id": "en-US-EmmaNeural", "name": "Emma (Conversational Finance)", "desc": "Warm, trustworthy conversational female narrator"},
-    "ryan": {"id": "en-GB-RyanNeural", "name": "Ryan (British History & Mystery)", "desc": "Deep cinematic British voice for war & documentaries"},
-    "sonia": {"id": "en-GB-SoniaNeural", "name": "Sonia (British Art & Culture)", "desc": "Elegant British documentarian female voice"},
-    "william": {"id": "en-AU-WilliamNeural", "name": "William (Australian Authentic)", "desc": "Relaxed, authentic Australian narrator"},
-    "liam": {"id": "en-CA-LiamNeural", "name": "Liam (Canadian Dynamic)", "desc": "Dynamic Canadian podcast narrator"},
-    "steffan": {"id": "en-US-SteffanNeural", "name": "Steffan (Cinematic Trailer & Gaming)", "desc": "Intense, dramatic voice for cinematic game reviews & trailers"},
-    "michelle": {"id": "en-US-MichelleNeural", "name": "Michelle (Viral Reels & Shorts)", "desc": "Upbeat, modern female voice for viral short-form storytelling"}
+    # 🎥 TRUE CRIME & DOCUMENTARY ESSAYS
+    "andrew": {"id": "en-US-AndrewNeural", "name": "Andrew (YouTube Documentary Essay)", "category": "True Crime & Documentary", "desc": "High energy, warm & engaging (#1 for Documentary Essays)"},
+    "christopher": {"id": "en-US-ChristopherNeural", "name": "Christopher (Deep Business & Mystery)", "category": "True Crime & Documentary", "desc": "Deep, authoritative, cinematic mystery narrator"},
+    "eric": {"id": "en-US-EricNeural", "name": "Eric (True Crime & Investigation)", "category": "True Crime & Documentary", "desc": "Grit, suspenseful tone for crime & unsolved cases"},
+    "roger": {"id": "en-US-RogerNeural", "name": "Roger (Authoritative History)", "category": "True Crime & Documentary", "desc": "Deep authoritative historical documentarian"},
+    "ryan": {"id": "en-GB-RyanNeural", "name": "Ryan (British History & War Docs)", "category": "True Crime & Documentary", "desc": "Deep cinematic British voice for war & mysteries"},
+    "thomas": {"id": "en-GB-ThomasNeural", "name": "Thomas (British Crime Narrator)", "category": "True Crime & Documentary", "desc": "Suspenseful British documentary narrator"},
+    "asreflect": {"id": "en-KE-AsiliaNeural", "name": "Asilia (Nature & Wildlife Doc)", "category": "True Crime & Documentary", "desc": "Calm, majestic wildlife documentary narrator"},
+
+    # 🎮 GAMING & CINEMATIC TRAILERS
+    "steffan": {"id": "en-US-SteffanNeural", "name": "Steffan (Cinematic Trailer & Gaming)", "category": "Gaming & Trailers", "desc": "Intense, dramatic voice for cinematic game reviews & trailers"},
+    "steffen": {"id": "en-US-SteffenNeural", "name": "Steffen (Action & Thriller)", "category": "Gaming & Trailers", "desc": "Action-packed voice for high-octane gaming content"},
+    "movie_trailer": {"id": "en-US-SteffanNeural", "name": "Movie Trailer Epic Voice", "category": "Gaming & Trailers", "desc": "Deep epic blockbuster trailer announcer tone"},
+
+    # 📱 VIRAL SHORTS & REELS
+    "brian": {"id": "en-US-BrianNeural", "name": "Brian (Viral Shorts & TikTok)", "category": "Viral Shorts & Reels", "desc": "Young, energetic, engaging creator tone for Shorts"},
+    "michelle": {"id": "en-US-MichelleNeural", "name": "Michelle (Viral Reels & Storytelling)", "category": "Viral Shorts & Reels", "desc": "Upbeat, modern female voice for viral short-form storytelling"},
+    "ava": {"id": "en-US-AvaNeural", "name": "Ava (Expressive Modern Female)", "category": "Viral Shorts & Reels", "desc": "Clear, modern, expressive narrator voice (#1 Tech)"},
+    "viral_hype": {"id": "en-US-BrianNeural", "name": "Viral Hype Creator", "category": "Viral Shorts & Reels", "desc": "Super high-energy Gen-Z creator pacing"},
+
+    # 💡 TECH & AI BREAKDOWN
+    "guy": {"id": "en-US-GuyNeural", "name": "Guy (News & Tech Commentary)", "category": "Tech & AI Breakdown", "desc": "Clear American news broadcaster & tech reviewer"},
+    "jenny": {"id": "en-US-JennyNeural", "name": "Jenny (Friendly Tech Explainer)", "category": "Tech & AI Breakdown", "desc": "Friendly, approachable AI product reviewer"},
+    "aria": {"id": "en-US-AriaNeural", "name": "Aria (Educational & AI Essay)", "category": "Tech & AI Breakdown", "desc": "Articulate, expressive educational essayist"},
+    "sam": {"id": "en-HK-SamNeural", "name": "Sam (Global Tech Reviewer)", "category": "Tech & AI Breakdown", "desc": "Crisp international tech journalist tone"},
+
+    # 💼 FINANCE, BUSINESS & MINDSET
+    "emma": {"id": "en-US-EmmaNeural", "name": "Emma (Conversational Finance)", "category": "Finance & Business", "desc": "Warm, trustworthy conversational female narrator"},
+    "sonia": {"id": "en-GB-SoniaNeural", "name": "Sonia (British Art & Culture)", "category": "Finance & Business", "desc": "Elegant British documentarian female voice"},
+    "william": {"id": "en-AU-WilliamNeural", "name": "William (Australian Business)", "category": "Finance & Business", "desc": "Relaxed, authentic Australian narrator"},
+    "liam": {"id": "en-CA-LiamNeural", "name": "Liam (Canadian Podcast)", "category": "Finance & Business", "desc": "Dynamic Canadian podcast narrator"},
+
+    # 🎭 SPECIAL EMOTIONAL & NICHE TONES
+    "whisper_doc": {"id": "en-US-ChristopherNeural", "name": "Whispering Suspense Narrator", "category": "Special Tones", "desc": "Soft, suspenseful whispered audio for creepy stories"},
+    "horror_crime": {"id": "en-GB-RyanNeural", "name": "Creepypasta Horror Voice", "category": "Special Tones", "desc": "Chilling, slow-paced horror story reader"},
+    "ana": {"id": "en-US-AnaNeural", "name": "Ana (Animated Storytelling)", "category": "Special Tones", "desc": "Playful, expressive voice for animated stories"}
 }
 
 import sqlite3
@@ -1642,7 +1666,9 @@ def generate_animated_ass_subtitle(
     custom_bg_hex: str = None,
     custom_bg_opacity: float = 0.85
 ):
-    words = script_text.strip().split()
+    import re
+    clean_script = re.sub(r'\[(dramatic|whisper|excited|suspense|authoritative|sad|cheerful|happy|scary|calm|fast|slow)\]', '', script_text, flags=re.IGNORECASE)
+    words = clean_script.strip().split()
     if not words:
         words = ["Beat"]
     
@@ -2690,6 +2716,112 @@ async def handle_upload_scene_image(request):
         return web.json_response({"status": "success", "image_url": rel_url, "image_path": out_path, "watermark_cleaned": True})
     except Exception as e:
         print("[handle_upload_scene_image error]:", e)
+        return web.json_response({"error": str(e)}, status=500)
+
+async def handle_voices(request):
+    try:
+        presets = dict(VOICE_PRESETS)
+        try:
+            conn = sqlite3.connect(DB_PATH)
+            c = conn.cursor()
+            c.execute("""
+                CREATE TABLE IF NOT EXISTS cloned_voices (
+                    id TEXT PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    audio_path TEXT NOT NULL,
+                    description TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            c.execute("SELECT id, name, audio_path, description, created_at FROM cloned_voices")
+            rows = c.fetchall()
+            for r in rows:
+                v_id, v_name, v_path, v_desc, _ = r
+                presets[v_id] = {
+                    "id": v_id,
+                    "name": f"🎙️ Cloned — {v_name}",
+                    "category": "Custom Cloned Voices",
+                    "desc": f"Zero-Shot Cloned Voice ({v_desc or 'User Upload'})",
+                    "is_cloned": True,
+                    "audio_url": v_path
+                }
+            conn.close()
+        except Exception as dbe:
+            print("[handle_voices DB warning]:", dbe)
+
+        return web.json_response({"status": "success", "voices": presets})
+    except Exception as e:
+        print("[handle_voices error]:", e)
+        return web.json_response({"error": str(e)}, status=500)
+
+async def handle_clone_voice(request):
+    try:
+        reader = await request.multipart()
+        name = "Custom Voice"
+        description = "User zero-shot voice sample"
+        file_content = None
+        filename = ""
+
+        while True:
+            field = await reader.next()
+            if field is None:
+                break
+            if field.name == "name":
+                name = (await field.read()).decode("utf-8").strip() or name
+            elif field.name == "description":
+                description = (await field.read()).decode("utf-8").strip() or description
+            elif field.filename:
+                filename = f"cloned_{uuid.uuid4().hex[:8]}_{field.filename}"
+                file_content = await field.read()
+
+        if not file_content or not filename:
+            return web.json_response({"error": "No voice audio sample file provided"}, status=400)
+
+        cloned_dir = os.path.join(STATIC_DIR, "uploads", "cloned_voices")
+        os.makedirs(cloned_dir, exist_ok=True)
+        out_path = os.path.join(cloned_dir, filename)
+
+        with open(out_path, "wb") as f:
+            f.write(file_content)
+
+        voice_id = f"clone_{uuid.uuid4().hex[:8]}"
+        rel_url = f"/static/uploads/cloned_voices/{filename}"
+
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS cloned_voices (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                audio_path TEXT NOT NULL,
+                description TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        c.execute("INSERT INTO cloned_voices (id, name, audio_path, description) VALUES (?, ?, ?, ?)",
+                  (voice_id, name, rel_url, description))
+        conn.commit()
+        conn.close()
+
+        VOICE_PRESETS[voice_id] = {
+            "id": voice_id,
+            "name": f"🎙️ Cloned — {name}",
+            "category": "Custom Cloned Voices",
+            "desc": f"Zero-Shot Cloned Voice ({description})",
+            "is_cloned": True,
+            "audio_url": rel_url
+        }
+
+        print(f"[OmniVoice Clone SUCCESS]: Registered voice '{name}' ({voice_id}) -> {rel_url}")
+        return web.json_response({
+            "status": "success",
+            "voice_id": voice_id,
+            "name": name,
+            "audio_url": rel_url,
+            "message": f"Successfully cloned voice '{name}'!"
+        })
+    except Exception as e:
+        print("[handle_clone_voice error]:", e)
         return web.json_response({"error": str(e)}, status=500)
 
 def create_app():
