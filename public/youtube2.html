@@ -498,8 +498,14 @@
 
             <!-- Voiceover Engine Selection Dropdown -->
             <div style="margin-bottom: 16px;">
-                <label style="font-size:0.8rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:8px;">🎙️ Select Voiceover Engine & OmniVoice Preset:</label>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <label style="font-size:0.8rem; font-weight:700; color:var(--text-secondary); margin:0;">🎙️ Select Voiceover Engine & OmniVoice Preset:</label>
+                    <button type="button" onclick="openVoiceClonerModal()" style="background:rgba(255,45,85,0.15); color:var(--accent-red); border:1px solid var(--border-accent); border-radius:20px; padding:3px 12px; font-size:0.75rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:5px;" title="Clone Your Own Custom Voice">
+                        🎙️ + Clone My Voice
+                    </button>
+                </div>
                 <select id="ttsEngineSelect" style="width:100%; background:var(--bg-input); border:1px solid var(--border-subtle); border-radius:var(--radius-md); color:var(--text-primary); padding:12px; font-size:0.9rem; font-weight:600; outline:none; cursor:pointer;">
+                    <optgroup label="🎙️ Custom Cloned Voices" id="clonedVoicesOptGroup"></optgroup>
                     <optgroup label="🎥 True Crime & Documentary Essays">
                         <option value="andrew">🎥 Andrew (YouTube Documentary Essay)</option>
                         <option value="christopher">🎥 Christopher (Deep Business & Mystery Narrator)</option>
@@ -2645,9 +2651,13 @@
                 const res = await fetch('/api/clone-voice', { method: 'POST', body: formData });
                 const data = await res.json();
                 if (data.status === 'success') {
-                    if (typeof showTopNotification === 'function') showTopNotification('✅ Voice cloned successfully!', 4000);
+                    if (typeof showNotification === 'function') showNotification(`✅ Voice '${nameInput.value.trim()}' cloned & registered!`, 'success');
                     closeVoiceClonerModal();
-                    loadStudioVoices();
+                    await loadStudioVoices();
+                    const selectEl = document.getElementById('ttsEngineSelect');
+                    if (selectEl && data.voice_id) {
+                        selectEl.value = data.voice_id;
+                    }
                 } else {
                     alert('Cloning failed: ' + (data.error || 'Unknown error'));
                 }
