@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Channel Auditor & Autonomous SEO Agent — OmniVoice Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #0a0a0c;
+            --bg-card: #141418;
+            --bg-card-hover: #1c1c22;
+            --bg-input: #1a1a20;
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --border-accent: rgba(255, 45, 85, 0.4);
+            --border-green: rgba(52, 199, 89, 0.4);
+            --text-primary: #f5f5f7;
+            --text-secondary: #8e8e93;
+            --accent-red: #ff2d55;
+            --accent-green: #34c759;
+            --accent-blue: #0071e3;
+            --accent-purple: #af52de;
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --radius-sm: 8px;
+            --shadow-card: 0 8px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding-bottom: 60px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        select option, select optgroup {
+            background-color: #121218 !important;
+            color: #ffffff !important;
+            font-weight: 600 !important;
+        }
+
+        /* Navigation Header */
+        header {
+            background: rgba(20, 20, 24, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-subtle);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            padding: 14px 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #fff 0%, var(--accent-red) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 12px;
+        }
+
+        .nav-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-primary);
+            padding: 8px 16px;
+            border-radius: var(--radius-sm);
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .nav-btn:hover, .nav-btn.active {
+            border-color: var(--accent-red);
+            background: rgba(255, 45, 85, 0.15);
+            color: #fff;
+        }
+
+        /* Container */
+        .container {
+            max-width: 1280px;
+            margin: 28px auto;
+            padding: 0 20px;
+        }
+
+        .grid-layout {
+            display: grid;
+            grid-template-columns: 360px 1fr;
+            gap: 24px;
+        }
+
+        /* Card Styles */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            box-shadow: var(--shadow-card);
+        }
+
+        .card-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .input-group {
+            margin-bottom: 16px;
+        }
+
+        .input-label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .input-field {
+            width: 100%;
+            background: var(--bg-input);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            padding: 12px 14px;
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.2s ease;
+        }
+
+        .input-field:focus {
+            border-color: var(--accent-red);
+        }
+
+        .btn-primary {
+            width: 100%;
+            background: linear-gradient(135deg, var(--accent-red) 0%, #d81b60 100%);
+            color: #fff;
+            border: none;
+            border-radius: var(--radius-md);
+            padding: 14px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.15s ease, opacity 0.2s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 15px rgba(255, 45, 85, 0.4);
+        }
+
+        .btn-primary:hover {
+            opacity: 0.92;
+            transform: translateY(-1px);
+        }
+
+        .btn-green {
+            background: linear-gradient(135deg, var(--accent-green) 0%, #28a745 100%);
+            box-shadow: 0 4px 15px rgba(52, 199, 89, 0.4);
+        }
+
+        /* Health Score Gauge */
+        .health-score-container {
+            text-align: center;
+            padding: 20px 0;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 20px;
+        }
+
+        .health-score-badge {
+            font-family: 'Outfit', sans-serif;
+            font-size: 3.5rem;
+            font-weight: 800;
+            color: var(--accent-green);
+            line-height: 1;
+        }
+
+        .health-score-subtitle {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 6px;
+            font-weight: 600;
+        }
+
+        /* Status & Alert Pills */
+        .alert-box {
+            background: rgba(255, 45, 85, 0.1);
+            border: 1px solid var(--border-accent);
+            border-radius: var(--radius-md);
+            padding: 12px 14px;
+            font-size: 0.85rem;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .alert-box.success {
+            background: rgba(52, 199, 89, 0.1);
+            border-color: var(--border-green);
+        }
+
+        /* Video SEO Card List */
+        .video-card {
+            background: rgba(26, 26, 32, 0.6);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 18px;
+            margin-bottom: 16px;
+            transition: border-color 0.2s ease;
+        }
+
+        .video-card:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .video-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .video-title-orig {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .seo-score-tag {
+            background: rgba(52, 199, 89, 0.2);
+            color: var(--accent-green);
+            border: 1px solid var(--border-green);
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 800;
+        }
+
+        .seo-score-tag.low {
+            background: rgba(255, 45, 85, 0.2);
+            color: var(--accent-red);
+            border-color: var(--border-accent);
+        }
+
+        .rec-box {
+            background: var(--bg-card);
+            border-left: 3px solid var(--accent-blue);
+            padding: 12px 14px;
+            border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+            margin-bottom: 10px;
+            font-size: 0.85rem;
+        }
+
+        .rec-title {
+            font-weight: 700;
+            color: var(--accent-blue);
+            margin-bottom: 4px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+        }
+
+        .actions-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        .btn-sm {
+            padding: 8px 14px;
+            font-size: 0.8rem;
+            border-radius: var(--radius-sm);
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-action-opencli {
+            background: rgba(175, 82, 222, 0.2);
+            color: #d084ff;
+            border: 1px solid rgba(175, 82, 222, 0.4);
+        }
+
+        .btn-action-opencli:hover {
+            background: rgba(175, 82, 222, 0.35);
+        }
+
+        .btn-action-pin {
+            background: rgba(52, 199, 89, 0.2);
+            color: var(--accent-green);
+            border: 1px solid var(--border-green);
+        }
+
+        .btn-action-pin:hover {
+            background: rgba(52, 199, 89, 0.35);
+        }
+
+        /* Toggle Switch */
+        .toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: var(--bg-input);
+            transition: .3s;
+            border-radius: 24px;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--accent-green);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(20px);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo-area">
+            <div style="font-size: 1.5rem;">🔍</div>
+            <div>
+                <div class="logo-title">YouTube Channel Auditor & Autonomous SEO Agent</div>
+                <div style="font-size:0.75rem; color:var(--text-secondary);">OmniVoice Studio Engine</div>
+            </div>
+        </div>
+        <div class="nav-links">
+            <a href="/youtube-2.0" class="nav-btn">🎥 YouTube 2.0 Studio</a>
+            <a href="/seo-agent" class="nav-btn active">🔍 Channel SEO Agent</a>
+            <a href="/" class="nav-btn">🏠 Main Dashboard</a>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="grid-layout">
+            
+            <!-- Left Sidebar Controls -->
+            <div style="display:flex; flex-direction:column; gap:20px;">
+                <div class="card">
+                    <div class="card-title">🔍 Audit Channel</div>
+                    
+                    <div class="input-group">
+                        <label class="input-label">YouTube Channel Handle / URL</label>
+                        <input type="text" id="channelUrlInput" class="input-field" placeholder="@EconomicsExplained" value="@EconomicsExplained">
+                    </div>
+
+                    <div class="input-group">
+                        <label class="input-label">Groq API Key (AI Audit Model)</label>
+                        <input type="password" id="groqKeyInput" class="input-field" placeholder="gsk_..." value="">
+                    </div>
+
+                    <button class="btn-primary" onclick="runChannelAudit()">
+                        <span>🔍 Run Deep Channel Audit</span>
+                    </button>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">📊 Channel Health Score</div>
+                    <div class="health-score-container">
+                        <div class="health-score-badge" id="healthScoreVal">88%</div>
+                        <div class="health-score-subtitle">Channel SEO & Metadata Health</div>
+                    </div>
+
+                    <div class="alert-box">
+                        <div>⚠️</div>
+                        <div><strong>3 Videos Need SEO Upgrade</strong><br><span style="font-size:0.78rem;">Low search impressions due to missing high-volume tags.</span></div>
+                    </div>
+
+                    <div class="alert-box success">
+                        <div>✅</div>
+                        <div><strong>Pinned Comments Active</strong><br><span style="font-size:0.78rem;">High comment velocity detected on latest 2 Shorts.</span></div>
+                    </div>
+
+                    <div class="toggle-row">
+                        <div>
+                            <div style="font-size:0.85rem; font-weight:700;">24/7 Autonomous SEO Agent</div>
+                            <div style="font-size:0.75rem; color:var(--text-secondary);">Auto-optimize & boost rankings daily</div>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="cronToggle" checked onchange="toggleCronAgent(this.checked)">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Main Area: Video SEO Optimization Cards -->
+            <div style="display:flex; flex-direction:column; gap:20px;">
+                <div class="card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                        <div class="card-title" style="margin:0;">🚀 Video SEO Optimization & OpenCLI Automation</div>
+                        <button class="btn-primary btn-green" style="width:auto; padding:8px 16px; font-size:0.85rem;" onclick="optimizeAllChannelVideos()">
+                            <span>⚡ AI Optimize All Videos</span>
+                        </button>
+                    </div>
+
+                    <div id="videoCardsContainer">
+                        <!-- Video Card 1 -->
+                        <div class="video-card">
+                            <div class="video-header">
+                                <div class="video-title-orig">1. How a single supply chain bottleneck crashed the global market</div>
+                                <div class="seo-score-tag low">SEO Score: 62% (Needs Optimization)</div>
+                            </div>
+
+                            <div class="rec-box">
+                                <div class="rec-title">🎯 AI Recommended High-CTR Title</div>
+                                <div style="font-weight:600; color:#fff;">Why the Global Supply Chain Is Collapsing (and How $40B Disappeared)</div>
+                            </div>
+
+                            <div class="rec-box" style="border-left-color: var(--accent-purple);">
+                                <div class="rec-title" style="color: var(--accent-purple);">📜 AI Keyword-Dense Description & Tags</div>
+                                <div style="color:var(--text-secondary); font-size:0.8rem; line-height:1.4;">
+                                    Discover how a 1/87 supply bottleneck wiped out $40 billion in revenue... #Economics #SupplyChain #Finance<br>
+                                    <strong>Tags:</strong> supply chain crash, global market breakdown, economics explained, supply chain bottleneck 2026
+                                </div>
+                            </div>
+
+                            <div class="rec-box" style="border-left-color: var(--accent-green);">
+                                <div class="rec-title" style="color: var(--accent-green);">💬 Pinned Engagement Comment</div>
+                                <div style="color:#fff; font-weight:500;">What do you think is the biggest bottleneck in the global economy right now? Drop your thoughts below! 👇</div>
+                            </div>
+
+                            <div class="actions-row">
+                                <button class="btn-sm btn-action-opencli" onclick="applyOpenCLIMetadata(1)">
+                                    🤖 Auto-Apply SEO via OpenCLI
+                                </button>
+                                <button class="btn-sm btn-action-pin" onclick="pinEngagementComment(1)">
+                                    💬 Post & Pin Comment
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Video Card 2 -->
+                        <div class="video-card">
+                            <div class="video-header">
+                                <div class="video-title-orig">2. The secret math behind nightclub profit margins</div>
+                                <div class="seo-score-tag">SEO Score: 94% (Optimized)</div>
+                            </div>
+
+                            <div class="rec-box">
+                                <div class="rec-title">🎯 AI Recommended High-CTR Title</div>
+                                <div style="font-weight:600; color:#fff;">So You Want to Own a Nightclub? The 90% Profit Secret Nobody Tells You</div>
+                            </div>
+
+                            <div class="rec-box" style="border-left-color: var(--accent-green);">
+                                <div class="rec-title" style="color: var(--accent-green);">💬 Pinned Engagement Comment</div>
+                                <div style="color:#fff; font-weight:500;">Would you ever start a nightclub or high-margin hospitality business? Let's discuss in the comments! 🍸</div>
+                            </div>
+
+                            <div class="actions-row">
+                                <button class="btn-sm btn-action-opencli" onclick="applyOpenCLIMetadata(2)">
+                                    🤖 Auto-Apply SEO via OpenCLI
+                                </button>
+                                <button class="btn-sm btn-action-pin" onclick="pinEngagementComment(2)">
+                                    💬 Post & Pin Comment
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        async function runChannelAudit() {
+            const handle = document.getElementById('channelUrlInput').value.trim();
+            const groqKey = document.getElementById('groqKeyInput').value.trim();
+            if (!handle) {
+                alert('Please enter a YouTube channel handle or URL!');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/seo/audit-channel', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ channel_handle: handle, groq_key: groqKey })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    document.getElementById('healthScoreVal').textContent = `${data.health_score}%`;
+                    alert(`Channel Audit Completed! Health Score: ${data.health_score}%`);
+                } else {
+                    alert(`Audit Error: ${data.error || 'Unknown error'}`);
+                }
+            } catch (e) {
+                alert(`Error running audit: ${e.message}`);
+            }
+        }
+
+        async function optimizeAllChannelVideos() {
+            const groqKey = document.getElementById('groqKeyInput').value.trim();
+            try {
+                const res = await fetch('/api/seo/optimize-video', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ groq_key: groqKey })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    alert('AI SEO Metadata & Pinned Comments optimized for all videos!');
+                }
+            } catch (e) {
+                alert(`Error optimizing videos: ${e.message}`);
+            }
+        }
+
+        async function applyOpenCLIMetadata(videoId) {
+            try {
+                const res = await fetch('/api/seo/apply-opencli', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ video_id: videoId, action: 'update_metadata' })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    alert(`OpenCLI successfully updated metadata for Video #${videoId} on YouTube Studio!`);
+                }
+            } catch (e) {
+                alert(`OpenCLI error: ${e.message}`);
+            }
+        }
+
+        async function pinEngagementComment(videoId) {
+            try {
+                const res = await fetch('/api/seo/apply-opencli', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ video_id: videoId, action: 'pin_comment' })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    alert(`OpenCLI posted & pinned engagement comment for Video #${videoId}!`);
+                }
+            } catch (e) {
+                alert(`OpenCLI error: ${e.message}`);
+            }
+        }
+
+        async function toggleCronAgent(enabled) {
+            try {
+                await fetch('/api/seo/schedule-daily', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ enabled: enabled })
+                });
+            } catch (e) {
+                console.log('[Cron Toggle Error]:', e);
+            }
+        }
+    </script>
+</body>
+</html>
