@@ -1,2 +1,5 @@
 aiohttp>=3.8.0
 edge-tts>=7.0.0
+opencv-python-headless
+numpy
+Pillow
