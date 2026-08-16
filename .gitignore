@@ -4,14 +4,16 @@ __pycache__/
 public/generated/
 public/uploads/
 public/samples/
+generated_media/
+scratch/
 temp_*
 studio.db
 *.db
-scratch/*.ass
 *.ass
 .env
 *.onnx
 *.bin
 *.wav
 *.mp3
+
 

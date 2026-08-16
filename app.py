@@ -383,49 +383,31 @@ MANDATORY DOMAIN RULE: Every single visual metaphor, store, customer interaction
         "tech_vector": "Modern tech 3D isometric vector render, clean glossy plastic surfaces, vibrant corporate tech color scheme, 8K clean studio lighting render with sharp 3D perspective.",
         "oil_painting": "Masterpiece Renaissance oil painting, rich impasto canvas brushstrokes, dramatic Rembrandt chiaroscuro lighting, deep classic golden oil tones on textured canvas.",
         "midjourney_raw": "Cinematic widescreen raw photography, award-winning composition, natural realistic lighting, shallow depth of field --ar 16:9 --style raw",
-        "physical_economics_3d": "BUILD THE ECONOMICS AS A PHYSICAL MINIATURE WORLD. Premium cinematic handcrafted 3D clay miniature + architectural model + stop-motion production design + macro cinematography + physical living infographic. Handcrafted tactile adult documentary miniature aesthetic with sculpted clay, clear acrylic, painted metal, wood, resin, and subtle handcrafted imperfections (fingerprints, sculpting marks). Physical representation of economics: revenue as flowing coins, costs as heavy blocks, bottlenecks as narrow passages, margins as physical gaps."
+        "physical_economics_3d": "BUILD THE ECONOMICS AS A PHYSICAL MINIATURE WORLD. Premium cinematic handcrafted 3D clay miniature + architectural model + stop-motion production design + macro cinematography + physical living infographic. Handcrafted tactile adult documentary miniature aesthetic with sculpted clay, clear acrylic, painted metal, wood, resin, and subtle handcrafted imperfections (fingerprints, sculpting marks). Physical representation of economics: revenue as flowing coins, costs as heavy blocks, bottlenecks as narrow passages, margins as physical gaps.",
+        "omniverse_master_hybrid": "Ultra-clean 8K Economics Documentary Hybrid Art — a crisp tactile 1/87 scale handcrafted physical architectural model set on a polished obsidian studio stage. Integrated 3D isometric financial flow diagrams with glowing cyan supply lines, rich emerald green revenue blocks, ruby red cost barriers, and glassmorphic HUD data cards. Shot on ARRI Alexa 35mm macro prime lens with Rembrandt chiaroscuro studio lighting, widescreen 16:9 golden-ratio visual symmetry, and generous negative space."
     }
-    style_directive = style_aesthetic_map.get(visual_style, style_aesthetic_map["vox_2d"])
+    style_directive = style_aesthetic_map.get(visual_style, style_aesthetic_map["omniverse_master_hybrid"])
 
-    if visual_style == "physical_economics_3d":
-        system_prompt = f"""MASTER PROMPT — PHYSICAL ECONOMICS 3D MINIATURE UNIVERSE (ULTRA HIGH-DETAIL EDITION)
+    if visual_style in ["physical_economics_3d", "omniverse_master_hybrid"]:
+        system_prompt = f"""MASTER PROMPT — ULTRA-CLEAN 8K ECONOMICS DOCUMENTARY HYBRID ART (HIGH LEGIBILITY EDITION)
 
-You are an elite visual prompt director and cinematic 3D miniature art director specializing in "The Economics of..." documentary-style YouTube videos.
-Your task is to transform the script beat into an EXCEPTIONALLY DETAILED, MULTI-SENTENCE STANDALONE IMAGE PROMPT (120-200 words) belonging to one consistent visual universe.
+You are an elite visual prompt director and cinematic documentary art director for top economics & business YouTube channels.
+Your task is to transform the script beat into an EXCEPTIONALLY DETAILED, CRYSTAL-CLEAR, MULTI-SENTENCE STANDALONE IMAGE PROMPT (100-160 words) with maximum visual legibility for video viewers.
 
 {topic_lock_directive}
 
-CORE PHILOSOPHY: BUILD THE ECONOMICS AS A PHYSICAL WORLD.
-Do not merely illustrate the subject. Create an impossibly detailed miniature physical world in which revenue, costs, customers, workers, infrastructure, resources, capacity, demand, margins, cash flow, bottlenecks, and economic relationships are visually understood through physical objects, environments, characters, architecture, movement, scale, and visual metaphors.
-
-MATERIAL SCIENCE & VIBRANT COLOR PALETTE:
-- NO dull grays, monochrome, or washed-out tones. Use a VIVID, HIGHLY SATURATED, HIGH-CONTRAST COLOR PALETTE:
-  - REVENUE & PROFIT: Radiant emerald green polymer clay, glowing neon turquoise accents, polished 24K gold miniature coins.
-  - EXPENSES & BOTTLENECK: Rich ruby crimson red blocks, warm terracotta structures, deep magenta warning plaques.
-  - INFRASTRUCTURE & HARDWARE: Deep sapphire blue partitions, cobalt machinery, bright cyan fiber optic light channels.
-  - ENVIRONMENT & BACKDROP: Deep royal navy blue studio backdrop, vibrant dual-color rim lighting (cyan and magenta highlights), warm 3200K key light creating rich saturated color contrast.
-- Tactile sculpted matte polymer clay in rich vibrant hues, 1/87 scale detailed miniature human figures, laser-etched clear acrylic resin blocks for digital/financial charts.
-- Precision painted brass and aluminum miniature industrial machinery, real polished miniature wood textures, frosted glass partitions.
-- Include subtle handcrafted evidence: tiny finger-print micro-textures on clay surfaces, subtle sculpting marks, precision laser joins.
-
-MACRO CINEMATOGRAPHY & LIGHTING SPECIFICATIONS:
-- Shot on ARRI Alexa Mini with 35mm f/2.8 macro cinema lens, tilt-shift miniature depth of field, razor-sharp focal plane on primary subject.
-- Warm 3200K tungsten studio key lighting with soft fill, vibrant volumetric cyan and magenta rim lighting, ambient occlusion, realistic contact shadows on miniature ground plane.
-
-PHYSICAL ECONOMICS CONVERSIONS:
-- REVENUE -> flowing streams of 3D miniature golden coins, emerald green currency tokens
-- COST -> heavy textured ruby red blocks, terracotta pipes, resource-consuming furnaces
-- MARGIN -> physical gap distance between emerald revenue streams and ruby cost blocks
-- DEMAND -> dense queues of colorful 1/87 scale miniature figures, overflowing order bins
-- BOTTLENECK -> narrow physical funnel or archway accumulating miniature traffic
-- NUMBERS/STATS -> laser-etched transparent acrylic plaques displaying clear numbers
-
-COMPOSITION & HYPER-DETAIL REQUIREMENT:
-Write a rich, multi-sentence prompt (120-200 words). Detail the foreground, middle ground, background, exact spatial layout, vibrant color palette, lighting direction, and micro-storytelling details.
+CORE HYBRID ARCHITECTURE (4 VISUAL LAYERS FOR MAXIMUM CLARITY):
+1. CENTER STAGE FOCAL SUBJECT: A crisp, uncluttered 1/87 scale handcrafted physical architectural miniature model or facility representing the scene theme.
+2. PHYSICAL ECONOMIC METAPHOR: 3D isometric supply/data flow with vibrant color contrast:
+   - REVENUE & PROFIT: Radiant emerald green polymer blocks or glowing cyan energy lines.
+   - EXPENSES & BOTTLENECKS: Heavy ruby crimson red blocks or terracotta barriers.
+   - METRICS/NUMBERS: Laser-etched clear acrylic glassmorphic HUD plaque with glowing holographic amber typography.
+3. VECTOR GRAPHIC OVERLAYS: Clean Vox-style geometric trade arrows and indicator lines integrated seamlessly.
+4. MACRO CINEMATOGRAPHY & LIGHTING: Shot on ARRI Alexa 35mm f/1.4 macro prime lens, dark obsidian studio stage backdrop, warm 3200K Rembrandt key lighting with cyan rim highlights, tilt-shift macro depth-of-field, widescreen 16:9 visual symmetry, generous negative space, zero visual clutter, zero human figures.
 
 Respond STRICTLY in JSON format:
 {{
-  "prompt": "SCENE: [short description of what scene communicates]\\n\\nIMAGE PROMPT: Cinematic handcrafted 3D clay miniature + architectural model + macro cinematography physical infographic style. [Complete, hyper-detailed 120-200 word multi-sentence prompt detailing exact miniature layout, materials, physical economic representations, characters, macro lens lighting, camera angle, and quality finish]\\n\\nEMOTION: [emotional quality]\\n\\nVISUAL PURPOSE: [what the viewer should understand economically]"
+  "prompt": "SCENE: [short description of what scene communicates]\\n\\nIMAGE PROMPT: Ultra-clean 8K Economics Documentary Hybrid Art. [Complete, hyper-detailed, crystal-clear 100-160 word standalone prompt specifying center stage focal subject, physical economic color representations, vector overlay HUD text/numbers, macro lens lighting, camera angle, and quality finish with generous negative space]\\n\\nEMOTION: [emotional quality]\\n\\nVISUAL PURPOSE: [what the viewer should understand economically]"
 }}"""
     else:
         system_prompt = f"""MASTER PROMPT — YOUTUBE EXPLAINER HIGH-RETENTION IMAGE PROMPT GENERATOR
@@ -511,11 +493,10 @@ def build_vector_art_scene_prompt_fallback(text, niche="economics", visual_style
         stat_callout = f" In the middle ground, a laser-etched clear acrylic HUD plaque with glowing holographic amber typography displays \"{stat_val}\"." if stat_val else ""
         return (
             f"SCENE: Omniverse Economics Fusion — {clean_line[:60]}\n\n"
-            f"IMAGE PROMPT: Ultra-high-retention 8K Economics Documentary Hybrid Art — a revolutionary fusion of 8K ARRI Alexa 35mm film photography, 1/87 scale handcrafted physical clay miniature architecture, 3D isometric GDP supply flow diagrams, Vox 2D vector trade arrows, cyberpunk neon light leaks, and Renaissance gold-leaf currency accents. "
+            f"IMAGE PROMPT: Ultra-clean 8K Economics Documentary Hybrid Art — a crisp tactile 1/87 scale handcrafted physical architectural model set on a polished obsidian studio stage. "
             f"Visually depicting: \"{clean_line}\". "
-            f"Constructed as a tactile miniature financial world set against a deep obsidian studio backdrop, featuring 1/87 scale polymer clay buildings and cargo ports, 3D isometric supply lines turning from glowing cyan to deep red at bottlenecks, fiber-optic data nodes, and glassmorphic translucent UI data cards. "
-            f"Shot on ARRI Alexa 35mm f/1.4 anamorphic prime lens, tilt-shift macro depth-of-field, Rembrandt chiaroscuro studio key lighting, and volumetric haze. "
-            f"Composed with widescreen 16:9 golden-ratio visual symmetry and generous negative space. Pure architectural, economic, and environmental visualization, zero human figures.{stat_callout}\n\n"
+            f"Featuring clean miniature architectural elements and 3D isometric financial flow diagrams with glowing cyan supply lines, rich emerald green revenue blocks, and heavy ruby red cost barriers. "
+            f"Shot on ARRI Alexa 35mm f/1.4 macro lens with shallow macro depth-of-field, Rembrandt chiaroscuro studio key lighting, cyan rim lighting, widescreen 16:9 golden-ratio visual symmetry, and generous negative space. Pure architectural, economic, and environmental visualization, zero clutter, zero human figures.{stat_callout}\n\n"
             f"EMOTION: High-stakes, authoritative, analytical, cinematic.\n\n"
             f"VISUAL PURPOSE: Master economic storytelling visualization of: {clean_line}"
         )
