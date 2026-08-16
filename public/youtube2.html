@@ -505,8 +505,16 @@
                     </button>
                 </div>
                 <select id="ttsEngineSelect" style="width:100%; background:var(--bg-input); border:1px solid var(--border-subtle); border-radius:var(--radius-md); color:var(--text-primary); padding:12px; font-size:0.9rem; font-weight:600; outline:none; cursor:pointer;">
+                    <optgroup label="🤖 Kokoro 82M AI Ultra-Realistic Voices">
+                        <option value="kokoro_adam" selected>🤖 Kokoro 82M — Adam (am_adam - #1 Ultra-Realistic Male Default)</option>
+                        <option value="kokoro_michael">🤖 Kokoro 82M — Michael (am_michael - Authoritative Male)</option>
+                        <option value="kokoro_george">🤖 Kokoro 82M — George (bm_george - Deep British)</option>
+                        <option value="kokoro_heart">🤖 Kokoro 82M — Heart (af_heart - Expressive Female)</option>
+                        <option value="kokoro_bella">🤖 Kokoro 82M — Bella (af_bella - Soft Narrative)</option>
+                        <option value="kokoro_nicole">🤖 Kokoro 82M — Nicole (af_nicole - Warm Female)</option>
+                    </optgroup>
                     <optgroup label="🎙️ Custom Cloned Voices" id="clonedVoicesOptGroup">
-                        <option value="parth" selected>🎙️ Parth (Channel Host Voice — #1 Default)</option>
+                        <option value="parth">🎙️ Parth (Channel Host Voice)</option>
                     </optgroup>
                     <optgroup label="🎥 True Crime & Documentary Essays">
                         <option value="andrew">🎥 Andrew (YouTube Documentary Essay)</option>
@@ -537,7 +545,7 @@
                     <optgroup label="💼 Finance, Business & Mindset">
                         <option value="emma">💼 Emma (Conversational Personal Finance)</option>
                         <option value="sonia">💼 Sonia (British Art & Business Culture)</option>
-                        <option value="william" selected>💼 William (Australian Outdoor & Business — Default Voice)</option>
+                        <option value="william">💼 William (Australian Outdoor & Business)</option>
                         <option value="liam">💼 Liam (Canadian Dynamic Podcast)</option>
                     </optgroup>
                     <optgroup label="🎭 Special Emotional Tones">
@@ -1639,7 +1647,7 @@
             btn.innerHTML = '⏳';
 
             const selectedEngineVal = document.getElementById('ttsEngineSelect').value;
-            let voiceParam = selectedEngineVal || 'parth';
+            let voiceParam = selectedEngineVal || 'kokoro_adam';
             let engineParam = 'edge';
 
             if (selectedEngineVal.startsWith('edge_')) {
@@ -2684,7 +2692,7 @@
                                 const opt = document.createElement('option');
                                 opt.value = vKey;
                                 opt.textContent = v.name;
-                                if (vKey === currentSel || (!currentSel && vKey === 'parth')) {
+                                if (vKey === currentSel) {
                                     opt.selected = true;
                                 }
                                 clonedOptGroup.appendChild(opt);

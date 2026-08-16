@@ -1644,7 +1644,7 @@ async def handle_generate_beat_audio(request):
         job_id = data.get("job_id", "")
         scene_idx = int(data.get("scene_index", 1))
         scene_text = data.get("scene_text", "").strip()
-        voice = data.get("voice", "andrew").lower()
+        voice = data.get("voice", "kokoro_adam").lower()
         rate = str(data.get("rate", "-4%")).strip()
         tts_engine = str(data.get("tts_engine", "edge")).lower()
 
