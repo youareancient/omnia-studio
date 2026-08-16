@@ -501,7 +501,7 @@
                 <label style="font-size:0.8rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:8px;">🎙️ Select Voiceover Engine & OmniVoice Preset:</label>
                 <select id="ttsEngineSelect" style="width:100%; background:var(--bg-input); border:1px solid var(--border-subtle); border-radius:var(--radius-md); color:var(--text-primary); padding:12px; font-size:0.9rem; font-weight:600; outline:none; cursor:pointer;">
                     <optgroup label="🎥 True Crime & Documentary Essays">
-                        <option value="andrew" selected>🎥 Andrew (YouTube Documentary Essay — #1 Voice)</option>
+                        <option value="andrew">🎥 Andrew (YouTube Documentary Essay)</option>
                         <option value="christopher">🎥 Christopher (Deep Business & Mystery Narrator)</option>
                         <option value="eric">🎥 Eric (True Crime & Unsolved Cases)</option>
                         <option value="roger">🎥 Roger (Authoritative History Documentarian)</option>
@@ -529,7 +529,7 @@
                     <optgroup label="💼 Finance, Business & Mindset">
                         <option value="emma">💼 Emma (Conversational Personal Finance)</option>
                         <option value="sonia">💼 Sonia (British Art & Business Culture)</option>
-                        <option value="william">💼 William (Australian Outdoor & Business)</option>
+                        <option value="william" selected>💼 William (Australian Outdoor & Business — Default Voice)</option>
                         <option value="liam">💼 Liam (Canadian Dynamic Podcast)</option>
                     </optgroup>
                     <optgroup label="🎭 Special Emotional Tones">
@@ -1631,7 +1631,7 @@
             btn.innerHTML = '⏳';
 
             const selectedEngineVal = document.getElementById('ttsEngineSelect').value;
-            let voiceParam = 'andrew';
+            let voiceParam = 'william';
             let engineParam = 'edge';
 
             if (selectedEngineVal.startsWith('edge_')) {
@@ -1642,7 +1642,7 @@
                 voiceParam = selectedEngineVal;
             } else if (selectedEngineVal === 'edge') {
                 engineParam = 'edge';
-                voiceParam = 'andrew';
+                voiceParam = 'william';
             }
 
             let count = 0;

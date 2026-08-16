@@ -1868,7 +1868,7 @@ async def handle_generate_beat_clip(request):
 
         if not os.path.exists(beat_audio_path):
             cleaned = humanize_script(scene_text)
-            await safe_edge_tts_save(cleaned, "en-US-AndrewNeural", "-4%", beat_audio_path)
+            await safe_edge_tts_save(cleaned, "en-AU-WilliamNeural", "-4%", beat_audio_path)
             await trim_trailing_audio_silence(beat_audio_path)
             await append_natural_pause_padding(beat_audio_path, 0.28)
 
