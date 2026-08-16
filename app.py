@@ -508,16 +508,16 @@ def build_vector_art_scene_prompt_fallback(text, niche="economics", visual_style
     stat_val = money_match.group(0).upper() if money_match else None
     
     if visual_style == "omniverse_master_hybrid":
-        stat_callout = f" In the middle ground, a laser-etched clear acrylic plaque with glowing holographic cyan typography displays \"{stat_val}\"." if stat_val else ""
+        stat_callout = f" In the middle ground, a laser-etched clear acrylic HUD plaque with glowing holographic amber typography displays \"{stat_val}\"." if stat_val else ""
         return (
-            f"SCENE: Omniverse Master Hybrid Fusion — {clean_line[:60]}\n\n"
-            f"IMAGE PROMPT: Ultra-high-retention Omniverse Master Hybrid Artwork — a revolutionary fusion of cinematic 8K documentary film photography, 1/87 scale handcrafted physical clay miniature architecture, 3D isometric tech graphics, cyberpunk neon light leaks, and classical impasto fine art. "
+            f"SCENE: Omniverse Economics Fusion — {clean_line[:60]}\n\n"
+            f"IMAGE PROMPT: Ultra-high-retention 8K Economics Documentary Hybrid Art — a revolutionary fusion of 8K ARRI Alexa 35mm film photography, 1/87 scale handcrafted physical clay miniature architecture, 3D isometric GDP supply flow diagrams, Vox 2D vector trade arrows, cyberpunk neon light leaks, and Renaissance gold-leaf currency accents. "
             f"Visually depicting: \"{clean_line}\". "
-            f"Constructed as a tactile physical miniature world set against a deep obsidian studio backdrop, featuring handcrafted polymer clay structures, glowing fiber-optic data nodes, high-contrast neon cyan and magenta rim lighting, gold-leaf accents, subtle vintage etched copperplate cross-hatching linework, and glassmorphic translucent UI data cards. "
+            f"Constructed as a tactile miniature financial world set against a deep obsidian studio backdrop, featuring 1/87 scale polymer clay buildings and cargo ports, 3D isometric supply lines turning from glowing cyan to deep red at bottlenecks, fiber-optic data nodes, and glassmorphic translucent UI data cards. "
             f"Shot on ARRI Alexa 35mm f/1.4 anamorphic prime lens, tilt-shift macro depth-of-field, Rembrandt chiaroscuro studio key lighting, and volumetric haze. "
-            f"Composed with widescreen 16:9 golden-ratio visual symmetry and generous negative space. Pure architectural and environmental visualization, zero human figures.{stat_callout}\n\n"
-            f"EMOTION: Mind-bending, futuristic, authoritative, breathtaking, revolutionary.\n\n"
-            f"VISUAL PURPOSE: Master hybrid fusion visualization of: {clean_line}"
+            f"Composed with widescreen 16:9 golden-ratio visual symmetry and generous negative space. Pure architectural, economic, and environmental visualization, zero human figures.{stat_callout}\n\n"
+            f"EMOTION: High-stakes, authoritative, analytical, cinematic.\n\n"
+            f"VISUAL PURPOSE: Master economic storytelling visualization of: {clean_line}"
         )
 
     elif visual_style == "photoreal":
