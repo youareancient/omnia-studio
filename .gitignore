@@ -2,6 +2,7 @@ cloudflared.exe
 __pycache__/
 *.pyc
 public/generated/
+public/uploads/
 public/samples/
 temp_*
 studio.db

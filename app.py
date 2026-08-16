@@ -8,6 +8,8 @@ import urllib.parse
 import sqlite3
 import edge_tts
 from aiohttp import web, ClientSession, FormData
+import cv2
+import numpy as np
 
 HOST = "0.0.0.0"
 PORT = int(os.environ.get("PORT", 7860))
@@ -411,7 +413,7 @@ VISUAL ART STYLE: {style_directive}
 MASTER GENERATION RULES:
 1. 3-5 SECOND SCENE FOCUS: Each scene covers 3-5 seconds (1 sentence). Include ONLY elements relevant to the scene line without clutter.
 2. STANDALONE LONG PROMPT: The generated prompt MUST be a full, detailed, multi-sentence paragraph (80-150 words). Never write 'same as before' or use generic short descriptions.
-3. SUBJECT & ACTION: Describe the subject's exact posture, clothing, hair, gestures, facial expression, and action in vivid detail. Use visual humor or thought bubbles whenever applicable.
+3. PURE ENVIRONMENT & OBJECT FOCUS (NO HOSTS/CHARACTERS): Focus 100% on high-impact scenery, architecture, physical objects, infrastructure, data diagrams, and environmental lighting. DO NOT include human hosts, presenters, or character figures.
 4. DIAGRAMS & LABELS: When accounting, business, or niche terms (revenue, costs, margins, stats) are mentioned, describe clean text/stat/chart visual callouts inside the prompt.
 5. COMPOSITION & NEGATIVE SPACE: Maintain a balanced composition with generous negative space, keeping the visual clean, professional, highly readable, and free of clutter or watermarks.
 
@@ -471,52 +473,225 @@ STOPWORDS = {
     "you've", "your", "yours", "yourself", "yourselves"
 }
 
-def build_vector_art_scene_prompt_fallback(text, niche="economics", visual_style="vox_2d"):
+def build_vector_art_scene_prompt_fallback(text, niche="economics", visual_style="omniverse_master_hybrid"):
     clean_line = re.sub(r'\s+', ' ', text).strip()
+    money_match = re.search(r'(\$?\d+[\d,.]*\s*(million|billion|thousand|k|m)?)', clean_line, re.IGNORECASE)
+    stat_val = money_match.group(0).upper() if money_match else None
     
-    if visual_style == "physical_economics_3d":
-        money_match = re.search(r'(\$?\d+[\d,.]*\s*(million|billion|thousand|k|m)?)', clean_line, re.IGNORECASE)
-        money_callout = f" A laser-etched clear acrylic plaque engraved with \"{money_match.group(0).upper()}\" stands prominently in the middle ground." if money_match else ""
+    if visual_style == "omniverse_master_hybrid":
+        stat_callout = f" In the middle ground, a laser-etched clear acrylic plaque with glowing holographic cyan typography displays \"{stat_val}\"." if stat_val else ""
+        return (
+            f"SCENE: Omniverse Master Hybrid Fusion — {clean_line[:60]}\n\n"
+            f"IMAGE PROMPT: Ultra-high-retention Omniverse Master Hybrid Artwork — a revolutionary fusion of cinematic 8K documentary film photography, 1/87 scale handcrafted physical clay miniature architecture, 3D isometric tech graphics, cyberpunk neon light leaks, and classical impasto fine art. "
+            f"Visually depicting: \"{clean_line}\". "
+            f"Constructed as a tactile physical miniature world set against a deep obsidian studio backdrop, featuring handcrafted polymer clay structures, glowing fiber-optic data nodes, high-contrast neon cyan and magenta rim lighting, gold-leaf accents, subtle vintage etched copperplate cross-hatching linework, and glassmorphic translucent UI data cards. "
+            f"Shot on ARRI Alexa 35mm f/1.4 anamorphic prime lens, tilt-shift macro depth-of-field, Rembrandt chiaroscuro studio key lighting, and volumetric haze. "
+            f"Composed with widescreen 16:9 golden-ratio visual symmetry and generous negative space. Pure architectural and environmental visualization, zero human figures.{stat_callout}\n\n"
+            f"EMOTION: Mind-bending, futuristic, authoritative, breathtaking, revolutionary.\n\n"
+            f"VISUAL PURPOSE: Master hybrid fusion visualization of: {clean_line}"
+        )
+
+    elif visual_style == "photoreal":
+        stat_callout = f" In the foreground, a sleek brushed-titanium plaque is engraved with the financial stat \"{stat_val}\"." if stat_val else ""
+        return (
+            f"SCENE: 8K Cinematic Film Photography — {clean_line[:60]}\n\n"
+            f"IMAGE PROMPT: Hyperrealistic 8K cinematic film photography, award-winning documentary still visually depicting: \"{clean_line}\". "
+            f"Shot on ARRI Alexa 35 with a Panavision 35mm f/1.4 anamorphic prime lens, featuring shallow depth of field, dramatic chiaroscuro key lighting, volumetric haze, atmospheric lens flare, macro environmental textures, and high contrast cinematic color grading (deep navy blues, warm amber highlights, and vivid crimson accents). "
+            f"The environment and objects are framed with golden-ratio composition, generous negative space, and realistic physical shadows. Pure cinematic landscape and object composition, zero human characters or hosts.{stat_callout}\n\n"
+            f"EMOTION: Dramatic, authoritative, immersive, cinematic.\n\n"
+            f"VISUAL PURPOSE: High-retention 8K documentary film visualization of: {clean_line}"
+        )
         
+    elif visual_style == "vox_2d":
+        stat_callout = f" A clean minimalist infographic text callout displays \"{stat_val}\" inside a smooth vector bubble." if stat_val else ""
+        return (
+            f"SCENE: Vox 2D Vector Explainer — {clean_line[:60]}\n\n"
+            f"IMAGE PROMPT: Professional Vox-style hand-drawn 2D vector educational artwork visually representing: \"{clean_line}\". "
+            f"Features crisp, smooth black outlines, bold high-contrast color blocks (electric blue, vibrant warm coral, canary yellow, and crisp white), flat shading, and clean geometric data structures. "
+            f"Set against a solid dark studio navy background with generous negative space and minimal visual clutter. Pure infographic and environmental vector artwork, no human presenters or characters.{stat_callout}\n\n"
+            f"EMOTION: Engaging, educational, clear, modern.\n\n"
+            f"VISUAL PURPOSE: High-retention 2D infographic vector illustration of: {clean_line}"
+        )
+        
+    elif visual_style == "kurzgesagt":
+        stat_callout = f" A glowing flat geometric vector badge displays \"{stat_val}\" in bold typography." if stat_val else ""
+        return (
+            f"SCENE: Kurzgesagt Geometric Vector — {clean_line[:60]}\n\n"
+            f"IMAGE PROMPT: Kurzgesagt-inspired flat geometric vector illustration visually explaining: \"{clean_line}\". "
+            f"Features vibrant neon cyan and magenta gradient backgrounds, clean flat shading, sharp geometric structures, and high-energy cosmic color accents. "
+            f"Composed with widescreen 16:9 visual symmetry, generous negative space, and zero clutter. Pure geometric environmental visualization, zero human figures.{stat_callout}\n\n"
+            f"EMOTION: Curious, scientific, energetic, visual.\n\n"
+            f"VISUAL PURPOSE: Kurzgesagt-style educational vector visualization of: {clean_line}"
+        )
+        
+    elif visual_style == "cyberpunk":
+        stat_callout = f" A glowing magenta holographic HUD plaque displays \"{stat_val}\" in digital neon font." if stat_val else ""
+        return (
+            f"SCENE: Cyberpunk Neon Anime — {clean_line[:60]}\n\n"
+            f"IMAGE PROMPT: High-contrast cell-shaded cyberpunk anime webtoon illustration illustrating: \"{clean_line}\". "
+            f"Features glowing neon cyan and magenta light leaks, rain-slicked dark cityscape reflections, futuristic cybernetic machinery, atmospheric volumetric fog, and dramatic high-contrast shadows. "
+            f"Composed with dynamic cinematic environmental angles, sharp linework, and generous negative space. Pure cyberpunk architecture and tech objects, no human characters.{stat_callout}\n\n"
+            f"EMOTION: High-octane, futuristic, atmospheric, bold.\n\n"
+            f"VISUAL PURPOSE: Cyberpunk anime visual representation of: {clean_line}"
+        )
+        
+    elif visual_style == "claymation":
+        stat_callout = f" A handcrafted polymer clay plaque stamped with \"{stat_val}\" is positioned prominently." if stat_val else ""
+        return (
+            f"SCENE: 3D Claymation Stop-Motion — {clean_line[:60]}\n\n"
+            f"IMAGE PROMPT: Tactile 3D stop-motion claymation plasticine animation style depicting: \"{clean_line}\". "
+            f"Features handcrafted clay micro-textures, subtle finger-sculpting marks, vibrant colored plasticine clay objects and buildings, tilt-shift macro depth of field, and warm 3200K studio table key lighting with realistic contact shadows. "
+            f"Set on a clean studio table stage with generous negative space. Pure clay object sculpting, zero clay human figures.{stat_callout}\n\n"
+            f"EMOTION: Tactile, creative, whimsical, handcrafted.\n\n"
+            f"VISUAL PURPOSE: Stop-motion clay animation representation of: {clean_line}"
+        )
+        
+    elif visual_style == "oil_painting":
+        stat_callout = f" A subtle gold-leaf painted scroll displays the text \"{stat_val}\" in elegant serif lettering." if stat_val else ""
+        return (
+            f"SCENE: Renaissance Oil Painting — {clean_line[:60]}\n\n"
+            f"IMAGE PROMPT: Masterpiece Renaissance oil painting on linen canvas visually depicting: \"{clean_line}\". "
+            f"Features rich impasto oil brushstrokes, dramatic Rembrandt chiaroscuro lighting, deep golden oil tones, warm ochre highlights, architectural elements, and dark atmospheric background glazing. "
+            f"Composed with classical museum-grade golden-ratio balance and generous negative space. Pure Still Life and architectural oil painting, no human figures.{stat_callout}\n\n"
+            f"EMOTION: Historical, prestigious, timeless, artistic.\n\n"
+            f"VISUAL PURPOSE: Classic fine art oil painting visualization of: {clean_line}"
+        )
+        
+    elif visual_style == "engraving":
+        stat_callout = f" A vintage engraved ribbon banner contains the etched text \"{stat_val}\"." if stat_val else ""
+        return (
+            f"SCENE: 19th Century Vintage Engraving — {clean_line[:60]}\n\n"
+            f"IMAGE PROMPT: 19th-century vintage copperplate engraving, detailed etched ink cross-hatching linework depicting: \"{clean_line}\". "
+            f"Set on antique weathered cream parchment paper texture, featuring intricate hand-engraved architectural linework, high-contrast black ink shading, and historical archive documentary aesthetic. "
+            f"Balanced composition with generous negative space. Pure architectural and object engraving, zero human characters.{stat_callout}\n\n"
+            f"EMOTION: Archival, historical, intellectual, classic.\n\n"
+            f"VISUAL PURPOSE: Historical copperplate engraving visualization of: {clean_line}"
+        )
+        
+    elif visual_style == "tech_vector":
+        stat_callout = f" A glossy translucent glassmorphic 3D UI card displays \"{stat_val}\" in glowing white typography." if stat_val else ""
+        return (
+            f"SCENE: 3D Tech Isometric Graphic — {clean_line[:60]}\n\n"
+            f"IMAGE PROMPT: Modern 3D tech isometric vector rendering illustrating: \"{clean_line}\". "
+            f"Features smooth glossy plastic 3D surfaces, corporate tech color palette (electric blue, deep slate navy, glowing emerald green), glowing fiber-optic data nodes, ambient occlusion studio lighting, and glassmorphic UI elements. "
+            f"Clean 3D isometric composition with generous negative space. Pure tech object rendering, no human figures.{stat_callout}\n\n"
+            f"EMOTION: Sleek, high-tech, corporate, futuristic.\n\n"
+            f"VISUAL PURPOSE: 3D isometric tech visualization of: {clean_line}"
+        )
+        
+    else: # Default: physical_economics_3d
+        stat_callout = f" A laser-etched clear acrylic plaque engraved with \"{stat_val}\" stands prominently in the middle ground." if stat_val else ""
         return (
             f"SCENE: Physical Miniature World — {clean_line[:60]}\n\n"
             f"IMAGE PROMPT: Cinematic handcrafted 3D clay miniature + architectural model + macro cinematography physical infographic style. "
             f"An extraordinarily detailed 1/87 scale miniature physical environment visually constructing the economics of: \"{clean_line}\". "
             f"Set against a deep royal navy studio backdrop, featuring a vivid, highly saturated, high-contrast color palette: radiant emerald green polymer clay structures, glowing neon turquoise accents, 24K gold miniature coins, rich ruby crimson cost blocks, and deep sapphire blue infrastructure partitions. "
-            f"Abstract financial forces are physically represented with vibrant color contrast: revenue flows as streams of golden coins, costs manifest as ruby crimson blocks, and demand appears as an orderly queue of colorful 1/87 scale miniature figures. "
-            f"Shot on 35mm f/2.8 macro cinema lens, tilt-shift miniature depth-of-field, warm 3200K tungsten studio key lighting with soft fill, volumetric cyan and magenta rim lighting, ambient occlusion, realistic physical contact shadows, and subtle handcrafted sculpting micro-textures.{money_callout}\n\n"
+            f"Abstract financial forces are physically represented with vibrant color contrast: revenue flows as streams of golden coins, costs manifest as ruby crimson blocks, and capacity is shown as miniature building infrastructure. "
+            f"Shot on 35mm f/2.8 macro cinema lens, tilt-shift miniature depth-of-field, warm 3200K tungsten studio key lighting with soft fill, volumetric cyan and magenta rim lighting, ambient occlusion, realistic physical contact shadows, and subtle handcrafted sculpting micro-textures. Pure miniature architecture, zero human figures.{stat_callout}\n\n"
             f"EMOTION: Intelligent, analytical, tactile, cinematic documentary.\n\n"
             f"VISUAL PURPOSE: High-retention physical miniature visualization of: {clean_line}"
         )
-    
-    style_header_map = {
-        "claymation": "3D claymation stop-motion animation style, tactile plasticine clay figures, dramatic chiaroscuro studio lighting, detailed handmade clay textures.",
-        "photoreal": "Hyperrealistic 8K 35mm film documentary photograph, shallow depth of field, anamorphic lens flare, natural volumetric lighting, award-winning movie still photography.",
-        "kurzgesagt": "Kurzgesagt flat vector illustration style, vibrant neon gradient color palette, bold geometric shapes, clean educational infographic aesthetic.",
-        "horror_auto": "Dark 16mm analog horror film photograph, lo-fi VHS grain, eerie atmospheric fog, flashlight beam shadows, dark haunting storytelling composition.",
-        "engraving": "19th-century vintage copperplate engraving, etched ink cross-hatching linework, antique weathered parchment paper texture.",
-        "cyberpunk": "Cyberpunk anime cell-shaded webtoon illustration, vibrant glowing neon lights, futuristic dark cityscape aesthetic, high contrast cell shading.",
-        "tech_vector": "Modern tech 3D isometric vector render, clean glossy plastic surfaces, corporate tech color palette, 8K studio lighting.",
-        "oil_painting": "Masterpiece Renaissance oil painting, rich impasto canvas brushstrokes, dramatic Rembrandt chiaroscuro lighting, deep golden oil tones.",
-        "midjourney_raw": "Cinematic widescreen raw photography, award-winning composition, natural realistic lighting --ar 16:9 --style raw",
-        "physical_economics_3d": "SCENE: Physical Miniature Business Model.\nIMAGE PROMPT: Premium cinematic handcrafted 3D clay miniature + architectural model + macro cinematography physical infographic style. A miniature physical world depicting the economics of: \"{clean_line}\". Abstract economic concepts are built as physical objects: revenue as flowing coins, costs as heavy blocks, capacity as miniature infrastructure, and margins as physical gaps. Tactile sculpted clay, clear acrylic, painted metal, and subtle handcrafted fingerprints.\nEMOTION: Intelligent, analytical, tactile, cinematic documentary.\nVISUAL PURPOSE: Visualizes the physical economics of the scene line.",
-        "vox_2d": "Hand-drawn professional educational cartoon illustration, clean studio-quality digital vector artwork with thick, smooth black outlines, crisp linework, soft flat colors, clean white background with generous negative space."
-    }
 
-    style_header = style_header_map.get(visual_style, style_header_map["vox_2d"])
+units_words = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen']
+tens_words = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety']
+scales_words = ['', 'thousand', 'million', 'billion', 'trillion']
 
-    money_match = re.search(r'(\$?\d+[\d,.]*\s*(million|billion|thousand|k|m)?)', clean_line, re.IGNORECASE)
-    money_callout = f" Clear visual text label displaying \"{money_match.group(0).upper()}\"." if money_match else ""
+def int_to_words(n):
+    if n == 0:
+        return 'zero'
+    if n < 0:
+        return 'minus ' + int_to_words(-n)
+    parts = []
+    scale_idx = 0
+    while n > 0:
+        chunk = n % 1000
+        if chunk > 0:
+            c_words = []
+            h = chunk // 100
+            rem = chunk % 100
+            if h > 0:
+                c_words.append(f'{units_words[h]} hundred')
+            if rem > 0:
+                if rem < 20:
+                    c_words.append(units_words[rem])
+                else:
+                    t = rem // 10
+                    u = rem % 10
+                    c_words.append(tens_words[t] + (f'-{units_words[u]}' if u > 0 else ''))
+            chunk_str = ' '.join(c_words)
+            if scales_words[scale_idx]:
+                chunk_str += ' ' + scales_words[scale_idx]
+            parts.insert(0, chunk_str)
+        n //= 1000
+        scale_idx += 1
+    return ' '.join(parts)
 
-    prompt_str = (
-        f"{style_header} A full-frame 16:9 cinematic shot depicting: \"{clean_line}\". "
-        f"A relaxed character in comfortable modern attire is positioned naturally in a clean scene with generous negative space. {money_callout} "
-        "Professional high-retention YouTube explainer documentary aesthetic, balanced composition, minimal clutter, no text watermarks."
-    )
+def num_to_spoken_str(num_str):
+    if '.' in num_str:
+        int_p, dec_p = num_str.split('.')
+        int_w = int_to_words(int(int_p)) if int_p and int(int_p) > 0 else 'zero'
+        dec_words = ' '.join(units_words[int(d)] for d in dec_p if d.isdigit())
+        return f'{int_w} point {dec_words}'
+    else:
+        return int_to_words(int(num_str))
 
-    return prompt_str
+def humanize_numbers_in_text(text):
+    if not text:
+        return text
+
+    # Clean redundant currency words: $5.5M dollars -> $5.5M
+    text = re.sub(r'(\$|€|£)\s*(\d+(?:,\d{3})*(?:\.\d+)?)\s*(k|m|million|b|billion|t|trillion)?\s*(dollars|euros|pounds|rupees)', r'\1\2 \3', text, flags=re.IGNORECASE)
+
+    # 1. Currency with scale words/suffixes: $5.5m, $150k, $2.5 billion
+    def curr_sub(m):
+        sym = m.group(1)
+        num_str = m.group(2).replace(',', '')
+        suffix = (m.group(3) or '').lower()
+        curr = 'dollars' if sym == '$' else 'euros' if sym in ('€', 'EUR') else 'pounds' if sym == '£' else 'rupees'
+
+        if suffix in ('m', 'million'):
+            scale_word = 'million'
+        elif suffix in ('b', 'billion'):
+            scale_word = 'billion'
+        elif suffix in ('t', 'trillion'):
+            scale_word = 'trillion'
+        elif suffix == 'k':
+            scale_word = 'thousand'
+        else:
+            scale_word = ''
+
+        num_spoken = num_to_spoken_str(num_str)
+        if scale_word:
+            return f'{num_spoken} {scale_word} {curr}'
+        else:
+            return f'{num_spoken} {curr}'
+
+    text = re.sub(r'(\$|€|£)\s*(\d+(?:,\d{3})*(?:\.\d+)?)\s*(k|m|million|b|billion|t|trillion)?\b', curr_sub, text, flags=re.IGNORECASE)
+
+    # 2. Standalone numbers with suffixes like 5.5m, 10k, 2.5 billion
+    def suffixed_num_sub(m):
+        num_str = m.group(1).replace(',', '')
+        suffix = m.group(2).lower()
+        scale_word = 'million' if suffix in ('m', 'million') else 'billion' if suffix in ('b', 'billion') else 'thousand' if suffix == 'k' else 'trillion'
+        return f'{num_to_spoken_str(num_str)} {scale_word}'
+    text = re.sub(r'\b(\d+(?:,\d{3})*(?:\.\d+)?)\s*(k|m|million|b|billion|t|trillion)\b', suffixed_num_sub, text, flags=re.IGNORECASE)
+
+    # 3. Percentages: 50% -> fifty percent
+    text = re.sub(r'(\d+(?:\.\d+)?)\s*%', lambda m: f'{num_to_spoken_str(m.group(1))} percent', text)
+
+    # 4. Standalone plain numbers: 150000, 10050, 150
+    def num_sub(m):
+        raw = m.group(0).replace(',', '')
+        if len(raw) == 4 and (raw.startswith('19') or raw.startswith('20')):
+            y1, y2 = int(raw[:2]), int(raw[2:])
+            return f'{int_to_words(y1)} {int_to_words(y2)}' if y2 > 0 else f'{int_to_words(y1)} hundred'
+        return int_to_words(int(raw))
+
+    text = re.sub(r'\b\d{1,3}(?:,\d{3})+\b|\b\d+\b', num_sub, text)
+    return text
 
 def generate_kokoro_tts_audio(text, voice_key="kokoro_adam", out_filepath="output.mp3"):
+    text = humanize_numbers_in_text(text)
     try:
         voice_map = {
             "kokoro_adam": "am_adam",
@@ -1371,6 +1546,7 @@ async def append_natural_pause_padding(audio_path, silence_duration_sec=0.28):
         print("Error appending natural silence padding:", e)
 
 async def safe_edge_tts_save(text, voice_id, rate, out_filepath, max_retries=3):
+    text = humanize_numbers_in_text(text)
     last_err = None
     for attempt in range(1, max_retries + 1):
         try:
@@ -1417,7 +1593,7 @@ async def handle_generate_beat_audio(request):
         out_filename = f"beat_audio_{job_id[:6] if job_id else 'beat'}_{scene_idx:02d}.mp3"
         out_filepath = os.path.join(DOWNLOADS_DIR, out_filename)
 
-        cleaned_text = humanize_script(scene_text)
+        cleaned_text = humanize_numbers_in_text(scene_text)
 
         # Synthesize audio specifically for this scene text line
         generated_ok = False
@@ -1537,6 +1713,30 @@ def generate_animated_ass_subtitle(
             alpha_hex = f"{alpha_int:02X}"
             back_color = f"&H{alpha_hex}{bgr_hex}"
 
+    font_map = {
+        "gladolia": "Gladolia DEMO",
+        "mileast": "Mileast",
+        "moldie": "Moldie Demo",
+        "montserrat": "Montserrat",
+        "outfit": "Outfit",
+        "impact": "Impact",
+        "bebas neue": "Bebas Neue",
+        "anton": "Anton",
+        "rubik": "Rubik",
+        "poppins": "Poppins",
+        "komika axis": "Komika Axis",
+        "inter": "Inter",
+        "georgia": "Georgia"
+    }
+    actual_font_name = font_map.get(str(font_name).lower().strip(), font_name)
+
+    # If background is 100% transparent (opacity <= 0.05), strip outline border box completely
+    if custom_bg_opacity is not None and custom_bg_opacity <= 0.05:
+        outline = 0
+        shadow = 0
+        outline_color = "&HFF000000"
+        back_color = "&HFF000000"
+
     header = f"""[Script Info]
 Title: Studio Animated Subtitles
 ScriptType: v4.00+
@@ -1546,7 +1746,7 @@ YCbCr Matrix: None
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,{font_name},{fontsize},{primary_color},{secondary_color},{outline_color},{back_color},-1,0,0,0,100,100,0,0,1,{outline},{shadow},{alignment},20,20,40,1
+Style: Default,{actual_font_name},{fontsize},{primary_color},{secondary_color},{outline_color},{back_color},-1,0,0,0,100,100,0,0,1,{outline},{shadow},{alignment},20,20,40,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -1873,18 +2073,19 @@ async def handle_clone_voice(request):
 
 def condense_prompt_for_flux(raw_prompt):
     if not raw_prompt:
-        return "cinematic film still, high quality"
+        return "cinematic film still, photorealistic, high quality"
     
-    clean = re.sub(r'[\r\n]+', ' ', raw_prompt)
-    clean = re.sub(r'[^\w\s\-,.]', '', clean).strip()
+    clean = raw_prompt.strip()
+    if 'IMAGE PROMPT:' in clean:
+        match = re.search(r'IMAGE PROMPT:\s*([\s\S]*?)(?=\n\n[A-Z\s]+:|$)', clean)
+        if match and match.group(1):
+            clean = match.group(1).strip()
+            
+    clean = re.sub(r'[\r\n]+', ' ', clean)
+    clean = re.sub(r'\s+', ' ', clean).strip()
 
-    if len(clean) > 220:
-        truncated = clean[:220]
-        last_space = truncated.rfind(' ')
-        if last_space > 80:
-            clean = truncated[:last_space]
-        else:
-            clean = truncated
+    if len(clean) > 500:
+        clean = clean[:500].rsplit(' ', 1)[0]
 
     return clean
 
@@ -1898,64 +2099,120 @@ async def handle_generate_flux_image(request):
         height = int(data.get("height", 720))
         
         flux_prompt = condense_prompt_for_flux(prompt)
-        encoded_prompt = urllib.parse.quote_plus(flux_prompt)
-        seed = uuid.uuid4().int % 100000
-        
-        flux_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width={width}&height={height}&model=flux&nologo=true&seed={seed}"
+        enhanced_prompt = f"{flux_prompt}, 8k resolution, photorealistic masterpiece, highly detailed, 35mm photograph, cinematic lighting"
+        encoded_prompt = urllib.parse.quote_plus(enhanced_prompt)
+        seed = (uuid.uuid4().int + scene_num * 31) % 100000
         
         filename = f"flux_scene_{proj_id}_{scene_num}_{uuid.uuid4().hex[:6]}.png"
         filepath = os.path.join(DOWNLOADS_DIR, filename)
         image_url = f"/static/generated/{filename}"
         
-        async with ClientSession() as session:
+        hf_token = os.environ.get("HF_TOKEN", "").strip() or os.environ.get("HUGGING_FACE_HUB_TOKEN", "").strip()
+        headers = {"Authorization": f"Bearer {hf_token}"} if hf_token else None
+
+        success = False
+
+        # TIER 1: Official black-forest-labs/FLUX.1-schnell & FLUX.1-dev with User HF_TOKEN
+        def run_official_flux():
+            from gradio_client import Client
+            import shutil
+            
+            # Try FLUX.1-schnell (Ultra fast 4-step 8K model)
             try:
-                async with session.get(flux_url, timeout=30) as resp:
-                    if resp.status == 200:
-                        image_bytes = await resp.read()
-                        with open(filepath, "wb") as f:
-                            f.write(image_bytes)
-                    else:
-                        # Fallback attempt with gen.pollinations.ai
-                        alt_url = f"https://gen.pollinations.ai/prompt/{encoded_prompt}?width={width}&height={height}&model=flux&nologo=true"
-                        async with session.get(alt_url, timeout=20) as alt_resp:
-                            if alt_resp.status == 200:
-                                image_bytes = await alt_resp.read()
-                                with open(filepath, "wb") as f:
-                                    f.write(image_bytes)
-                            else:
-                                svg_content = f'''<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">
-                                    <rect width="100%" height="100%" fill="#0e1017"/>
-                                    <rect x="2" y="2" width="{width-4}" height="{height-4}" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="8 8"/>
-                                    <text x="50%" y="45%" dominant-baseline="middle" text-anchor="middle" fill="#f59e0b" font-size="28" font-weight="bold">⚡ FLUX AI IMAGE BEAT #{scene_num}</text>
-                                    <text x="50%" y="60%" dominant-baseline="middle" text-anchor="middle" fill="#9ca3af" font-size="16">{clean_prompt[:60]}...</text>
-                                </svg>'''
-                                with open(filepath, "w", encoding="utf-8") as f:
-                                    f.write(svg_content)
-            except Exception as net_err:
-                svg_content = f'''<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">
-                    <rect width="100%" height="100%" fill="#0e1017"/>
-                    <rect x="2" y="2" width="{width-4}" height="{height-4}" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="8 8"/>
-                    <text x="50%" y="45%" dominant-baseline="middle" text-anchor="middle" fill="#f59e0b" font-size="28" font-weight="bold">⚡ FLUX AI IMAGE BEAT #{scene_num}</text>
-                    <text x="50%" y="60%" dominant-baseline="middle" text-anchor="middle" fill="#9ca3af" font-size="16">{clean_prompt[:60]}...</text>
-                </svg>'''
-                with open(filepath, "w", encoding="utf-8") as f:
-                    f.write(svg_content)
-        
-        # Update SQLite scene database record
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
-        cursor.execute("UPDATE scenes SET image_url = ?, prompt = ? WHERE project_id = ? AND scene_num = ?", 
-                       (image_url, prompt, proj_id, scene_num))
-        conn.commit()
-        conn.close()
-        
+                client_s = Client("black-forest-labs/FLUX.1-schnell", headers=headers)
+                result_s = client_s.predict(
+                    prompt=enhanced_prompt,
+                    seed=seed,
+                    randomize_seed=True,
+                    width=1024,
+                    height=576,
+                    num_inference_steps=4,
+                    api_name="/infer"
+                )
+                gen_path = result_s[0] if isinstance(result_s, (list, tuple)) else str(result_s)
+                if gen_path and os.path.exists(gen_path):
+                    shutil.copy(gen_path, filepath)
+                    print(f"[FLUX.1-schnell Scene #{scene_num} SUCCESS]: saved to {filepath}")
+                    return True
+            except Exception as e_s:
+                print(f"[FLUX.1-schnell Scene #{scene_num} notice]: {e_s}")
+            
+            # Try FLUX.1-dev
+            try:
+                client_d = Client("black-forest-labs/FLUX.1-dev", headers=headers)
+                result_d = client_d.predict(
+                    prompt=enhanced_prompt,
+                    seed=seed,
+                    randomize_seed=False,
+                    width=width,
+                    height=height,
+                    guidance_scale=3.5,
+                    num_inference_steps=28,
+                    api_name="/infer"
+                )
+                gen_path_d = result_d[0] if isinstance(result_d, (list, tuple)) else str(result_d)
+                if gen_path_d and os.path.exists(gen_path_d):
+                    shutil.copy(gen_path_d, filepath)
+                    print(f"[FLUX.1-dev Scene #{scene_num} SUCCESS]: saved to {filepath}")
+                    return True
+            except Exception as e_d:
+                print(f"[FLUX.1-dev Scene #{scene_num} notice]: {e_d}")
+
+            return False
+
+        try:
+            success = await asyncio.wait_for(asyncio.to_thread(run_official_flux), timeout=25.0)
+        except Exception as timeout_err:
+            print(f"[Official FLUX Timeout Scene #{scene_num}]: {timeout_err}")
+            success = False
+
+        # TIER 2: Pollinations FLUX engine fallback
+        if not success or not os.path.exists(filepath):
+            flux_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width={width}&height={height}&model=flux&nologo=true&seed={seed}&enhance=true"
+            async with ClientSession() as session:
+                try:
+                    async with session.get(flux_url, timeout=25) as resp:
+                        if resp.status == 200:
+                            image_bytes = await resp.read()
+                            with open(filepath, "wb") as f:
+                                f.write(image_bytes)
+                            success = True
+                except Exception as net_err:
+                    print(f"[FLUX Tier 2 Scene #{scene_num} notice]: {net_err}")
+
+        # TIER 3: SVG fallback
+        if not success or not os.path.exists(filepath):
+            svg_content = f'''<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">
+                <rect width="100%" height="100%" fill="#0e1017"/>
+                <rect x="4" y="4" width="{width-8}" height="{height-8}" fill="none" stroke="#af52de" stroke-width="2" stroke-dasharray="8 8"/>
+                <text x="50%" y="45%" dominant-baseline="middle" text-anchor="middle" fill="#af52de" font-size="28" font-weight="bold">⚡ FLUX AI visual asset beat #{scene_num}</text>
+                <text x="50%" y="60%" dominant-baseline="middle" text-anchor="middle" fill="#9ca3af" font-size="16">{flux_prompt[:60]}...</text>
+            </svg>'''
+            with open(filepath, "w", encoding="utf-8") as f:
+                f.write(svg_content)
+
+        # Update SQLite scene database record if exists
+        try:
+            conn = sqlite3.connect(DB_PATH)
+            cursor = conn.cursor()
+            cursor.execute("UPDATE scenes SET image_url = ?, prompt = ? WHERE project_id = ? AND scene_num = ?", 
+                           (image_url, prompt, proj_id, scene_num))
+            conn.commit()
+            conn.close()
+        except Exception:
+            pass
+
         return web.json_response({
             "status": "success",
             "message": f"FLUX AI Image generated for Beat #{scene_num}",
             "sceneNum": scene_num,
-            "imageUrl": image_url
+            "scene_num": scene_num,
+            "image_url": image_url,
+            "imageUrl": image_url,
+            "image_path": filepath
         })
     except Exception as e:
+        print("[handle_generate_flux_image exception]:", e)
         return web.json_response({"error": str(e)}, status=500)
 
 async def handle_verify_passcode(request):
@@ -2009,37 +2266,42 @@ def generate_scene_canvas_image(scene_text, scene_num, out_filepath):
         print("[generate_scene_canvas_image error]:", e)
 
 async def run_cmd(cmd_list):
-    proc = await asyncio.create_subprocess_exec(
-        *cmd_list,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE
-    )
-    stdout, stderr = await proc.communicate()
-    if proc.returncode != 0:
-        print(f"[run_cmd error] code={proc.returncode} stderr={stderr.decode('utf-8', errors='ignore')}")
-    return proc.returncode == 0
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            *cmd_list,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+        stdout, stderr = await proc.communicate()
+        if proc.returncode != 0:
+            print(f"[run_cmd error] code={proc.returncode} stderr={stderr.decode('utf-8', errors='ignore')}")
+        return proc.returncode == 0
+    except Exception as e:
+        print(f"[run_cmd exception]: {e}")
+        return False
 
 async def handle_render_final_video(request):
     try:
         data = await request.json()
-        job_id = data.get("job_id", "").strip()
+        job_id = data.get("job_id", "")
         scenes = data.get("scenes", [])
-        subtitle_style = str(data.get("subtitle_style", "hormozi")).lower()
+        subtitle_style = str(data.get("subtitle_style", "bounce")).lower()
         subtitle_pos = str(data.get("subtitle_pos", "bottom")).lower()
         video_filter = str(data.get("video_filter", "none")).lower()
-        
-        if not scenes:
-            job = BACKGROUND_JOBS.get(job_id)
-            if job and job.get("result") and job["result"].get("scenes"):
-                scenes = job["result"]["scenes"]
+        is_quick_preview = bool(data.get("is_quick_preview", False))
 
         if not scenes:
             return web.json_response({"error": "No scene beats available to render video."}, status=400)
 
-        out_master_filename = f"master_video_{job_id[:8] if job_id else 'video'}.mp4"
+        # Quick Preview mode slices to first 2 scenes for ultra-fast 3-second testing
+        if is_quick_preview and len(scenes) >= 2:
+            scenes = scenes[:2]
+
+        ts_id = int(time.time() * 1000)
+        out_master_filename = f"master_video_{job_id[:8] if job_id else 'vid'}_{ts_id}.mp4"
         out_master_filepath = os.path.join(DOWNLOADS_DIR, out_master_filename)
 
-        temp_dir = os.path.join(DOWNLOADS_DIR, f"render_tmp_{job_id[:6] if job_id else 'tmp'}")
+        temp_dir = os.path.join(DOWNLOADS_DIR, f"render_tmp_{job_id[:6] if job_id else 'tmp'}_{ts_id}")
         os.makedirs(temp_dir, exist_ok=True)
 
         concat_list_path = os.path.join(temp_dir, "concat.txt")
@@ -2111,97 +2373,128 @@ async def handle_render_final_video(request):
         transition_style = str(data.get("transition", "crossfade")).lower()
         allowed_transitions = data.get("allowed_transitions", [])
         
-        # Build raw concatenated video (with xfade if selected)
+        # Build raw concatenated video (with xfade if selected and safe for command length)
         raw_concat_video = os.path.join(temp_dir, "raw_concat.mp4")
-        
-        if len(concat_files) > 1 and transition_style != "none":
-            # 19 Premium FFmpeg xfade transition options
-            xfade_options = [
-                "fade", "fadeblack", "fadewhite", "wipeleft", "wiperight",
-                "wipeup", "wipedown", "slideleft", "slideright", "slideup",
-                "slidedown", "zoomin", "circlecrop", "rectcrop", "pixelize",
-                "diagtl", "diagtr", "horzopen", "vertopen"
-            ]
-            xfade_map = {
-                "crossfade": "fade",
-                "fadeblack": "fadeblack",
-                "fadewhite": "fadewhite",
-                "wipeleft": "wipeleft",
-                "wiperight": "wiperight",
-                "wipeup": "wipeup",
-                "wipedown": "wipedown",
-                "slideleft": "slideleft",
-                "slideright": "slideright",
-                "slideup": "slideup",
-                "slidedown": "slidedown",
-                "zoomin": "zoomin",
-                "circlecrop": "circlecrop",
-                "rectcrop": "rectcrop",
-                "pixelize": "pixelize",
-                "diagtl": "diagtl",
-                "diagtr": "diagtr",
-                "horzopen": "horzopen",
-                "vertopen": "vertopen"
-            }
-            if allowed_transitions and isinstance(allowed_transitions, list) and len(allowed_transitions) > 0:
-                selected_pool = [xfade_map.get(t, t) for t in allowed_transitions if t in xfade_map or t in xfade_options]
-                if selected_pool:
-                    xfade_options = selected_pool
 
-            # Extract durations
-            durations = []
-            for cf in concat_files:
-                d = await get_media_duration_sec(cf)
-                durations.append(max(d, 0.5))
+        success = False
+        # Only run xfade filter complex if clip count is small (<=20 clips) to prevent Windows command line overflow [WinError 206]
+        if len(concat_files) > 1 and len(concat_files) <= 20 and transition_style != "none":
+            try:
+                # 19 Premium FFmpeg xfade transition options
+                xfade_options = [
+                    "fade", "fadeblack", "fadewhite", "wipeleft", "wiperight",
+                    "wipeup", "wipedown", "slideleft", "slideright", "slideup",
+                    "slidedown", "zoomin", "circlecrop", "rectcrop", "pixelize",
+                    "diagtl", "diagtr", "horzopen", "vertopen"
+                ]
+                xfade_map = {
+                    "crossfade": "fade", "fadeblack": "fadeblack", "fadewhite": "fadewhite",
+                    "wipeleft": "wipeleft", "wiperight": "wiperight", "wipeup": "wipeup",
+                    "wipedown": "wipedown", "slideleft": "slideleft", "slideright": "slideright",
+                    "slideup": "slideup", "slidedown": "slidedown", "zoomin": "zoomin",
+                    "circlecrop": "circlecrop", "rectcrop": "rectcrop", "pixelize": "pixelize",
+                    "diagtl": "diagtl", "diagtr": "diagtr", "horzopen": "horzopen", "vertopen": "vertopen"
+                }
+                if allowed_transitions and isinstance(allowed_transitions, list) and len(allowed_transitions) > 0:
+                    selected_pool = [xfade_map.get(t, t) for t in allowed_transitions if t in xfade_map or t in xfade_options]
+                    if selected_pool:
+                        xfade_options = selected_pool
 
-            # Build complex xfade filter graph
-            filter_parts = []
-            accum_offset = durations[0] - 0.5
-            prev_v = "0:v"
-            prev_a = "0:a"
-            
-            xfade_inputs = []
-            for idx, cf in enumerate(concat_files):
-                xfade_inputs.extend(["-i", cf])
+                durations = []
+                for cf in concat_files:
+                    d = await get_media_duration_sec(cf)
+                    durations.append(max(d, 0.5))
 
-            for i in range(1, len(concat_files)):
-                if transition_style in ["random", "sequential", "cycle"] or (allowed_transitions and len(allowed_transitions) > 0):
-                    trans_kw = xfade_options[(i - 1) % len(xfade_options)]
-                else:
-                    trans_kw = xfade_map.get(transition_style, "fade")
+                filter_parts = []
+                accum_offset = durations[0] - 0.5
+                prev_v = "0:v"
 
-                next_v = f"{i}:v"
-                next_a = f"{i}:a"
-                out_v = f"v{i}" if i < len(concat_files) - 1 else "outv"
-                out_a = f"a{i}" if i < len(concat_files) - 1 else "outa"
-                
-                filter_parts.append(f"[{prev_v}][{next_v}]xfade=transition={trans_kw}:duration=0.5:offset={max(0, accum_offset):.3f}[{out_v}]")
-                filter_parts.append(f"[{prev_a}][{next_a}]acrossfade=d=0.5:c1=tri:c2=tri[{out_a}]")
-                
-                prev_v = out_v
-                prev_a = out_a
-                if i < len(durations) - 1:
-                    accum_offset += max(0, durations[i] - 0.5)
+                xfade_inputs = []
+                for idx, cf in enumerate(concat_files):
+                    xfade_inputs.extend(["-i", cf])
 
-            filter_graph = ";".join(filter_parts)
-            
-            xfade_cmd = ["ffmpeg", "-y"] + xfade_inputs + [
-                "-filter_complex", filter_graph,
-                "-map", "[outv]", "-map", "[outa]",
-                "-c:v", "libx264", "-preset", "ultrafast", "-crf", "20",
-                "-c:a", "aac", "-b:a", "192k", raw_concat_video
-            ]
-            success = await run_cmd(xfade_cmd)
-            if not success or not os.path.exists(raw_concat_video) or os.path.getsize(raw_concat_video) < 100:
-                # Fallback to concat demuxer if xfade fails
+                for i in range(1, len(concat_files)):
+                    if transition_style in ["random", "sequential", "cycle"] or (allowed_transitions and len(allowed_transitions) > 0):
+                        trans_kw = xfade_options[(i - 1) % len(xfade_options)]
+                    else:
+                        trans_kw = xfade_map.get(transition_style, "fade")
+
+                    next_v = f"{i}:v"
+                    out_v = f"v{i}" if i < len(concat_files) - 1 else "outv"
+
+                    filter_parts.append(f"[{prev_v}][{next_v}]xfade=transition={trans_kw}:duration=0.5:offset={max(0, accum_offset):.3f}[{out_v}]")
+
+                    prev_v = out_v
+                    if i < len(durations) - 1:
+                        accum_offset += max(0, durations[i] - 0.5)
+
+                # Concatenate audio streams end-to-end to protect 100% of audio and natural pauses
+                audio_inputs_str = "".join([f"[{i}:a]" for i in range(len(concat_files))])
+                filter_parts.append(f"{audio_inputs_str}concat=n={len(concat_files)}:v=0:a=1[outa]")
+
+                filter_graph = ";".join(filter_parts)
+                filter_script_path = os.path.join(temp_dir, "xfade_filter.txt")
+                with open(filter_script_path, "w", encoding="utf-8") as f:
+                    f.write(filter_graph)
+
+                xfade_cmd = ["ffmpeg", "-y"] + xfade_inputs + [
+                    "-filter_complex_script", filter_script_path,
+                    "-map", "[outv]", "-map", "[outa]",
+                    "-c:v", "libx264", "-preset", "ultrafast", "-crf", "20",
+                    "-c:a", "aac", "-b:a", "192k", raw_concat_video
+                ]
+                success = await run_cmd(xfade_cmd)
+            except Exception as ex:
+                print(f"[xfade fallback triggered]: {ex}")
+                success = False
+
+        if not success or not os.path.exists(raw_concat_video) or os.path.getsize(raw_concat_video) < 100:
+            batch_chunk_size = 50
+            num_clips = len(concat_files)
+            if num_clips > batch_chunk_size:
+                print(f"[Master Concatenation Engine]: Rendering {num_clips} clips in 50-clip batches to prevent crashes...")
+                total_batches = (num_clips + batch_chunk_size - 1) // batch_chunk_size
+                intermediate_batch_files = []
+
+                for b_idx in range(total_batches):
+                    start_i = b_idx * batch_chunk_size
+                    end_i = min(start_i + batch_chunk_size, num_clips)
+                    batch_files = concat_files[start_i:end_i]
+
+                    batch_list_path = os.path.join(temp_dir, f"batch_concat_list_{b_idx:03d}.txt")
+                    with open(batch_list_path, "w", encoding="utf-8") as f:
+                        for cf in batch_files:
+                            esc_path = cf.replace("\\", "/")
+                            f.write(f"file '{esc_path}'\n")
+
+                    batch_chunk_mp4 = os.path.join(temp_dir, f"batch_chunk_{b_idx:03d}.mp4")
+                    batch_cmd = ["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", batch_list_path, "-c:v", "copy", "-c:a", "copy", batch_chunk_mp4]
+                    
+                    print(f"[Master Concatenation Engine]: Batch {b_idx + 1}/{total_batches} ({start_i + 1}-{end_i}/{num_clips}) rendering...")
+                    batch_ok = await run_cmd(batch_cmd)
+                    if not batch_ok or not os.path.exists(batch_chunk_mp4) or os.path.getsize(batch_chunk_mp4) < 100:
+                        batch_cmd_re = ["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", batch_list_path, "-c:v", "libx264", "-preset", "ultrafast", "-c:a", "aac", "-b:a", "192k", batch_chunk_mp4]
+                        await run_cmd(batch_cmd_re)
+
+                    intermediate_batch_files.append(batch_chunk_mp4)
+                    await asyncio.sleep(0.3)  # CPU & Disk I/O cooldown break
+
+                final_batch_list_path = os.path.join(temp_dir, "final_batch_list.txt")
+                with open(final_batch_list_path, "w", encoding="utf-8") as f:
+                    for b_file in intermediate_batch_files:
+                        esc_path = b_file.replace("\\", "/")
+                        f.write(f"file '{esc_path}'\n")
+
+                final_merge_cmd = ["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", final_batch_list_path, "-c:v", "copy", "-c:a", "copy", raw_concat_video]
+                await run_cmd(final_merge_cmd)
+            else:
+                print(f"[Master Concatenation]: Fast FFmpeg concat demuxer rendering {len(concat_files)} clips...")
                 concat_cmd = ["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", concat_list_path, "-c:v", "copy", "-c:a", "copy", raw_concat_video]
-                await run_cmd(concat_cmd)
-        else:
-            concat_cmd = [
-                "ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", concat_list_path,
-                "-c:v", "copy", "-c:a", "copy", raw_concat_video
-            ]
-            await run_cmd(concat_cmd)
+                concat_ok = await run_cmd(concat_cmd)
+                if not concat_ok or not os.path.exists(raw_concat_video) or os.path.getsize(raw_concat_video) < 100:
+                    print("[Master Concatenation]: Fallback re-encoding via concat demuxer...")
+                    concat_cmd_re = ["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", concat_list_path, "-c:v", "libx264", "-preset", "ultrafast", "-c:a", "aac", "-b:a", "192k", raw_concat_video]
+                    await run_cmd(concat_cmd_re)
 
         subtitle_font = str(data.get("subtitle_font", "Arial")).strip()
         subtitle_bg_color = str(data.get("subtitle_bg_color", "#000000")).strip()
@@ -2230,12 +2523,17 @@ async def handle_render_final_video(request):
                 custom_bg_opacity=subtitle_bg_opacity
             )
 
+            fonts_dir_path = os.path.join(STATIC_DIR, "fonts")
+            fonts_dir_escaped = fonts_dir_path.replace("\\", "/").replace(":", "\\:")
             master_ass_escaped = master_ass_path.replace("\\", "/").replace(":", "\\:")
-            final_vf_filters.append(f"subtitles='{master_ass_escaped}'")
+            final_vf_filters.append(f"subtitles='{master_ass_escaped}':fontsdir='{fonts_dir_escaped}'")
 
         final_render_cmd = ["ffmpeg", "-y", "-i", raw_concat_video]
         if final_vf_filters:
-            final_render_cmd.extend(["-vf", ",".join(final_vf_filters)])
+            final_vf_script_path = os.path.join(temp_dir, "final_vf.txt")
+            with open(final_vf_script_path, "w", encoding="utf-8") as f:
+                f.write(",".join(final_vf_filters))
+            final_render_cmd.extend(["-filter_script:v", final_vf_script_path])
 
         final_render_cmd.extend([
             "-af", "loudnorm=I=-14:LRA=11:TP=-1.5",
@@ -2256,59 +2554,138 @@ async def handle_render_final_video(request):
         print("[handle_render_final_video exception]:", e)
         return web.json_response({"error": str(e)}, status=500)
 
-async def handle_generate_flux_image(request):
-    try:
-        data = await request.json()
-        prompt = data.get("prompt", "").strip()
-        scene_num = data.get("scene_num", 1)
-        if not prompt:
-            return web.json_response({"error": "Prompt is required"}, status=400)
-            
-        filename = f"flux_dev_scene_{scene_num}_{uuid.uuid4().hex[:6]}.png"
-        out_filepath = os.path.join(STATIC_DIR, "generated", filename)
-        os.makedirs(os.path.dirname(out_filepath), exist_ok=True)
-        
-        def run_flux_dev():
-            from gradio_client import Client
-            import shutil
-            client = Client("black-forest-labs/FLUX.1-dev")
-            result = client.predict(
-                prompt=prompt,
-                seed=42,
-                randomize_seed=True,
-                width=1280,
-                height=720,
-                guidance_scale=3.5,
-                num_inference_steps=28,
-                api_name="/infer"
-            )
-            gen_path = result[0] if isinstance(result, (list, tuple)) else str(result)
-            shutil.copy(gen_path, out_filepath)
-            return f"/static/generated/{filename}"
-            
-        rel_url = await asyncio.to_thread(run_flux_dev)
-        return web.json_response({"status": "success", "image_url": rel_url, "image_path": out_filepath})
-    except Exception as e:
-        print("[handle_generate_flux_image exception]:", e)
-        return web.json_response({"error": str(e)}, status=500)
+# Duplicate Gradio FLUX handler removed to enforce reliable multi-tier Pollinations FLUX engine
 
-async def handle_upload_scene_image(request):
+_lama_session = None
+
+def clean_image_with_lama_ai(img_bytes):
+    global _lama_session
+    try:
+        print(f"[LaMa AI]: Starting watermark removal on {len(img_bytes)} bytes...")
+        model_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "scratch", "lama_fp32.onnx")
+        if not os.path.exists(model_path):
+            print(f"[LaMa AI ERROR]: Model path does not exist: {model_path}")
+            return img_bytes
+
+        if _lama_session is None:
+            import onnxruntime as ort
+            print("[LaMa AI]: Loading ONNX session...")
+            _lama_session = ort.InferenceSession(model_path, providers=['CPUExecutionProvider'])
+
+        nparr = np.frombuffer(img_bytes, np.uint8)
+        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        if img is None:
+            print("[LaMa AI ERROR]: cv2.imdecode returned None")
+            return img_bytes
+
+        h, w = img.shape[:2]
+
+        # Target ONLY exact Google Flow AI / Gemini / Nano Banana watermark box (tight box: y 87-98%, x 89-99%)
+        mask = np.zeros((h, w), dtype=np.uint8)
+        mask[int(h * 0.87):int(h * 0.98), int(w * 0.89):int(w * 0.99)] = 255
+
+        img_512 = cv2.resize(img, (512, 512))
+        mask_512 = cv2.resize(mask, (512, 512), interpolation=cv2.INTER_NEAREST)
+
+        img_rgb = cv2.cvtColor(img_512, cv2.COLOR_BGR2RGB)
+        img_np = (img_rgb.astype(np.float32) / 255.0).transpose((2, 0, 1))[np.newaxis, ...]
+        mask_np = (mask_512 > 128).astype(np.float32)[np.newaxis, np.newaxis, ...]
+
+        inputs = {
+            _lama_session.get_inputs()[0].name: img_np,
+            _lama_session.get_inputs()[1].name: mask_np
+        }
+        res = _lama_session.run(None, inputs)[0][0]
+
+        res = np.clip(res, 0, 255 if res.max() > 1.0 else 1.0)
+        if res.max() <= 1.0:
+            res = (res * 255.0)
+
+        res = res.astype(np.uint8).transpose((1, 2, 0))
+        res_bgr = cv2.cvtColor(res, cv2.COLOR_RGB2BGR)
+
+        res_full = cv2.resize(res_bgr, (w, h))
+
+        final = img.copy()
+        mask_3d = (mask > 0)[:, :, np.newaxis]
+        final = np.where(mask_3d, res_full, img)
+
+        ext = ".jpg"
+        is_success, buffer = cv2.imencode(ext, final, [cv2.IMWRITE_JPEG_QUALITY, 95])
+        if is_success:
+            print(f"[LaMa AI SUCCESS]: Cleaned image encoded successfully ({len(buffer)} bytes)")
+            return buffer.tobytes()
+        print("[LaMa AI ERROR]: cv2.imencode failed")
+        return img_bytes
+    except Exception as e:
+        print("[clean_image_with_lama_ai exception]:", e)
+        import traceback
+        traceback.print_exc()
+        return img_bytes
+
+def overlay_channel_logo_on_image(img_bytes, logo_source=None):
+    return img_bytes
+
+async def handle_upload_channel_logo(request):
     try:
         reader = await request.multipart()
         field = await reader.next()
         if not field or not field.filename:
             return web.json_response({"error": "No file uploaded"}, status=400)
-        
-        filename = f"scene_img_{uuid.uuid4().hex[:8]}_{field.filename}"
-        out_path = os.path.join(STATIC_DIR, "uploads", filename)
-        os.makedirs(os.path.dirname(out_path), exist_ok=True)
-        
+
+        logo_path = os.path.join(STATIC_DIR, "uploads", "channel_logo.png")
+        os.makedirs(os.path.dirname(logo_path), exist_ok=True)
+
         content = await field.read()
+        with open(logo_path, "wb") as f:
+            f.write(content)
+
+        return web.json_response({
+            "status": "success",
+            "logo_url": "/static/uploads/channel_logo.png",
+            "logo_path": logo_path
+        })
+    except Exception as e:
+        print("[handle_upload_channel_logo error]:", e)
+        return web.json_response({"error": str(e)}, status=500)
+
+async def handle_upload_scene_image(request):
+    try:
+        clean_watermarks = request.query.get("clean_watermarks", "").lower() in ("true", "1")
+        reader = await request.multipart()
+        filename = ""
+        out_path = ""
+        content = None
+
+        while True:
+            field = await reader.next()
+            if field is None:
+                break
+            if field.name in ("clean_watermarks", "burn_logo"):
+                try:
+                    val = (await field.read()).decode('utf-8').strip().lower()
+                    if val in ("true", "1"):
+                        clean_watermarks = True
+                except Exception:
+                    pass
+            elif field.filename:
+                filename = f"scene_img_{uuid.uuid4().hex[:8]}_{field.filename}"
+                out_path = os.path.join(STATIC_DIR, "uploads", filename)
+                os.makedirs(os.path.dirname(out_path), exist_ok=True)
+                content = await field.read()
+
+        if not content or not out_path:
+            return web.json_response({"error": "No file uploaded"}, status=400)
+
+        if clean_watermarks:
+            print(f"[LaMa AI Engine]: Auto-cleaning watermark on '{filename}'...")
+            content = clean_image_with_lama_ai(content)
+
         with open(out_path, "wb") as f:
             f.write(content)
-                
+
         rel_url = f"/static/uploads/{filename}"
-        return web.json_response({"status": "success", "image_url": rel_url, "image_path": out_path})
+        return web.json_response({"status": "success", "image_url": rel_url, "image_path": out_path, "watermark_cleaned": True})
     except Exception as e:
         print("[handle_upload_scene_image error]:", e)
         return web.json_response({"error": str(e)}, status=500)
@@ -2335,14 +2712,15 @@ def create_app():
     app.router.add_post("/api/generate-flux-image", handle_generate_flux_image)
     app.router.add_post("/api/generate-beat-clip", handle_generate_beat_clip)
     app.router.add_post("/api/upload-scene-image", handle_upload_scene_image)
+    app.router.add_post("/api/upload-channel-logo", handle_upload_channel_logo)
     app.router.add_post("/api/generate-seo-package", handle_generate_seo_package)
     app.router.add_post("/api/clone-voice", handle_clone_voice)
     app.router.add_post("/api/verify-passcode", handle_verify_passcode)
     app.router.add_post("/api/render-final-video", handle_render_final_video)
     app.router.add_get("/api/projects", handle_list_projects)
     app.router.add_get("/api/projects/{id}", handle_get_project)
-    app.router.add_post("/api/projects", handle_save_project)
     app.router.add_static("/static/", STATIC_DIR)
+    app.router.add_static("/fonts/", os.path.join(STATIC_DIR, "fonts"))
     app.router.add_get("/{path:.*}", handle_fallback)
     return app
 

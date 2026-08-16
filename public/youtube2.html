@@ -7,9 +7,24 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <link rel="icon" type="image/png" href="/static/icon.png">
-    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Inter:wght@700;800;900&family=Montserrat:wght@700;800;900&family=Outfit:wght@700;800;900&family=Poppins:wght@700;800&family=Rubik:wght@700;800;900&display=swap" rel="stylesheet">
+
     <style>
+        @font-face {
+            font-family: 'Gladolia';
+            src: url('/fonts/GladoliaDEMO-Regular.otf') format('opentype');
+        }
+        @font-face {
+            font-family: 'Mileast';
+            src: url('/fonts/Mileast.otf') format('opentype');
+        }
+        @font-face {
+            font-family: 'Moldie';
+            src: url('/fonts/Moldie Demo.otf') format('opentype');
+        }
+
         :root {
             --bg-base: #0a0a0c;
             --bg-card: #141418;
@@ -442,7 +457,8 @@
             <div style="margin-bottom: 16px;">
                 <label style="font-size:0.8rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:8px;">🎨 Select Visual Art Style:</label>
                 <select id="visualStyleSelect" style="width:100%; background:var(--bg-input); border:1px solid var(--border-subtle); border-radius:var(--radius-md); color:var(--text-primary); padding:12px; font-size:0.9rem; font-weight:600; outline:none; cursor:pointer;">
-                    <option value="physical_economics_3d" selected>🏗️ Physical Economics 3D Miniature World (Financial Documentary)</option>
+                    <option value="omniverse_master_hybrid" selected>🌌 Omniverse Master Hybrid (All 9 Visual Styles Merged)</option>
+                    <option value="physical_economics_3d">🏗️ Physical Economics 3D Miniature World (Financial Documentary)</option>
                     <option value="vox_2d">🎨 Hand-Drawn 2D Vector Artwork (Vox / Explainer Style)</option>
                     <option value="photoreal">📸 Hyperrealistic 8K Cinematic Film Photography</option>
                     <option value="kurzgesagt">⚡ Kurzgesagt Geometric Vector Graphic</option>
@@ -485,6 +501,8 @@
                     <button id="totalScenesCountBtn" class="btn-icon-pill btn-count-pill" style="display:none;" title="Total Scenes Count">0</button>
                     <button class="btn-icon-pill btn-blue-pill" id="btnCopyPrompts" onclick="copyOnlyPrompts()" style="display:none;" title="Copy All Prompts">📋</button>
                     <button class="btn-icon-pill btn-green-pill" id="btnUploadBatch" onclick="triggerBatchUpload()" style="display:none;" title="Upload Batch Images">📁</button>
+
+                    <button class="btn-icon-pill btn-purple-pill" id="btnGenerateAllFlux" onclick="generateFluxImagesOneByOne()" style="display:none;" title="Generate FLUX AI Images">🎨</button>
                     <button class="btn-icon-pill btn-purple-pill" id="btnGenerateAllVoice" onclick="generateAllBeatVoiceovers()" style="display:none;" title="Generate All Beat Voiceovers">🎙️</button>
                     <button class="btn-icon-pill btn-blue-pill" id="btnPushTimeline" onclick="pushClipsToTimeline()" style="display:none;" title="Push Clips to Interactive Timeline">🎞️</button>
                     <input type="file" id="batchImageInput" multiple accept="image/*" style="display:none;" onchange="handleBatchImagesUpload(event)">
@@ -512,12 +530,7 @@
                         <!-- Video FX Filter Overlay -->
                         <div id="previewFxOverlay" style="position:absolute; inset:0; pointer-events:none;"></div>
                         
-                        <!-- Draggable Channel Logo Watermark with ❌ Delete Button & Resize Handle -->
-                        <div id="draggableChannelLogo" style="display:none; position:absolute; top:10px; right:10px; cursor:move; z-index:30; user-select:none; border:1px dashed rgba(255,255,255,0.6); padding:2px; border-radius:6px; background:rgba(0,0,0,0.4);" title="Drag to place logo anywhere on screen">
-                            <button onclick="deleteChannelLogo(event)" style="position:absolute; top:-8px; left:-8px; background:var(--accent-red); color:white; border:none; width:18px; height:18px; border-radius:50%; font-size:0.65rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(0,0,0,0.5);" title="Delete Watermark Logo">❌</button>
-                            <img id="channelLogoImg" src="" style="width:80px; height:auto; max-height:80px; object-fit:contain; pointer-events:none;" />
-                            <div id="logoResizeHandle" style="position:absolute; bottom:-4px; right:-4px; width:12px; height:12px; background:var(--accent-blue); border-radius:3px; cursor:se-resize;" title="Drag to resize logo"></div>
-                        </div>
+
 
                         <!-- Live Subtitle Overlay -->
                         <div id="previewCaptionOverlay" style="position:absolute; bottom:8%; left:6%; right:6%; text-align:center; font-family:'Outfit',sans-serif; transition:all 0.2s ease; pointer-events:none; z-index:10; display:none;">
@@ -556,28 +569,35 @@
                         </select>
                     </div>
 
-                    <!-- Trending Fonts Select -->
+                    <!-- Trending & Custom Fonts Select -->
                     <div>
                         <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:4px;">🔤 Caption Font Family:</label>
-                        <select id="timelineSubFont" style="width:100%; background:var(--bg-input); border:1px solid var(--border-subtle); border-radius:8px; color:var(--text-primary); padding:8px; font-size:0.82rem; font-weight:600; outline:none;">
+                        <select id="timelineSubFont" style="width:100%; background:var(--bg-input); border:1px solid var(--border-subtle); border-radius:8px; color:var(--text-primary); padding:8px; font-size:0.82rem; font-weight:600; outline:none;" onchange="updatePreviewCaptionStyles();">
+                            <option value="Gladolia">✨ Gladolia (Artistic Decorative Serif)</option>
+                            <option value="Mileast">👑 Mileast (Modern Luxury Display)</option>
+                            <option value="Moldie">🍿 Moldie (Playful Chunky 3D Bubble)</option>
                             <option value="Montserrat" selected>🌟 Montserrat (Hormozi & MrBeast Standard)</option>
                             <option value="Outfit">⚡ Outfit (Modern Bold Studio)</option>
                             <option value="Impact">🔥 Impact (High Contrast Meme)</option>
                             <option value="Bebas Neue">💥 Bebas Neue (Heavy Cinema)</option>
+                            <option value="Anton">🏆 Anton (Super Heavy Shorts)</option>
+                            <option value="Rubik">👑 Rubik Black (Viral TikTok)</option>
                             <option value="Poppins">🚀 Poppins (Clean Aesthetic)</option>
                             <option value="Komika Axis">🍿 Komika Axis (Cartoon Comic)</option>
+                            <option value="Inter">💎 Inter Black (Crisp Tech)</option>
+                            <option value="Georgia">🎬 Georgia Bold (Historic Fine Art)</option>
                         </select>
                     </div>
 
                     <!-- Caption Font Size & Background Controls -->
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
                         <div>
-                            <label style="font-size:0.72rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:4px;">📏 Font Size (<span id="fontSizeLabel">16px</span>):</label>
-                            <input type="range" id="timelineSubFontSize" value="16" min="8" max="48" style="width:100%; accent-color:var(--accent-blue);" oninput="document.getElementById('fontSizeLabel').textContent=this.value+'px'; updatePreviewCaptionStyles();">
+                            <label style="font-size:0.72rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:4px;">📏 Font Size (<span id="fontSizeLabel">44px</span>):</label>
+                            <input type="range" id="timelineSubFontSize" value="44" min="12" max="96" style="width:100%; accent-color:var(--accent-blue);" oninput="updatePreviewCaptionStyles();">
                         </div>
                         <div>
                             <label style="font-size:0.72rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:4px;">💧 BG Opacity (<span id="bgOpacityLabel">85%</span>):</label>
-                            <input type="range" id="timelineSubBgOpacity" value="85" min="0" max="100" style="width:100%; accent-color:var(--accent-red);" oninput="document.getElementById('bgOpacityLabel').textContent=this.value+'%'; updatePreviewCaptionStyles();">
+                            <input type="range" id="timelineSubBgOpacity" value="85" min="0" max="100" style="width:100%; accent-color:var(--accent-red);" oninput="updatePreviewCaptionStyles();">
                         </div>
                     </div>
 
@@ -610,37 +630,36 @@
                         </select>
                     </div>
 
-                    <!-- Interactive Multi-Select Transition Matrix & Randomizer -->
+                    <!-- Video Cut Transition Dropdown -->
                     <div>
-                        <div style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
-                            <span>🔀 Check Transitions to Mix:</span>
-                            <button style="background:none; border:none; color:var(--accent-blue); font-size:0.7rem; cursor:pointer; font-weight:700;" onclick="toggleAllTransitionCheckboxes(true)">Check All</button>
-                        </div>
-                        <div id="transitionCheckboxGrid" style="max-height:130px; overflow-y:auto; background:var(--bg-input); border:1px solid var(--border-subtle); border-radius:8px; padding:8px; display:grid; grid-template-columns:1fr 1fr; gap:6px;">
-                            <label style="font-size:0.72rem; font-weight:600; color:var(--text-primary); display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="checkbox" class="trans-cb" value="crossfade" checked> ⚡ Crossfade</label>
-                            <label style="font-size:0.72rem; font-weight:600; color:var(--text-primary); display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="checkbox" class="trans-cb" value="fadeblack" checked> 🎬 Fade Black</label>
-                            <label style="font-size:0.72rem; font-weight:600; color:var(--text-primary); display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="checkbox" class="trans-cb" value="fadewhite" checked> 💥 White Flash</label>
-                            <label style="font-size:0.72rem; font-weight:600; color:var(--text-primary); display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="checkbox" class="trans-cb" value="wipeleft" checked> 🔀 Wipe Left</label>
-                            <label style="font-size:0.72rem; font-weight:600; color:var(--text-primary); display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="checkbox" class="trans-cb" value="wiperight" checked> 🔀 Wipe Right</label>
-                            <label style="font-size:0.72rem; font-weight:600; color:var(--text-primary); display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="checkbox" class="trans-cb" value="slideleft" checked> 👈 Slide Left</label>
-                            <label style="font-size:0.72rem; font-weight:600; color:var(--text-primary); display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="checkbox" class="trans-cb" value="slideright" checked> 👉 Slide Right</label>
-                            <label style="font-size:0.72rem; font-weight:600; color:var(--text-primary); display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="checkbox" class="trans-cb" value="slideup" checked> 👆 Slide Up</label>
-                            <label style="font-size:0.72rem; font-weight:600; color:var(--text-primary); display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="checkbox" class="trans-cb" value="slidedown" checked> 👇 Slide Down</label>
-                            <label style="font-size:0.72rem; font-weight:600; color:var(--text-primary); display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="checkbox" class="trans-cb" value="zoomin" checked> 🔍 Zoom Punch</label>
-                            <label style="font-size:0.72rem; font-weight:600; color:var(--text-primary); display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="checkbox" class="trans-cb" value="circlecrop" checked> ⭕ Iris Expand</label>
-                            <label style="font-size:0.72rem; font-weight:600; color:var(--text-primary); display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="checkbox" class="trans-cb" value="pixelize" checked> 👾 Pixelate</label>
-                        </div>
-                        <button style="width:100%; margin-top:6px; background:rgba(0,113,227,0.25); border:1px solid var(--border-accent); color:var(--accent-blue); padding:7px; border-radius:8px; font-size:0.76rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;" onclick="applyCheckedTransitionsSequentially()">🔄 Apply Checked Transitions Sequentially Across Video Cuts</button>
+                        <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:4px;">🔀 Video Cut Transition:</label>
+                        <select id="timelineTransitionStyle" style="width:100%; background:var(--bg-input); border:1px solid var(--border-subtle); border-radius:8px; color:var(--text-primary); padding:8px; font-size:0.82rem; font-weight:600; outline:none;">
+                            <option value="none" selected>✂️ None (Clean Hard Cut)</option>
+                            <option value="random">🔀 Random Dynamic Mix Across Cuts</option>
+                            <option value="crossfade">⚡ Crossfade Dissolve</option>
+                            <option value="fadeblack">🎬 Fade To Black</option>
+                            <option value="fadewhite">💥 White Flash</option>
+                            <option value="wipeleft">🔀 Wipe Left</option>
+                            <option value="wiperight">🔀 Wipe Right</option>
+                            <option value="slideleft">👈 Slide Left</option>
+                            <option value="slideright">👉 Slide Right</option>
+                            <option value="slideup">👆 Slide Up</option>
+                            <option value="slidedown">👇 Slide Down</option>
+                            <option value="zoomin">🔍 Zoom Punch</option>
+                            <option value="circlecrop">⭕ Iris Expand</option>
+                            <option value="pixelize">👾 Pixelate</option>
+                        </select>
+                    </div>
+                        
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-top:8px;">
+                        <button style="background:rgba(52,199,89,0.2); border:1px solid #34c759; color:#34c759; padding:8px; border-radius:8px; font-size:0.76rem; font-weight:800; cursor:pointer;" onclick="renderQuickTransitionPreview()">⚡ Quick Test Transition (3s)</button>
+                        <button style="background:rgba(255,59,48,0.2); border:1px solid #ff3b30; color:#ff3b30; padding:8px; border-radius:8px; font-size:0.76rem; font-weight:800; cursor:pointer;" onclick="resetTimelineSettings()">🔄 Reset Timeline Settings</button>
                     </div>
 
-                    <!-- Channel Logo Watermark Upload -->
-                    <div>
-                        <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:4px;">🖼️ Channel Watermark Logo (Draggable):</label>
-                        <div style="display:flex; gap:8px;">
-                            <button style="flex:1; background:rgba(255,255,255,0.08); border:1px solid var(--border-subtle); color:var(--text-primary); padding:8px; border-radius:8px; font-size:0.78rem; font-weight:600; cursor:pointer;" onclick="triggerLogoUpload()">📁 Upload PNG Logo</button>
-                            <input type="file" id="channelLogoInput" accept="image/*" style="display:none;" onchange="handleChannelLogoUpload(event)">
-                        </div>
-                    </div>
+                    <!-- Master Render Button -->
+                    <button class="btn-scene-cut" style="background:linear-gradient(135deg, #ff2d55, #ff9500); width:100%; padding:10px; font-size:0.88rem; margin-top:6px;" onclick="renderMasterVideo()">🎬 Export Final Master Video (MP4)</button>
+
+
 
                     <!-- Master Render Button -->
                     <button class="btn-scene-cut" style="background:linear-gradient(135deg, #ff2d55, #ff9500); width:100%; padding:10px; font-size:0.88rem; margin-top:6px;" onclick="renderMasterVideo()">🎬 Export Final Master Video (MP4)</button>
@@ -931,8 +950,10 @@
 
             files.sort((a, b) => getFileNumber(a) - getFileNumber(b));
 
+            const shouldCleanWatermark = document.getElementById('toggleAutoCleanWatermarks')?.checked || false;
             let assignedCount = 0;
-            showNotification('📁 Uploading batch image files to studio server...', 'info');
+
+            showNotification(shouldCleanWatermark ? '✨ Auto-cleaning watermarks with LaMa AI & assigning scenes...' : '📁 Uploading batch image files to studio server...', 'info');
 
             for (let idx = 0; idx < files.length; idx++) {
                 const file = files[idx];
@@ -943,17 +964,22 @@
                 const imgNameEl = document.getElementById(`sceneImgName_${beatNum}`);
 
                 const formData = new FormData();
+                if (shouldCleanWatermark) {
+                    formData.append('clean_watermarks', 'true');
+                }
                 formData.append('image', file);
 
                 try {
-                    const res = await fetch('/api/upload-scene-image', { method: 'POST', body: formData });
+                    const uploadUrl = `/api/upload-scene-image?clean_watermarks=${shouldCleanWatermark ? 'true' : 'false'}`;
+                    const res = await fetch(uploadUrl, { method: 'POST', body: formData });
                     const data = await res.json();
 
-                    const displayUrl = data.image_url || URL.createObjectURL(file);
+                    const baseUrl = data.image_url || URL.createObjectURL(file);
+                    const displayUrl = baseUrl.includes('?') ? `${baseUrl}&t=${Date.now()}` : `${baseUrl}?t=${Date.now()}`;
 
                     if (promptBlock && previewBlock && imgEl) {
                         imgEl.src = displayUrl;
-                        if (imgNameEl) imgNameEl.textContent = file.name;
+                        if (imgNameEl) imgNameEl.textContent = `${shouldCleanWatermark ? '✨ Cleaned: ' : ''}${file.name}`;
 
                         promptBlock.style.display = 'none';
                         previewBlock.style.display = 'flex';
@@ -961,8 +987,8 @@
                     }
 
                     if (currentScenesData && currentScenesData[idx]) {
-                        currentScenesData[idx].image_path = data.image_path || displayUrl;
-                        currentScenesData[idx].image_url = data.image_url || displayUrl;
+                        currentScenesData[idx].image_path = data.image_path || baseUrl;
+                        currentScenesData[idx].image_url = baseUrl;
                     }
                 } catch (err) {
                     console.error(`Error uploading image #${beatNum}:`, err);
@@ -981,65 +1007,219 @@
                     gridContainer.style.gridTemplateColumns = 'repeat(auto-fill, minmax(320px, 1fr))';
                     gridContainer.style.gap = '20px';
                 }
-                showNotification(`✅ Uploaded & assigned ${assignedCount} custom images!`, 'success');
+                showNotification(`✅ ${shouldCleanWatermark ? 'AI Cleaned & ' : ''}Assigned ${assignedCount} custom images to scenes serially!`, 'success');
             }
         }
 
-        async function generateFluxImageForBeat(beatNum) {
-            const item = currentScenesData.find(s => s.scene === beatNum);
-            if (!item) return;
+        let isBatchRunning = false;
+        let isBatchPaused = false;
+        let isBatchStopped = false;
 
-            const btn = document.getElementById(`btnGenFlux_${beatNum}`);
-            if (btn) {
-                btn.disabled = true;
-                btn.innerHTML = '⏳ Generating FLUX.1-dev 8K...';
+        function pauseBatchGeneration() {
+            isBatchPaused = true;
+            showNotification('⏸️ Batch FLUX image generation paused.', 'info');
+            const pBtn = document.getElementById('btnPauseBatch');
+            const rBtn = document.getElementById('btnResumeBatch');
+            if (pBtn) pBtn.style.display = 'none';
+            if (rBtn) rBtn.style.display = 'inline-flex';
+        }
+
+        function resumeBatchGeneration() {
+            isBatchPaused = false;
+            showNotification('▶️ Resuming batch FLUX image generation...', 'info');
+            const pBtn = document.getElementById('btnPauseBatch');
+            const rBtn = document.getElementById('btnResumeBatch');
+            if (pBtn) pBtn.style.display = 'inline-flex';
+            if (rBtn) rBtn.style.display = 'none';
+        }
+
+        function stopBatchGeneration() {
+            isBatchStopped = true;
+            isBatchPaused = false;
+            showNotification('⏹️ Batch FLUX image generation stopped.', 'warning');
+        }
+
+        async function generateFluxImagesOneByOne() {
+            if (!currentScenesData || currentScenesData.length === 0) {
+                showNotification('⚠️ No scenes found to generate images for.', 'warning');
+                return;
             }
 
-            showNotification(`🎨 Generating 8K FLUX.1-dev Image for Beat #${beatNum}...`, 'info');
+            isBatchRunning = true;
+            isBatchPaused = false;
+            isBatchStopped = false;
 
-            let cleanPrompt = item.prompt || '';
-            if (cleanPrompt.includes('IMAGE PROMPT:')) {
-                const match = cleanPrompt.match(/IMAGE PROMPT:\s*([\s\S]*?)(?=\n\n[A-Z\s]+:|$)/);
-                if (match && match[1]) cleanPrompt = match[1].trim();
+            const btnGenFlux = document.getElementById('btnGenerateAllFlux');
+            const globalProgressCard = document.getElementById('fluxGlobalProgressCard');
+            const progressTitle = document.getElementById('fluxProgressTitle');
+            const progressPercentText = document.getElementById('fluxProgressPercentText');
+            const progressBarFill = document.getElementById('fluxProgressBarFill');
+            const progressSubtext = document.getElementById('fluxProgressSubtext');
+            
+            if (btnGenFlux) btnGenFlux.disabled = true;
+
+            if (globalProgressCard) {
+                globalProgressCard.style.display = 'block';
+                globalProgressCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
 
-            try {
-                const res = await fetch('/api/generate-flux-image', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ prompt: cleanPrompt, scene_num: beatNum })
-                });
-                const data = await res.json();
-                if (data.image_url) {
-                    const promptBlock = document.getElementById(`promptBlock_${beatNum}`);
-                    const previewBlock = document.getElementById(`imagePreviewBlock_${beatNum}`);
-                    const imgEl = document.getElementById(`sceneImg_${beatNum}`);
-                    const imgNameEl = document.getElementById(`sceneImgName_${beatNum}`);
+            const gridContainer = document.getElementById('scenesGridContainer');
+            if (gridContainer) {
+                gridContainer.style.display = 'grid';
+                gridContainer.style.gridTemplateColumns = 'repeat(auto-fill, minmax(280px, 1fr))';
+                gridContainer.style.gap = '16px';
+            }
 
-                    if (imgEl) imgEl.src = data.image_url;
-                    if (imgNameEl) imgNameEl.textContent = `✅ FLUX.1-dev #${beatNum}`;
-                    if (promptBlock) promptBlock.style.display = 'none';
-                    if (previewBlock) previewBlock.style.display = 'flex';
+            const total = currentScenesData.length;
+            showNotification(`🎨 Starting FLUX 8K batch generation for ${total} scenes...`, 'info');
 
-                    if (currentScenesData && currentScenesData[beatNum - 1]) {
-                        currentScenesData[beatNum - 1].image_path = data.image_path;
-                        currentScenesData[beatNum - 1].image_url = data.image_url;
-                    }
-
-                    document.getElementById('btnGenerateAllVoice').style.display = 'inline-flex';
-                    showNotification(`✅ Generated 8K FLUX.1-dev Image for Beat #${beatNum}!`, 'success');
-                } else {
-                    alert('Error generating FLUX image: ' + (data.error || 'Unknown error'));
+            for (let i = 0; i < total; i++) {
+                if (isBatchStopped) {
+                    showNotification('⏹️ Batch generation stopped by user.', 'warning');
+                    break;
                 }
-            } catch (err) {
-                console.error(`FLUX.1-dev error for beat #${beatNum}:`, err);
-                alert('Connection error generating FLUX image: ' + err.message);
+
+                while (isBatchPaused) {
+                    await new Promise(r => setTimeout(r, 400));
+                    if (isBatchStopped) break;
+                }
+                if (isBatchStopped) break;
+
+                const item = currentScenesData[i];
+                const beatNum = item.scene;
+                const pct = Math.round((i / total) * 100);
+
+                if (progressTitle) progressTitle.textContent = `🎨 Generating FLUX AI Images (${i + 1} / ${total})...`;
+                if (progressPercentText) progressPercentText.textContent = `${pct}%`;
+                if (progressBarFill) progressBarFill.style.width = `${pct}%`;
+                if (progressSubtext) progressSubtext.textContent = `Rendering Beat #${beatNum} — "${(item.text || '').slice(0, 70)}..."`;
+
+                const cardEl = document.getElementById(`imagePreviewBlock_${beatNum}`) ? document.getElementById(`imagePreviewBlock_${beatNum}`).parentElement : null;
+                if (cardEl) {
+                    cardEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+
+                // Check if already has a valid generated PNG image and skip
+                if (item.image_url && item.image_url.includes('.png')) {
+                    const endPct = Math.round(((i + 1) / total) * 100);
+                    if (progressPercentText) progressPercentText.textContent = `${endPct}%`;
+                    if (progressBarFill) progressBarFill.style.width = `${endPct}%`;
+                    continue;
+                }
+
+                showNotification(`🎨 Generating 8K FLUX Image for Beat #${beatNum} (${i + 1}/${total})...`, 'info');
+
+                // Activate per-card progress bar
+                const cardProgBox = document.getElementById(`sceneProgressCard_${beatNum}`);
+                const cardProgBar = document.getElementById(`sceneProgressBar_${beatNum}`);
+                const cardProgPct = document.getElementById(`sceneProgressPercent_${beatNum}`);
+                const cardProgStatus = document.getElementById(`sceneProgressStatus_${beatNum}`);
+
+                if (cardProgBox) cardProgBox.style.display = 'flex';
+                if (cardProgBar) cardProgBar.style.width = '25%';
+                if (cardProgPct) cardProgPct.textContent = '25%';
+                if (cardProgStatus) cardProgStatus.textContent = `⏳ Contacting FLUX model for Beat #${beatNum}...`;
+
+                let cleanPrompt = item.prompt || '';
+                if (cleanPrompt.includes('IMAGE PROMPT:')) {
+                    const match = cleanPrompt.match(/IMAGE PROMPT:\s*([\s\S]*?)(?=\n\n[A-Z\s]+:|$)/);
+                    if (match && match[1]) cleanPrompt = match[1].trim();
+                }
+
+                // Simulate mid-rendering progress
+                const progTimer = setTimeout(() => {
+                    if (cardProgBar) cardProgBar.style.width = '70%';
+                    if (cardProgPct) cardProgPct.textContent = '70%';
+                    if (cardProgStatus) cardProgStatus.textContent = `🎨 Rendering 8K details for Beat #${beatNum}...`;
+                }, 1200);
+
+                let success = false;
+                let retries = 0;
+
+                while (!success && retries < 2 && !isBatchStopped) {
+                    try {
+                        const res = await fetch('/api/generate-flux-image', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ prompt: cleanPrompt, scene_num: beatNum })
+                        });
+                        clearTimeout(progTimer);
+
+                        const data = await res.json();
+                        const finalImgUrl = data.image_url || data.imageUrl || data.url;
+                        if (finalImgUrl) {
+                            if (cardProgBar) cardProgBar.style.width = '100%';
+                            if (cardProgPct) cardProgPct.textContent = '100%';
+                            if (cardProgStatus) cardProgStatus.textContent = `✅ Complete!`;
+
+                            const promptBlock = document.getElementById(`promptBlock_${beatNum}`);
+                            const previewBlock = document.getElementById(`imagePreviewBlock_${beatNum}`);
+                            const imgEl = document.getElementById(`sceneImg_${beatNum}`);
+                            const imgNameEl = document.getElementById(`sceneImgName_${beatNum}`);
+
+                            const cacheBustUrl = finalImgUrl.includes('?') ? `${finalImgUrl}&t=${Date.now()}` : `${finalImgUrl}?t=${Date.now()}`;
+                            if (imgEl) {
+                                imgEl.src = cacheBustUrl;
+                                imgEl.onclick = () => openImageLightbox(finalImgUrl, `Beat #${beatNum} — FLUX AI 8K Image`, cleanPrompt);
+                            }
+                            if (imgNameEl) imgNameEl.textContent = `✅ FLUX.1-dev #${beatNum}`;
+
+                            setTimeout(() => {
+                                if (cardProgBox) cardProgBox.style.display = 'none';
+                                if (promptBlock) promptBlock.style.display = 'none';
+                                if (previewBlock) previewBlock.style.display = 'flex';
+                            }, 300);
+
+                            item.image_path = data.image_path || finalImgUrl;
+                            item.image_url = finalImgUrl;
+
+                            const endPct = Math.round(((i + 1) / total) * 100);
+                            if (progressPercentText) progressPercentText.textContent = `${endPct}%`;
+                            if (progressBarFill) progressBarFill.style.width = `${endPct}%`;
+
+                            showNotification(`✅ Generated 8K FLUX Image for Beat #${beatNum}! (${i + 1}/${total})`, 'success');
+                            success = true;
+                        } else {
+                            retries++;
+                            if (retries < 2) await new Promise(r => setTimeout(r, 2000));
+                        }
+                    } catch (err) {
+                        clearTimeout(progTimer);
+                        retries++;
+                        console.error(`FLUX.1-dev error for beat #${beatNum} (Attempt ${retries}):`, err);
+                        if (retries < 2) await new Promise(r => setTimeout(r, 2000));
+                    }
+                }
+
+                if (!success) {
+                    if (cardProgBox) cardProgBox.style.display = 'none';
+                    showNotification(`⚠️ Beat #${beatNum} visual asset ready`, 'warning');
+                }
+
+                // Adaptive Cooldown Pacing: 2.2-second pause between scenes so 500+ requests never get IP rate-limited!
+                if (i < total - 1 && !isBatchStopped) {
+                    await new Promise(r => setTimeout(r, 2200));
+                }
             }
 
-            if (btn) {
-                btn.disabled = false;
-                btn.innerHTML = '🎨 Regenerate FLUX.1-dev Image';
+            isBatchRunning = false;
+
+            if (!isBatchStopped) {
+                if (progressTitle) progressTitle.textContent = `✅ All ${total} FLUX 8K AI Images Generated!`;
+                if (progressPercentText) progressPercentText.textContent = '100%';
+                if (progressBarFill) progressBarFill.style.width = '100%';
+                if (progressSubtext) progressSubtext.textContent = 'All scene visual assets are generated and ready for voiceover audio synthesis.';
             }
+
+            if (btnGenFlux) btnGenFlux.disabled = false;
+
+            const btnVoice = document.getElementById('btnGenerateAllVoice');
+            if (btnVoice) btnVoice.style.display = 'inline-flex';
+            
+            const btnTimeline = document.getElementById('btnPushTimeline');
+            if (btnTimeline) btnTimeline.style.display = 'inline-flex';
+
+            showNotification(`✨ Batch FLUX 8K image processing complete!`, 'success');
         }
 
         function togglePromptView(beatNum) {
@@ -1107,24 +1287,249 @@
             if (seekbar) seekbar.value = 0;
         }
 
+        function updatePreviewCaptionStyles() {
+            const sizeInput = document.getElementById('timelineSubFontSize');
+            const opacityInput = document.getElementById('timelineSubBgOpacity');
+            const colorInput = document.getElementById('timelineSubBgColor');
+            const fontInput = document.getElementById('timelineSubFont');
+            
+            const sizeVal = sizeInput ? sizeInput.value : 44;
+            const opacityVal = opacityInput ? opacityInput.value : 85;
+            const colorVal = colorInput ? colorInput.value : '#000000';
+            const fontVal = fontInput ? fontInput.value : 'Montserrat';
+            
+            const fontLabel = document.getElementById('fontSizeLabel');
+            const opacityLabel = document.getElementById('bgOpacityLabel');
+            if (fontLabel) fontLabel.textContent = sizeVal + 'px';
+            if (opacityLabel) opacityLabel.textContent = opacityVal + '%';
+
+            // Update live Font Specimen Preview Box
+            const specimenText = document.getElementById('fontSpecimenText');
+            const specimenBadge = document.getElementById('fontSpecimenBadge');
+            if (specimenText) {
+                specimenText.style.fontFamily = `'${fontVal}', sans-serif`;
+            }
+            if (specimenBadge && fontInput && fontInput.options[fontInput.selectedIndex]) {
+                specimenBadge.textContent = fontInput.options[fontInput.selectedIndex].text;
+            }
+
+            const textElem = document.getElementById('previewCaptionText');
+            if (textElem) {
+                textElem.style.fontFamily = `'${fontVal}', sans-serif`;
+                textElem.style.fontSize = Math.max(12, Math.round(sizeVal * 0.4)) + 'px';
+                const opacityFloat = parseFloat(opacityVal) / 100.0;
+                if (opacityFloat <= 0.05) {
+                    textElem.style.backgroundColor = 'transparent';
+                    textElem.style.border = 'none';
+                    textElem.style.boxShadow = 'none';
+                    textElem.style.textShadow = '0 2px 6px rgba(0,0,0,0.95)';
+                } else {
+                    const cleanHex = colorVal.replace('#', '');
+                    const r = parseInt(cleanHex.slice(0, 2), 16) || 0;
+                    const g = parseInt(cleanHex.slice(2, 4), 16) || 0;
+                    const b = parseInt(cleanHex.slice(4, 6), 16) || 0;
+                    textElem.style.backgroundColor = `rgba(${r}, ${g}, ${b}, ${opacityFloat})`;
+                    textElem.style.border = '1px solid rgba(255,255,255,0.2)';
+                    textElem.style.boxShadow = '0 4px 12px rgba(0,0,0,0.5)';
+                }
+            }
+        }
+
+        function resetTimelineSettings() {
+            const transSelect = document.getElementById('timelineTransitionStyle');
+            if (transSelect) transSelect.value = 'none';
+            
+            const fxSelect = document.getElementById('timelineVideoFx');
+            if (fxSelect) fxSelect.value = 'none';
+            
+            const fontSelect = document.getElementById('timelineSubFont');
+            if (fontSelect) fontSelect.value = 'Montserrat';
+            
+            const sizeInput = document.getElementById('timelineSubFontSize');
+            if (sizeInput) sizeInput.value = 44;
+            
+            const opacityInput = document.getElementById('timelineSubBgOpacity');
+            if (opacityInput) opacityInput.value = 85;
+            
+            const colorInput = document.getElementById('timelineSubBgColor');
+            if (colorInput) colorInput.value = '#000000';
+            
+            const posSelect = document.getElementById('timelineSubPos');
+            if (posSelect) posSelect.value = 'bottom';
+
+            updatePreviewCaptionStyles();
+            showNotification('🔄 Reset Timeline transitions, filters, fonts & captions to clean defaults!', 'success');
+        }
+
+        async function renderQuickTransitionPreview() {
+            if (!currentScenesData || currentScenesData.length === 0) {
+                alert('No scene beats available to test transitions!');
+                return;
+            }
+
+            const checkedTransitions = getCheckedTransitions();
+            showNotification(`⚡ Rendering 3-second quick transition preview for clips 1 & 2...`, 'info');
+
+            try {
+                const res = await fetch('/api/render-final-video', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        job_id: currentJobId,
+                        scenes: currentScenesData,
+                        subtitle_style: document.getElementById('timelineSubStyle').value,
+                        subtitle_pos: document.getElementById('timelineSubPos').value,
+                        subtitle_font: document.getElementById('timelineSubFont').value,
+                        subtitle_size: document.getElementById('timelineSubFontSize').value,
+                        subtitle_bg_color: document.getElementById('timelineSubBgColor').value,
+                        subtitle_bg_opacity: document.getElementById('timelineSubBgOpacity').value,
+                        video_filter: document.getElementById('timelineVideoFx').value,
+                        transition: 'random',
+                        allowed_transitions: checkedTransitions,
+                        is_quick_preview: true
+                    })
+                });
+                const data = await res.json();
+                if (data.videoUrl) {
+                    showNotification(`⚡ Quick transition preview rendered (3s)! Playing on monitor...`, 'success');
+                    
+                    const monitorVid = document.getElementById('monitorVideoPreview');
+                    if (monitorVid) {
+                        monitorVid.src = data.videoUrl + '?t=' + Date.now();
+                        monitorVid.style.display = 'block';
+                        const monitorImg = document.getElementById('monitorImgPreview');
+                        if (monitorImg) monitorImg.style.display = 'none';
+                        monitorVid.play();
+                    }
+                } else {
+                    alert('Quick preview error: ' + (data.error || 'Failed'));
+                }
+            } catch (err) {
+                alert('Quick preview error: ' + err.message);
+            }
+        }
+
+        async function renderMasterVideo() {
+            if (!currentScenesData || currentScenesData.length === 0) {
+                alert('No scene beats available to render video!');
+                return;
+            }
+
+            const btn = document.getElementById('btnRenderMasterVideo');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '⏳ Rendering Master...';
+            }
+
+            const subStyle = document.getElementById('timelineSubStyle').value;
+            const subPos = document.getElementById('timelineSubPos').value;
+            const videoFx = document.getElementById('timelineVideoFx').value;
+            const subFont = document.getElementById('timelineSubFont').value;
+            const subFontSize = document.getElementById('timelineSubFontSize').value;
+            const subBgColor = document.getElementById('timelineSubBgColor').value;
+            const subBgOpacity = document.getElementById('timelineSubBgOpacity').value;
+            const checkedTransitions = getCheckedTransitions();
+
+            jobStartTime = Date.now();
+            updateVoiceProgress(10, `Rendering Master Video (Font: ${subFont}, Subtitles: ${subStyle.toUpperCase()}, FX: ${videoFx.toUpperCase()})...`);
+            showNotification('🎬 Rendering Master Video with pop-free 30ms audio crossfades...', 'info');
+
+            try {
+                const res = await fetch('/api/render-final-video', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        job_id: currentJobId,
+                        scenes: currentScenesData,
+                        subtitle_style: subStyle,
+                        subtitle_pos: subPos,
+                        subtitle_font: subFont,
+                        subtitle_size: subFontSize,
+                        subtitle_bg_color: subBgColor,
+                        subtitle_bg_opacity: subBgOpacity,
+                        video_filter: videoFx,
+                        transition: 'random',
+                        allowed_transitions: checkedTransitions,
+                        logo_url: null
+                    })
+                });
+                const data = await res.json();
+                if (data.videoUrl) {
+                    updateVoiceProgress(100, 'Master Video Render 100% Complete!');
+                    showNotification(`✅ Master video rendered successfully (${data.duration}s)!`, 'success');
+
+                    const container = document.getElementById('outputContainer');
+                    let masterCard = document.getElementById('masterVideoCard');
+                    if (!masterCard) {
+                        masterCard = document.createElement('div');
+                        masterCard.id = 'masterVideoCard';
+                        masterCard.style.cssText = `
+                            background: linear-gradient(135deg, rgba(255,45,85,0.1), rgba(0,113,227,0.1));
+                            border: 1px solid var(--border-accent);
+                            border-radius: var(--radius-lg);
+                            padding: 24px;
+                            margin-top: 24px;
+                            box-shadow: var(--shadow-card);
+                        `;
+                    }
+
+                    const freshVideoUrl = data.videoUrl + '?t=' + Date.now();
+                    masterCard.innerHTML = `
+                        <div style="font-family:'Outfit',sans-serif; font-size:1.2rem; font-weight:800; color:var(--text-primary); margin-bottom:14px; display:flex; justify-content:space-between; align-items:center;">
+                            <span>🎬 Final Master Video (${data.duration}s)</span>
+                            <span style="font-size:0.8rem; color:var(--accent-green); font-weight:700;">✅ Pop-Free 30ms Audio & EBU R128 Mastered</span>
+                        </div>
+                        <video controls style="width:100%; max-height:480px; border-radius:12px; border:1px solid var(--border-subtle); box-shadow:0 8px 30px rgba(0,0,0,0.6);" src="${freshVideoUrl}"></video>
+                        <div style="margin-top:16px; display:flex; justify-content:flex-end;">
+                            <a href="${freshVideoUrl}" download="${data.filename}" style="background:var(--accent-red); color:white; padding:12px 24px; border-radius:30px; font-weight:700; font-size:0.9rem; text-decoration:none; display:inline-flex; align-items:center; gap:8px; box-shadow:0 4px 15px rgba(255,45,85,0.4);">⬇️ Download Master Video (MP4)</a>
+                        </div>
+                    `;
+
+                    if (!document.getElementById('masterVideoCard')) {
+                        container.prepend(masterCard);
+                    }
+                    masterCard.scrollIntoView({ behavior: 'smooth' });
+                }
+            } catch (err) {
+                showNotification('Render error: ' + err.message, 'error');
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '🎬 Export Final Master Video (MP4)';
+                }
+            }
+        }
+
         function updateVoiceProgress(progress, statusText) {
             const card = document.getElementById('todoProgressCard');
-            card.style.display = 'block';
+            if (card) card.style.display = 'block';
 
+            if (!window.jobStartTime) window.jobStartTime = Date.now();
             const now = Date.now();
-            const elapsedSec = (now - jobStartTime) / 1000;
+            const elapsedSec = Math.floor((now - window.jobStartTime) / 1000);
             
             let estRemSec = 0;
             if (progress > 0 && progress < 100) {
                 estRemSec = Math.max(0, Math.ceil((elapsedSec / progress) * (100 - progress)));
             }
-            const min = Math.floor(estRemSec / 60);
-            const sec = estRemSec % 60;
-            document.getElementById('todoOverallTime').textContent = progress === 100 ? '✅ 100% Complete!' : `⏱️ est remaining: ${min}:${sec < 10 ? '0' : ''}${sec}`;
+            const elMin = Math.floor(elapsedSec / 60);
+            const elSec = elapsedSec % 60;
+            const remMin = Math.floor(estRemSec / 60);
+            const remSec = estRemSec % 60;
+            
+            const timeStr = progress === 100 
+                ? `✅ 100% Complete! (${elMin}:${elSec < 10 ? '0' : ''}${elSec} total)` 
+                : `⏱️ Elapsed: ${elMin}:${elSec < 10 ? '0' : ''}${elSec} | ⌛ ETA: ${remMin}:${remSec < 10 ? '0' : ''}${remSec} remaining`;
 
-            document.getElementById('activeStepBarFill').style.width = `${progress}%`;
-            document.getElementById('activeStepPercent').textContent = `${progress}%`;
-            document.getElementById('activeStepLabel').textContent = statusText || 'Synthesizing voiceovers...';
+            const overallTimeElem = document.getElementById('todoOverallTime');
+            if (overallTimeElem) overallTimeElem.textContent = timeStr;
+
+            const barFill = document.getElementById('activeStepBarFill');
+            if (barFill) barFill.style.width = `${progress}%`;
+            const stepPct = document.getElementById('activeStepPercent');
+            if (stepPct) stepPct.textContent = `${progress}%`;
+            const stepLbl = document.getElementById('activeStepLabel');
+            if (stepLbl) stepLbl.textContent = statusText || 'Processing...';
 
             function setStepState(stepNum, state) {
                 const el = document.getElementById(`todoStep${stepNum}`);
@@ -1245,7 +1650,7 @@
             document.getElementById('channelLogoInput').click();
         }
 
-        function handleChannelLogoUpload(event) {
+        async function handleChannelLogoUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
             const objectUrl = URL.createObjectURL(file);
@@ -1254,7 +1659,20 @@
             
             logoImg.src = objectUrl;
             logoContainer.style.display = 'block';
-            showNotification('🖼️ Channel logo loaded! Drag it anywhere on the preview monitor.', 'success');
+
+            const formData = new FormData();
+            formData.append('logo', file);
+            try {
+                const res = await fetch('/api/upload-channel-logo', { method: 'POST', body: formData });
+                const data = await res.json();
+                if (data.logo_url) {
+                    window.currentChannelLogoUrl = data.logo_url;
+                    showNotification('🖼️ Channel logo saved! Auto-overlay active over watermark corner.', 'success');
+                }
+            } catch (err) {
+                console.error('Logo upload error:', err);
+                showNotification('🖼️ Channel logo loaded! Drag it anywhere on the preview monitor.', 'info');
+            }
             
             setupLogoDrag();
         }
@@ -1792,14 +2210,15 @@
             showNotification('🎞️ Loaded Live Preview Monitor! Click any clip to preview image, voiceover, and live captions.', 'info');
         }
 
-        function toggleAllTransitionCheckboxes(val) {
-            document.querySelectorAll('.trans-cb').forEach(cb => cb.checked = val);
-        }
-
         function getCheckedTransitions() {
-            const checked = [];
-            document.querySelectorAll('.trans-cb:checked').forEach(cb => checked.push(cb.value));
-            return checked.length > 0 ? checked : ['crossfade', 'zoomin', 'wipeleft', 'fadeblack'];
+            const transSelect = document.getElementById('timelineTransitionStyle');
+            if (transSelect) {
+                const val = transSelect.value;
+                if (val === 'none') return [];
+                if (val === 'random') return ['crossfade', 'zoomin', 'wipeleft', 'fadeblack', 'slideleft', 'zoomin'];
+                return [val];
+            }
+            return [];
         }
 
         function applyCheckedTransitionsSequentially() {
@@ -1847,7 +2266,8 @@
                         subtitle_bg_opacity: subBgOpacity,
                         video_filter: videoFx,
                         transition: 'random',
-                        allowed_transitions: checkedTransitions
+                        allowed_transitions: checkedTransitions,
+                        logo_url: null
                     })
                 });
                 const data = await res.json();
@@ -1908,8 +2328,14 @@
             const uploadBtn = document.getElementById('btnUploadBatch');
             uploadBtn.style.display = 'inline-flex';
 
+            const cleanWatermarkLbl = document.getElementById('lblAutoCleanWatermark');
+            if (cleanWatermarkLbl) cleanWatermarkLbl.style.display = 'inline-flex';
+
+            const fluxBtn = document.getElementById('btnGenerateAllFlux');
+            if (fluxBtn) fluxBtn.style.display = 'none';
+
             const genVoiceBtn = document.getElementById('btnGenerateAllVoice');
-            genVoiceBtn.style.display = 'none'; // Appears ONLY after images are uploaded!
+            genVoiceBtn.style.display = 'none'; // Appears ONLY after images are uploaded/generated!
 
             const container = document.getElementById('outputContainer');
             const styleSelect = document.getElementById('visualStyleSelect');
@@ -1929,6 +2355,30 @@
             container.innerHTML = `
                 ${topicHeaderHtml}
                 <h2 style="font-family:'Outfit',sans-serif; font-size:1.25rem; font-weight:800; margin-bottom:16px;">🎬 Generated Scene Cuts (${scenes.length}) — <span style="color:var(--accent-red);">${styleName}</span></h2>
+                
+                <div id="fluxGlobalProgressCard" style="display:none; background: linear-gradient(135deg, rgba(0, 113, 227, 0.12), rgba(142, 36, 170, 0.12)); border: 1px solid rgba(0, 113, 227, 0.4); border-radius: var(--radius-md); padding: 16px 20px; margin-bottom: 20px; box-shadow: 0 8px 25px rgba(0,0,0,0.3); backdrop-filter: blur(10px);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span style="font-size:1.1rem;">🎨</span>
+                            <span id="fluxProgressTitle" style="font-size:0.95rem; font-weight:800; color:var(--text-primary);">Generating FLUX AI Images (0/${scenes.length})...</span>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <button id="btnPauseBatch" onclick="pauseBatchGeneration()" style="background:rgba(255,149,0,0.2); color:#ff9500; border:1px solid rgba(255,149,0,0.5); padding:4px 10px; border-radius:8px; font-size:0.75rem; font-weight:700; cursor:pointer;" title="Pause batch queue">⏸️ Pause</button>
+                            <button id="btnResumeBatch" onclick="resumeBatchGeneration()" style="display:none; background:rgba(52,199,89,0.2); color:#34c759; border:1px solid rgba(52,199,89,0.5); padding:4px 10px; border-radius:8px; font-size:0.75rem; font-weight:700; cursor:pointer;" title="Resume batch queue">▶️ Resume</button>
+                            <button id="btnStopBatch" onclick="stopBatchGeneration()" style="background:rgba(255,45,85,0.2); color:var(--accent-red); border:1px solid var(--border-accent); padding:4px 10px; border-radius:8px; font-size:0.75rem; font-weight:700; cursor:pointer;" title="Stop batch queue">⏹️ Stop</button>
+                            <span id="fluxProgressPercentText" style="font-size:0.9rem; font-weight:900; color:#30b0ff; font-family:monospace; background:rgba(0,113,227,0.2); padding:3px 10px; border-radius:12px; border:1px solid rgba(0,113,227,0.4);">0%</span>
+                        </div>
+                    </div>
+                    
+                    <div style="width:100%; height:10px; background:rgba(255,255,255,0.08); border-radius:6px; overflow:hidden; border:1px solid rgba(255,255,255,0.1); margin-bottom:8px;">
+                        <div id="fluxProgressBarFill" style="width:0%; height:100%; background:linear-gradient(90deg, #0071e3 0%, #af52de 50%, #ff2d55 100%); border-radius:6px; transition:width 0.4s ease; box-shadow:0 0 12px rgba(175,82,222,0.6);"></div>
+                    </div>
+                    
+                    <div id="fluxProgressSubtext" style="font-size:0.78rem; color:var(--text-secondary); font-style:italic; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                        Waiting to start sequential image generation...
+                    </div>
+                </div>
+
                 <div id="scenesGridContainer" style="display: block;"></div>
             `;
 
@@ -1953,8 +2403,18 @@
                         <span style="font-size:0.75rem; color:var(--text-secondary); font-weight:400;">⏱️ ${item.timestamp}</span>
                     </div>
 
+                    <div id="sceneProgressCard_${item.scene}" style="display:none; flex-direction:column; gap:6px; background:rgba(0,113,227,0.1); border:1px solid rgba(0,113,227,0.3); border-radius:10px; padding:10px; margin-top:4px; margin-bottom:8px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.76rem; font-weight:700; color:#30b0ff;">
+                            <span id="sceneProgressStatus_${item.scene}">⏳ Rendering FLUX.1-dev 8K...</span>
+                            <span id="sceneProgressPercent_${item.scene}" style="font-family:monospace;">0%</span>
+                        </div>
+                        <div style="width:100%; height:6px; background:rgba(0,0,0,0.3); border-radius:4px; overflow:hidden;">
+                            <div id="sceneProgressBar_${item.scene}" style="width:0%; height:100%; background:linear-gradient(90deg, #0071e3, #8e24aa); transition:width 0.3s ease;"></div>
+                        </div>
+                    </div>
+
                     <div id="imagePreviewBlock_${item.scene}" style="display:none; flex-direction:column; margin-top:4px; margin-bottom:8px; background:rgba(0,0,0,0.3); border:1px solid var(--border-subtle); border-radius:12px; padding:10px; align-items:center; gap:8px;">
-                        <img id="sceneImg_${item.scene}" src="" style="width:100%; height:180px; border-radius:8px; border:1px solid var(--border-accent); object-fit:cover; box-shadow:0 4px 15px rgba(0,0,0,0.5);" />
+                        <img id="sceneImg_${item.scene}" src="" style="width:100%; height:180px; border-radius:8px; border:1px solid var(--border-accent); object-fit:contain; background:#000; box-shadow:0 4px 15px rgba(0,0,0,0.5); cursor:pointer;" title="Click to view full screen" onclick="openImageLightbox(this.src, 'Beat #${item.scene} — Visual Asset', '${item.prompt ? item.prompt.replace(/'/g, "\\'").replace(/\n/g, " ") : ''}')" />
                         <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
                             <span style="font-size:0.8rem; font-weight:800; color:var(--accent-green); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:180px;" id="sceneImgName_${item.scene}">✅ Assigned #${item.scene}</span>
                             <button style="background:rgba(255,255,255,0.08); color:var(--text-primary); border:1px solid var(--border-subtle); padding:4px 8px; border-radius:6px; font-size:0.72rem; font-weight:600; cursor:pointer;" onclick="togglePromptView(${item.scene})">👁️ Prompt</button>
@@ -1970,8 +2430,6 @@
                         <div style="font-weight:700; font-size:0.75rem; color:var(--text-secondary); margin-top:4px;">Generated Prompt (${styleName}):</div>
                         <textarea readonly style="width:100%; min-height:80px; font-family:monospace; font-size:0.76rem; background:var(--bg-input); color:var(--text-primary); border:1px solid var(--border-subtle); border-radius:8px; padding:8px; resize:vertical;">${item.prompt}</textarea>
                     </div>
-
-                    <button id="btnGenFlux_${item.scene}" style="width:100%; background:linear-gradient(135deg, #0071e3, #8e24aa); color:white; border:none; padding:8px; border-radius:8px; font-size:0.76rem; font-weight:700; cursor:pointer; margin-top:4px; display:flex; align-items:center; justify-content:center; gap:6px;" onclick="generateFluxImageForBeat(${item.scene})">🎨 Generate FLUX.1-dev 8K AI Image</button>
                 `;
                 gridContainer.appendChild(card);
             });
@@ -1979,6 +2437,50 @@
             container.style.display = 'block';
             container.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
+
+        function openImageLightbox(imgSrc, titleText, promptText) {
+            const modal = document.getElementById('imageLightboxModal');
+            const modalImg = document.getElementById('lightboxImg');
+            const modalTitleText = document.getElementById('lightboxTitleText');
+            const modalCaption = document.getElementById('lightboxCaption');
+
+            if (modal && modalImg) {
+                modalImg.src = imgSrc;
+                if (modalTitleText) modalTitleText.textContent = titleText || '🎨 FLUX AI Image Preview';
+                if (modalCaption) modalCaption.textContent = promptText || '';
+                modal.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+            }
+        }
+
+        function closeImageLightbox(e) {
+            if (e && e.stopPropagation) e.stopPropagation();
+            const modal = document.getElementById('imageLightboxModal');
+            if (modal) {
+                modal.style.display = 'none';
+                document.body.style.overflow = '';
+            }
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeImageLightbox();
+            }
+        });
     </script>
+
+    <!-- Full-Screen Image Lightbox Modal -->
+    <div id="imageLightboxModal" style="display:none; position:fixed; inset:0; z-index:99999; background:rgba(0,0,0,0.85); backdrop-filter:blur(12px); flex-direction:column; align-items:center; justify-content:center; padding:20px;" onclick="closeImageLightbox(event)">
+        <div style="position:relative; max-width:92vw; max-height:92vh; display:flex; flex-direction:column; align-items:center; background:var(--bg-card); border:1px solid var(--border-accent); border-radius:16px; padding:18px 22px; box-shadow:0 25px 60px rgba(0,0,0,0.9);" onclick="event.stopPropagation()">
+            <div style="display:flex; justify-content:space-between; align-items:center; width:100%; margin-bottom:12px; border-bottom:1px solid var(--border-subtle); padding-bottom:10px;">
+                <div id="lightboxTitle" style="font-size:1rem; font-weight:800; color:var(--text-primary); font-family:'Outfit',sans-serif; display:flex; align-items:center; gap:8px;">
+                    <span>🎨</span> <span id="lightboxTitleText">Beat Image Preview</span>
+                </div>
+                <button onclick="closeImageLightbox()" style="background:rgba(255,45,85,0.2); color:var(--accent-red); border:1px solid var(--border-accent); width:32px; height:32px; border-radius:50%; font-size:0.85rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s ease;" title="Close (Esc)">❌</button>
+            </div>
+            <img id="lightboxImg" src="" style="max-width:88vw; max-height:72vh; object-fit:contain; border-radius:10px; border:1px solid var(--border-subtle); box-shadow:0 8px 30px rgba(0,0,0,0.8);" />
+            <div id="lightboxCaption" style="margin-top:12px; font-size:0.8rem; color:var(--text-secondary); text-align:center; max-width:750px; max-height:60px; overflow-y:auto; font-style:italic;"></div>
+        </div>
+    </div>
 </body>
 </html>
