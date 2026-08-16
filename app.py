@@ -1571,12 +1571,38 @@ async def append_natural_pause_padding(audio_path, silence_duration_sec=0.28):
     except Exception as e:
         print("Error appending natural silence padding:", e)
 
-async def safe_edge_tts_save(text, voice_id, rate, out_filepath, max_retries=3):
-    text = humanize_numbers_in_text(text)
+async def safe_edge_tts_save(text, voice_id, rate="-4%", out_filepath="", max_retries=3):
+    import re
+    # Extract & strip bracketed emotion tags like [authoritative], [dramatic], [whisper], etc.
+    clean_text = re.sub(r'\[\s*(dramatic|whisper|excited|suspense|authoritative|sad|cheerful|happy|scary|calm|fast|slow|neutral)\s*\]', '', text, flags=re.IGNORECASE)
+    clean_text = re.sub(r'\[[a-zA-Z0-9_\-\s]+\]', '', clean_text)
+    clean_text = humanize_numbers_in_text(clean_text).strip()
+    if not clean_text:
+        clean_text = humanize_numbers_in_text(text).strip()
+
+    # Apply specialized pitch & rate audio tuning based on emotion tag
+    lower_orig = text.lower()
+    pitch = "+0Hz"
+    if "authoritative" in lower_orig:
+        pitch = "-3Hz"
+        rate = "-6%"
+    elif "dramatic" in lower_orig:
+        pitch = "-2Hz"
+        rate = "-8%"
+    elif "whisper" in lower_orig or "suspense" in lower_orig:
+        pitch = "-4Hz"
+        rate = "-10%"
+    elif "excited" in lower_orig:
+        pitch = "+3Hz"
+        rate = "+4%"
+    elif "cheerful" in lower_orig:
+        pitch = "+2Hz"
+        rate = "+2%"
+
     last_err = None
     for attempt in range(1, max_retries + 1):
         try:
-            communicate = edge_tts.Communicate(text, voice_id, rate=rate)
+            communicate = edge_tts.Communicate(clean_text, voice_id, rate=rate, pitch=pitch)
             await communicate.save(out_filepath)
             if os.path.exists(out_filepath) and os.path.getsize(out_filepath) > 100:
                 return True
