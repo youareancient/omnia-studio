@@ -539,20 +539,26 @@
                     <button class="btn-icon-pill btn-blue-pill" id="btnCopyPrompts" onclick="copyOnlyPrompts()" style="display:none;" title="Copy All Prompts">📋</button>
                     <button class="btn-icon-pill btn-green-pill" id="btnUploadBatch" onclick="triggerBatchUpload()" style="display:none;" title="Upload Batch Images">📁</button>
 
-                    <button class="btn-icon-pill btn-purple-pill" id="btnGenerateAllFlux" onclick="generateFluxImagesOneByOne()" style="display:none;" title="Generate FLUX AI Images">🎨</button>
-                    
-                    <!-- Voice Emotion Selector (Appears ONLY during Voice Generation Step) -->
-                    <select id="globalEmotionSelect" style="display:none; background:var(--bg-input); border:1px solid var(--border-accent); color:var(--text-primary); border-radius:var(--radius-md); padding:8px 12px; font-size:0.8rem; font-weight:700; cursor:pointer;" title="Choose voice emotion for speech generation">
-                        <option value="neutral" selected>😐 Voice Emotion: Neutral (Default)</option>
-                        <option value="dramatic">🎭 Voice Emotion: Dramatic (Cinematic)</option>
-                        <option value="whisper">🤫 Voice Emotion: Whisper (Suspenseful)</option>
-                        <option value="excited">🔥 Voice Emotion: Excited (Viral Hype)</option>
-                        <option value="suspense">😱 Voice Emotion: Suspense (Horror / Crime)</option>
-                        <option value="authoritative">💼 Voice Emotion: Authoritative (Deep)</option>
-                        <option value="cheerful">😊 Voice Emotion: Cheerful (Upbeat Shorts)</option>
-                    </select>
+                    <!-- Voiceover & Emotion Control Group (Appears ONLY after images are uploaded/generated!) -->
+                    <div id="voiceoverControlGroup" style="display:none; align-items:center; gap:10px;">
+                        <div style="display:flex; align-items:center; gap:6px; background:var(--bg-input); border:1px solid var(--border-accent); border-radius:30px; padding:4px 14px;">
+                            <span style="font-size:0.75rem; font-weight:800; color:var(--text-secondary);">🎭 Emotion:</span>
+                            <select id="globalEmotionSelect" style="background:transparent; border:none; color:var(--text-primary); font-size:0.8rem; font-weight:700; cursor:pointer; outline:none;" title="Choose voice emotion for speech generation">
+                                <option value="neutral" selected>😐 Neutral (Default)</option>
+                                <option value="dramatic">🎭 Dramatic (Cinematic)</option>
+                                <option value="whisper">🤫 Whisper (Suspenseful)</option>
+                                <option value="excited">🔥 Excited (Viral Hype)</option>
+                                <option value="suspense">😱 Suspense (Horror / Crime)</option>
+                                <option value="authoritative">💼 Authoritative (Deep)</option>
+                                <option value="cheerful">😊 Cheerful (Upbeat Shorts)</option>
+                            </select>
+                        </div>
 
-                    <button class="btn-icon-pill btn-purple-pill" id="btnGenerateAllVoice" onclick="generateAllBeatVoiceovers()" style="display:none;" title="Generate All Beat Voiceovers">🎙️ Generate All Voiceovers</button>
+                        <button type="button" id="btnGenerateAllVoice" onclick="generateAllBeatVoiceovers()" style="background:linear-gradient(135deg, #ff2d55, #ff9500); color:#fff; border:none; border-radius:30px; padding:10px 22px; font-size:0.85rem; font-weight:800; cursor:pointer; box-shadow:0 4px 15px rgba(255,45,85,0.4); display:inline-flex; align-items:center; gap:8px; white-space:nowrap;" title="Generate All Beat Voiceovers">
+                            🎙️ Generate All Voiceovers
+                        </button>
+                    </div>
+
                     <button class="btn-icon-pill btn-blue-pill" id="btnPushTimeline" onclick="pushClipsToTimeline()" style="display:none;" title="Push Clips to Interactive Timeline">🎞️</button>
                     <input type="file" id="batchImageInput" multiple accept="image/*" style="display:none;" onchange="handleBatchImagesUpload(event)">
                 </div>
@@ -1048,7 +1054,8 @@
 
             if (assignedCount > 0) {
                 document.getElementById('btnCopyPrompts').style.display = 'none';
-                document.getElementById('btnGenerateAllVoice').style.display = 'inline-flex';
+                const vGroup = document.getElementById('voiceoverControlGroup');
+                if (vGroup) vGroup.style.display = 'inline-flex';
 
                 const gridContainer = document.getElementById('scenesGridContainer');
                 if (gridContainer) {
@@ -1262,8 +1269,8 @@
 
             if (btnGenFlux) btnGenFlux.disabled = false;
 
-            const btnVoice = document.getElementById('btnGenerateAllVoice');
-            if (btnVoice) btnVoice.style.display = 'inline-flex';
+            const vGroup = document.getElementById('voiceoverControlGroup');
+            if (vGroup) vGroup.style.display = 'inline-flex';
             
             const btnTimeline = document.getElementById('btnPushTimeline');
             if (btnTimeline) btnTimeline.style.display = 'inline-flex';
@@ -2395,10 +2402,8 @@
             const fluxBtn = document.getElementById('btnGenerateAllFlux');
             if (fluxBtn) fluxBtn.style.display = 'inline-flex';
 
-            const genVoiceBtn = document.getElementById('btnGenerateAllVoice');
-            const globalEmotSelect = document.getElementById('globalEmotionSelect');
-            if (genVoiceBtn) genVoiceBtn.style.display = 'inline-flex';
-            if (globalEmotSelect) globalEmotSelect.style.display = 'inline-flex';
+            const voiceGroup = document.getElementById('voiceoverControlGroup');
+            if (voiceGroup) voiceGroup.style.display = 'none'; // Appears ONLY after images are uploaded or generated!
 
             const container = document.getElementById('outputContainer');
             const styleSelect = document.getElementById('visualStyleSelect');
