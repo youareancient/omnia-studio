@@ -1577,9 +1577,11 @@ async def append_natural_pause_padding(audio_path, silence_duration_sec=0.28):
 async def safe_edge_tts_save(text, voice_id, rate="-4%", out_filepath="", emotion=None, max_retries=3):
     import re
     # Extract & strip bracketed emotion tags like [authoritative], [dramatic], [whisper], etc.
-    tag_match = re.search(r'\[\s*(dramatic|whisper|excited|suspense|authoritative|sad|cheerful|happy|scary|calm|fast|slow|neutral)\s*\]', text, flags=re.IGNORECASE)
-    if tag_match:
-        emotion = tag_match.group(1).lower()
+    # If no emotion passed explicitly, check for tag in text
+    if not emotion:
+        tag_match = re.search(r'\[\s*(dramatic|whisper|excited|suspense|authoritative|sad|cheerful|happy|scary|calm|fast|slow|neutral)\s*\]', text, flags=re.IGNORECASE)
+        if tag_match:
+            emotion = tag_match.group(1).lower()
 
     clean_text = re.sub(r'\[\s*(dramatic|whisper|excited|suspense|authoritative|sad|cheerful|happy|scary|calm|fast|slow|neutral)\s*\]', '', text, flags=re.IGNORECASE)
     clean_text = re.sub(r'\[[a-zA-Z0-9_\-\s]+\]', '', clean_text)
@@ -1587,12 +1589,16 @@ async def safe_edge_tts_save(text, voice_id, rate="-4%", out_filepath="", emotio
     if not clean_text:
         clean_text = humanize_numbers_in_text(text).strip()
 
-    # Apply STRONG, DRAMATIC pitch, rate, and volume audio modulation for each emotion
+    # Apply pitch, rate, and volume audio modulation for each emotion
     pitch = "+0Hz"
     volume = "+0%"
     emot_lower = (emotion or "").lower()
 
-    if "authoritative" in emot_lower or "deep" in emot_lower:
+    if emot_lower == "neutral" or not emot_lower:
+        pitch = "+0Hz"
+        rate = "-4%"
+        volume = "+0%"
+    elif "authoritative" in emot_lower or "deep" in emot_lower:
         pitch = "-22Hz"
         rate = "-10%"
         volume = "+20%"

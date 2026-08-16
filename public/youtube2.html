@@ -1666,9 +1666,10 @@
                 const item = currentScenesData[i];
                 const currentPct = Math.floor(((i + 1) / total) * 100);
                 
-                let textForVoice = item.text;
+                let rawText = (item.text || '').replace(/\[\s*(dramatic|whisper|excited|suspense|authoritative|sad|cheerful|happy|scary|calm|fast|slow|neutral)\s*\]/gi, '').trim();
+                let textForVoice = rawText;
                 if (activeEmotion && activeEmotion !== 'neutral') {
-                    textForVoice = `[${activeEmotion}] ${item.text}`;
+                    textForVoice = `[${activeEmotion}] ${rawText}`;
                 }
 
                 updateVoiceProgress(currentPct, `Synthesizing beat voiceover #${item.scene} [${activeEmotion.toUpperCase()}] (${i + 1}/${total})...`);
