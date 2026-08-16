@@ -720,7 +720,9 @@ def humanize_numbers_in_text(text):
     return text
 
 def generate_kokoro_tts_audio(text, voice_key="kokoro_adam", out_filepath="output.mp3"):
-    text = humanize_numbers_in_text(text)
+    import re
+    clean_speech_text = re.sub(r'\[.*?\]', '', text).strip()
+    text = humanize_numbers_in_text(clean_speech_text)
     try:
         voice_map = {
             "kokoro_adam": "am_adam",
@@ -1576,15 +1578,13 @@ async def append_natural_pause_padding(audio_path, silence_duration_sec=0.28):
 
 async def safe_edge_tts_save(text, voice_id, rate="-4%", out_filepath="", emotion=None, max_retries=3):
     import re
-    # Extract & strip bracketed emotion tags like [authoritative], [dramatic], [whisper], etc.
     # If no emotion passed explicitly, check for tag in text
     if not emotion:
-        tag_match = re.search(r'\[\s*(dramatic|whisper|excited|suspense|authoritative|sad|cheerful|happy|scary|calm|fast|slow|neutral)\s*\]', text, flags=re.IGNORECASE)
+        tag_match = re.search(r'\[\s*([a-zA-Z0-9_\-\s]+)\s*\]', text)
         if tag_match:
             emotion = tag_match.group(1).lower()
 
-    clean_text = re.sub(r'\[\s*(dramatic|whisper|excited|suspense|authoritative|sad|cheerful|happy|scary|calm|fast|slow|neutral)\s*\]', '', text, flags=re.IGNORECASE)
-    clean_text = re.sub(r'\[[a-zA-Z0-9_\-\s]+\]', '', clean_text)
+    clean_text = re.sub(r'\[.*?\]', '', text).strip()
     clean_text = humanize_numbers_in_text(clean_text).strip()
     if not clean_text:
         clean_text = humanize_numbers_in_text(text).strip()
@@ -1672,7 +1672,10 @@ async def handle_generate_beat_audio(request):
         out_filename = f"beat_audio_{job_id[:6] if job_id else 'beat'}_{scene_idx:02d}.mp3"
         out_filepath = os.path.join(DOWNLOADS_DIR, out_filename)
 
-        cleaned_text = humanize_numbers_in_text(scene_text)
+        clean_speech_text = re.sub(r'\[.*?\]', '', scene_text).strip()
+        cleaned_text = humanize_numbers_in_text(clean_speech_text)
+        if not cleaned_text:
+            cleaned_text = clean_speech_text
 
         # Synthesize audio specifically for this scene text line
         generated_ok = False
