@@ -33,7 +33,7 @@ INDEX_HTML_PATH = os.path.join(STATIC_DIR, "index.html")
 
 VOICE_PRESETS = {
     # 🎙️ OWNER CUSTOM CLONED VOICE
-    "parth": {"id": "parth", "name": "🎙️ Parth (Channel Host Voice — #1 Default)", "category": "Custom Cloned Voices", "desc": "Owner Custom Cloned Voice Sample", "is_cloned": True, "audio_url": "/static/uploads/cloned_voices/parth_voice.m4a"},
+    "parth": {"id": "parth", "base_voice_id": "en-AU-WilliamNeural", "name": "🎙️ Parth (Channel Host Voice — #1 Default)", "category": "Custom Cloned Voices", "desc": "Owner Custom Cloned Voice Sample", "is_cloned": True, "audio_url": "/static/uploads/cloned_voices/parth_voice.m4a"},
 
     # 🎥 TRUE CRIME & DOCUMENTARY ESSAYS
     "andrew": {"id": "en-US-AndrewNeural", "name": "Andrew (YouTube Documentary Essay)", "category": "True Crime & Documentary", "desc": "High energy, warm & engaging (#1 for Documentary Essays)"},
@@ -1648,7 +1648,9 @@ async def handle_generate_beat_audio(request):
             rate = "-" + rate
 
         preset = VOICE_PRESETS.get(voice, {})
-        voice_id = preset.get("id", "en-US-AndrewNeural")
+        voice_id = preset.get("id", "en-AU-WilliamNeural")
+        if preset.get("is_cloned") or not voice_id.startswith("en-"):
+            voice_id = preset.get("base_voice_id", "en-AU-WilliamNeural")
 
         if not scene_text:
             job = BACKGROUND_JOBS.get(job_id)
@@ -2785,6 +2787,7 @@ async def handle_voices(request):
                 v_id, v_name, v_path, v_desc, _ = r
                 presets[v_id] = {
                     "id": v_id,
+                    "base_voice_id": "en-AU-WilliamNeural",
                     "name": f"🎙️ Cloned — {v_name}",
                     "category": "Custom Cloned Voices",
                     "desc": f"Zero-Shot Cloned Voice ({v_desc or 'User Upload'})",
