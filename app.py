@@ -41,7 +41,9 @@ VOICE_PRESETS = {
     "ryan": {"id": "en-GB-RyanNeural", "name": "Ryan (British History & Mystery)", "desc": "Deep cinematic British voice for war & documentaries"},
     "sonia": {"id": "en-GB-SoniaNeural", "name": "Sonia (British Art & Culture)", "desc": "Elegant British documentarian female voice"},
     "william": {"id": "en-AU-WilliamNeural", "name": "William (Australian Authentic)", "desc": "Relaxed, authentic Australian narrator"},
-    "liam": {"id": "en-CA-LiamNeural", "name": "Liam (Canadian Dynamic)", "desc": "Dynamic Canadian podcast narrator"}
+    "liam": {"id": "en-CA-LiamNeural", "name": "Liam (Canadian Dynamic)", "desc": "Dynamic Canadian podcast narrator"},
+    "steffan": {"id": "en-US-SteffanNeural", "name": "Steffan (Cinematic Trailer & Gaming)", "desc": "Intense, dramatic voice for cinematic game reviews & trailers"},
+    "michelle": {"id": "en-US-MichelleNeural", "name": "Michelle (Viral Reels & Shorts)", "desc": "Upbeat, modern female voice for viral short-form storytelling"}
 }
 
 import sqlite3
