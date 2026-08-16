@@ -32,6 +32,9 @@ os.makedirs(DOWNLOADS_DIR, exist_ok=True)
 INDEX_HTML_PATH = os.path.join(STATIC_DIR, "index.html")
 
 VOICE_PRESETS = {
+    # 🎙️ OWNER CUSTOM CLONED VOICE
+    "parth": {"id": "parth", "name": "🎙️ Parth (Channel Host Voice — #1 Default)", "category": "Custom Cloned Voices", "desc": "Owner Custom Cloned Voice Sample", "is_cloned": True, "audio_url": "/static/uploads/cloned_voices/parth_voice.m4a"},
+
     # 🎥 TRUE CRIME & DOCUMENTARY ESSAYS
     "andrew": {"id": "en-US-AndrewNeural", "name": "Andrew (YouTube Documentary Essay)", "category": "True Crime & Documentary", "desc": "High energy, warm & engaging (#1 for Documentary Essays)"},
     "christopher": {"id": "en-US-ChristopherNeural", "name": "Christopher (Deep Business & Mystery)", "category": "True Crime & Documentary", "desc": "Deep, authoritative, cinematic mystery narrator"},

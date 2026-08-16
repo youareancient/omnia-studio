@@ -505,7 +505,9 @@
                     </button>
                 </div>
                 <select id="ttsEngineSelect" style="width:100%; background:var(--bg-input); border:1px solid var(--border-subtle); border-radius:var(--radius-md); color:var(--text-primary); padding:12px; font-size:0.9rem; font-weight:600; outline:none; cursor:pointer;">
-                    <optgroup label="🎙️ Custom Cloned Voices" id="clonedVoicesOptGroup"></optgroup>
+                    <optgroup label="🎙️ Custom Cloned Voices" id="clonedVoicesOptGroup">
+                        <option value="parth" selected>🎙️ Parth (Channel Host Voice — #1 Default)</option>
+                    </optgroup>
                     <optgroup label="🎥 True Crime & Documentary Essays">
                         <option value="andrew">🎥 Andrew (YouTube Documentary Essay)</option>
                         <option value="christopher">🎥 Christopher (Deep Business & Mystery Narrator)</option>
@@ -1637,7 +1639,7 @@
             btn.innerHTML = '⏳';
 
             const selectedEngineVal = document.getElementById('ttsEngineSelect').value;
-            let voiceParam = 'william';
+            let voiceParam = selectedEngineVal || 'parth';
             let engineParam = 'edge';
 
             if (selectedEngineVal.startsWith('edge_')) {
@@ -2673,6 +2675,7 @@
                 if (data.status === 'success' && data.voices) {
                     const clonedOptGroup = document.getElementById('clonedVoicesOptGroup');
                     if (clonedOptGroup) {
+                        const currentSel = document.getElementById('ttsEngineSelect').value;
                         clonedOptGroup.innerHTML = '';
                         Object.keys(data.voices).forEach(vKey => {
                             const v = data.voices[vKey];
@@ -2680,6 +2683,9 @@
                                 const opt = document.createElement('option');
                                 opt.value = vKey;
                                 opt.textContent = v.name;
+                                if (vKey === currentSel || (!currentSel && vKey === 'parth')) {
+                                    opt.selected = true;
+                                }
                                 clonedOptGroup.appendChild(opt);
                             }
                         });
