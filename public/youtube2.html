@@ -2444,6 +2444,35 @@
                     </div>
                 </div>
 
+                <div id="scenesVoiceoverBar" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; background:linear-gradient(135deg, rgba(255,45,85,0.12), rgba(0,113,227,0.12)); border:1px solid var(--border-accent); border-radius:16px; padding:14px 20px; margin-bottom:20px; box-shadow:0 6px 20px rgba(0,0,0,0.3);">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span style="font-size:1.2rem;">🎙️</span>
+                        <div>
+                            <div style="font-size:0.95rem; font-weight:800; color:var(--text-primary); font-family:'Outfit',sans-serif;">Voiceover Production Suite</div>
+                            <div style="font-size:0.75rem; color:var(--text-secondary);">Select voice emotion below and click Generate All Voiceovers to synthesize complete script audio</div>
+                        </div>
+                    </div>
+
+                    <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                        <div style="display:flex; align-items:center; gap:6px; background:var(--bg-input); border:1px solid var(--border-accent); border-radius:30px; padding:6px 14px;">
+                            <span style="font-size:0.78rem; font-weight:800; color:var(--text-secondary);">🎭 Voice Emotion:</span>
+                            <select id="globalEmotionSelect" style="background:transparent; border:none; color:var(--text-primary); font-size:0.85rem; font-weight:700; cursor:pointer; outline:none;" title="Choose voice emotion applied to whole script">
+                                <option value="neutral" selected>😐 Neutral (Default)</option>
+                                <option value="dramatic">🎭 Dramatic (Cinematic)</option>
+                                <option value="whisper">🤫 Whisper (Suspenseful)</option>
+                                <option value="excited">🔥 Excited (Viral Hype)</option>
+                                <option value="suspense">😱 Suspense (Horror / Crime)</option>
+                                <option value="authoritative">💼 Authoritative (Deep)</option>
+                                <option value="cheerful">😊 Cheerful (Upbeat Shorts)</option>
+                            </select>
+                        </div>
+
+                        <button type="button" id="btnGenerateAllVoice" onclick="generateAllBeatVoiceovers()" style="background:linear-gradient(135deg, #ff2d55, #ff9500); color:#fff; border:none; border-radius:30px; padding:10px 24px; font-size:0.88rem; font-weight:800; cursor:pointer; box-shadow:0 4px 18px rgba(255,45,85,0.45); display:inline-flex; align-items:center; gap:8px; white-space:nowrap;" title="Generate Voiceover Audio for All Scenes">
+                            🎙️ Generate All Voiceovers
+                        </button>
+                    </div>
+                </div>
+
                 <div id="scenesGridContainer" style="display: block;"></div>
             `;
 
