@@ -895,10 +895,17 @@
                 return;
             }
 
-            document.getElementById('totalScenesCountBtn').style.display = 'none';
-            document.getElementById('btnCopyPrompts').style.display = 'none';
-            document.getElementById('btnUploadBatch').style.display = 'none';
-            document.getElementById('btnGenerateAllVoice').style.display = 'none';
+            const btnCount = document.getElementById('totalScenesCountBtn');
+            if (btnCount) btnCount.style.display = 'none';
+            
+            const btnCopy = document.getElementById('btnCopyPrompts');
+            if (btnCopy) btnCopy.style.display = 'none';
+            
+            const btnUpload = document.getElementById('btnUploadBatch');
+            if (btnUpload) btnUpload.style.display = 'none';
+            
+            const btnVoice = document.getElementById('btnGenerateAllVoice');
+            if (btnVoice) btnVoice.style.display = 'none';
 
             jobStartTime = Date.now();
             updateVoiceProgress(5, 'Starting scene cut...');
@@ -1034,7 +1041,8 @@
             }
 
             if (assignedCount > 0) {
-                document.getElementById('btnCopyPrompts').style.display = 'none';
+                const copyBtn = document.getElementById('btnCopyPrompts');
+                if (copyBtn) copyBtn.style.display = 'none';
 
                 const gridContainer = document.getElementById('scenesGridContainer');
                 if (gridContainer) {
