@@ -389,7 +389,25 @@ MANDATORY DOMAIN RULE: Every single visual metaphor, store, customer interaction
     style_directive = style_aesthetic_map.get(visual_style, style_aesthetic_map["omniverse_master_hybrid"])
 
     if visual_style in ["physical_economics_3d", "omniverse_master_hybrid"]:
-        system_prompt = f"""MASTER PROMPT — ULTRA-CLEAN 8K ECONOMICS DOCUMENTARY HYBRID ART (HIGH LEGIBILITY EDITION)
+        if scene_number == 1:
+            system_prompt = f"""MASTER PROMPT — ULTRA-CLEAN 8K ECONOMICS DOCUMENTARY HYBRID ART (SCENE 1 HERO HOOK EDITION)
+
+You are an elite visual prompt director and cinematic documentary art director for top economics & business YouTube channels.
+Your task is to transform Scene 1 (the video hook beat) into an EXCEPTIONALLY IMPRESSIVE, DETAILED, MULTI-SENTENCE STANDALONE IMAGE PROMPT (100-160 words) with maximum visual appeal and hook retention.
+
+{topic_lock_directive}
+
+CRITICAL RULES FOR SCENE 1 (THE HERO HOOK IMAGE):
+1. HERO REVEAL OF COMPLETE FACILITY / PRODUCT: Scene 1 is the opening hook of the entire video. You MUST describe a complete, fully-realized, authentic 1/87 scale architectural miniature of the main subject/facility (e.g. for a nightclub: a complete multi-zone layout featuring the grand entrance, DJ booth stage, main dance floor, illuminated bar counter, VIP lounge area, and overhead lighting rigs). DO NOT render a bare empty box, plain square room, or partial model!
+2. NO HUD TEXT CARDS OR METRIC OVERLAYS: Scene 1 MUST focus 100% on the breathtaking visual hero reveal of the complete subject facility in the specified art style. DO NOT include HUD plaques, metric text, stat badges, or revenue/cost block overlays in Scene 1.
+3. MACRO CINEMATOGRAPHY & LIGHTING: Shot on ARRI Alexa 35mm f/1.4 macro prime lens, dark obsidian studio stage backdrop, warm 3200K Rembrandt key lighting with cyan rim highlights, tilt-shift macro depth-of-field, widescreen 16:9 visual symmetry, generous negative space, zero visual clutter, zero human figures.
+
+Respond STRICTLY in JSON format:
+{{
+  "prompt": "SCENE: [short description of scene hook]\\n\\nIMAGE PROMPT: Ultra-clean 8K Economics Documentary Hybrid Art. [Complete, hyper-detailed, crystal-clear 100-160 word standalone prompt specifying the complete multi-zone focal facility subject in full architectural detail, macro lens lighting, camera angle, and quality finish with generous negative space]\\n\\nEMOTION: [emotional quality]\\n\\nVISUAL PURPOSE: [what the viewer should experience visually]"
+}}"""
+        else:
+            system_prompt = f"""MASTER PROMPT — ULTRA-CLEAN 8K ECONOMICS DOCUMENTARY HYBRID ART (HIGH LEGIBILITY EDITION)
 
 You are an elite visual prompt director and cinematic documentary art director for top economics & business YouTube channels.
 Your task is to transform the script beat into an EXCEPTIONALLY DETAILED, CRYSTAL-CLEAR, MULTI-SENTENCE STANDALONE IMAGE PROMPT (100-160 words) with maximum visual legibility for video viewers.
@@ -397,7 +415,7 @@ Your task is to transform the script beat into an EXCEPTIONALLY DETAILED, CRYSTA
 {topic_lock_directive}
 
 CORE HYBRID ARCHITECTURE (4 VISUAL LAYERS FOR MAXIMUM CLARITY):
-1. CENTER STAGE FOCAL SUBJECT: A crisp, uncluttered 1/87 scale handcrafted physical architectural miniature model or facility representing the scene theme.
+1. CENTER STAGE FOCAL SUBJECT: A crisp, complete, uncluttered 1/87 scale handcrafted physical architectural miniature model of the facility or subject (describing realistic, complete architectural zones rather than bare empty boxes).
 2. PHYSICAL ECONOMIC METAPHOR: 3D isometric supply/data flow with vibrant color contrast:
    - REVENUE & PROFIT: Radiant emerald green polymer blocks or glowing cyan energy lines.
    - EXPENSES & BOTTLENECKS: Heavy ruby crimson red blocks or terracotta barriers.
@@ -410,6 +428,7 @@ Respond STRICTLY in JSON format:
   "prompt": "SCENE: [short description of what scene communicates]\\n\\nIMAGE PROMPT: Ultra-clean 8K Economics Documentary Hybrid Art. [Complete, hyper-detailed, crystal-clear 100-160 word standalone prompt specifying center stage focal subject, physical economic color representations, vector overlay HUD text/numbers, macro lens lighting, camera angle, and quality finish with generous negative space]\\n\\nEMOTION: [emotional quality]\\n\\nVISUAL PURPOSE: [what the viewer should understand economically]"
 }}"""
     else:
+        hero_note = "CRITICAL FOR SCENE 1: Focus 100% on a complete, stunning hero reveal of the complete product/facility. DO NOT include text plaques, HUD overlays, or stats in Scene 1." if scene_number == 1 else "DIAGRAMS & LABELS: Describe clean text/stat callouts inside the prompt when metrics are mentioned."
         system_prompt = f"""MASTER PROMPT — YOUTUBE EXPLAINER HIGH-RETENTION IMAGE PROMPT GENERATOR
 
 You are a 10+ year veteran AI Image Prompt Engineer, Visual Director, and Storyteller for top YouTube channels like @misterfinanceyt, @TheWealthCortexx, and @millyproblems.
@@ -425,7 +444,7 @@ MASTER GENERATION RULES:
 1. 3-5 SECOND SCENE FOCUS: Each scene covers 3-5 seconds (1 sentence). Include ONLY elements relevant to the scene line without clutter.
 2. STANDALONE LONG PROMPT: The generated prompt MUST be a full, detailed, multi-sentence paragraph (80-150 words). Never write 'same as before' or use generic short descriptions.
 3. PURE ENVIRONMENT & OBJECT FOCUS (NO HOSTS/CHARACTERS): Focus 100% on high-impact scenery, architecture, physical objects, infrastructure, data diagrams, and environmental lighting. DO NOT include human hosts, presenters, or character figures.
-4. DIAGRAMS & LABELS: When accounting, business, or niche terms (revenue, costs, margins, stats) are mentioned, describe clean text/stat/chart visual callouts inside the prompt.
+4. {hero_note}
 5. COMPOSITION & NEGATIVE SPACE: Maintain a balanced composition with generous negative space, keeping the visual clean, professional, highly readable, and free of clutter or watermarks.
 
 Respond STRICTLY in JSON format:
@@ -433,6 +452,7 @@ Respond STRICTLY in JSON format:
   "prompt": "[Complete, rich, multi-sentence standalone image prompt starting with the visual style signature and detailing subject, posture, composition, lighting, environment, negative space, and quality finish]"
 }}
 """
+
 
     user_prompt = f"Script Line (Beat {scene_number}): \"{scene_text}\""
 
@@ -484,22 +504,33 @@ STOPWORDS = {
     "you've", "your", "yours", "yourself", "yourselves"
 }
 
-def build_vector_art_scene_prompt_fallback(text, niche="economics", visual_style="omniverse_master_hybrid"):
+def build_vector_art_scene_prompt_fallback(text, niche="economics", visual_style="omniverse_master_hybrid", scene_number=1):
     clean_line = re.sub(r'\s+', ' ', text).strip()
     money_match = re.search(r'(\$?\d+[\d,.]*\s*(million|billion|thousand|k|m)?)', clean_line, re.IGNORECASE)
     stat_val = money_match.group(0).upper() if money_match else None
     
     if visual_style == "omniverse_master_hybrid":
-        stat_callout = f" In the middle ground, a laser-etched clear acrylic HUD plaque with glowing holographic amber typography displays \"{stat_val}\"." if stat_val else ""
-        return (
-            f"SCENE: Omniverse Economics Fusion — {clean_line[:60]}\n\n"
-            f"IMAGE PROMPT: Ultra-clean 8K Economics Documentary Hybrid Art — a crisp tactile 1/87 scale handcrafted physical architectural model set on a polished obsidian studio stage. "
-            f"Visually depicting: \"{clean_line}\". "
-            f"Featuring clean miniature architectural elements and 3D isometric financial flow diagrams with glowing cyan supply lines, rich emerald green revenue blocks, and heavy ruby red cost barriers. "
-            f"Shot on ARRI Alexa 35mm f/1.4 macro lens with shallow macro depth-of-field, Rembrandt chiaroscuro studio key lighting, cyan rim lighting, widescreen 16:9 golden-ratio visual symmetry, and generous negative space. Pure architectural, economic, and environmental visualization, zero clutter, zero human figures.{stat_callout}\n\n"
-            f"EMOTION: High-stakes, authoritative, analytical, cinematic.\n\n"
-            f"VISUAL PURPOSE: Master economic storytelling visualization of: {clean_line}"
-        )
+        if scene_number == 1:
+            return (
+                f"SCENE: Omniverse Economics Fusion Hero Reveal — {clean_line[:60]}\n\n"
+                f"IMAGE PROMPT: Ultra-clean 8K Economics Documentary Hybrid Art — a grand, complete 1/87 scale handcrafted physical architectural miniature model of the complete facility (complete with multi-zone architecture, detailed entrance, central stage/floor, bar counter, and overhead lighting rigs) set on a dark obsidian studio stage backdrop. "
+                f"Visually depicting the complete focal subject for: \"{clean_line}\". "
+                f"Shot on ARRI Alexa 35mm f/1.4 macro lens with shallow macro depth-of-field, Rembrandt chiaroscuro studio key lighting, cyan rim lighting, widescreen 16:9 golden-ratio visual symmetry, and generous negative space. Pure architectural and environmental hero visualization, zero clutter, zero human figures.\n\n"
+                f"EMOTION: High-stakes, authoritative, immersive, cinematic.\n\n"
+                f"VISUAL PURPOSE: Grand hero visual reveal of: {clean_line}"
+            )
+        else:
+            stat_callout = f" In the middle ground, a laser-etched clear acrylic HUD plaque with glowing holographic amber typography displays \"{stat_val}\"." if stat_val else ""
+            return (
+                f"SCENE: Omniverse Economics Fusion — {clean_line[:60]}\n\n"
+                f"IMAGE PROMPT: Ultra-clean 8K Economics Documentary Hybrid Art — a crisp tactile 1/87 scale handcrafted physical architectural model set on a polished obsidian studio stage. "
+                f"Visually depicting: \"{clean_line}\". "
+                f"Featuring clean miniature architectural elements and 3D isometric financial flow diagrams with glowing cyan supply lines, rich emerald green revenue blocks, and heavy ruby red cost barriers. "
+                f"Shot on ARRI Alexa 35mm f/1.4 macro lens with shallow macro depth-of-field, Rembrandt chiaroscuro studio key lighting, cyan rim lighting, widescreen 16:9 golden-ratio visual symmetry, and generous negative space. Pure architectural, economic, and environmental visualization, zero clutter, zero human figures.{stat_callout}\n\n"
+                f"EMOTION: High-stakes, authoritative, analytical, cinematic.\n\n"
+                f"VISUAL PURPOSE: Master economic storytelling visualization of: {clean_line}"
+            )
+
 
     elif visual_style == "photoreal":
         stat_callout = f" In the foreground, a sleek brushed-titanium plaque is engraved with the financial stat \"{stat_val}\"." if stat_val else ""
@@ -863,7 +894,7 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
             scenes = []
             for idx, (sitem, prompt_res) in enumerate(zip(scenes_raw, ai_prompts), start=1):
                 if not prompt_res:
-                    prompt_res = build_vector_art_scene_prompt_fallback(sitem["text"], niche, visual_style)
+                    prompt_res = build_vector_art_scene_prompt_fallback(sitem["text"], niche, visual_style, scene_number=idx)
                 
                 scenes.append({
                     "scene": idx,
