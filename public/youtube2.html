@@ -526,16 +526,8 @@
                 </select>
             </div>
 
-            <!-- Inline Emotion Cues Bar & Voice Cloner Toolbar -->
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
-                <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-                    <span style="font-size:0.75rem; font-weight:800; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.04em;">🎭 Script Emotion Cues:</span>
-                    <button type="button" onclick="insertEmotionCue('[dramatic] ')" style="background:rgba(255,45,85,0.12); color:#ff2d55; border:1px solid rgba(255,45,85,0.3); border-radius:12px; padding:3px 9px; font-size:0.72rem; font-weight:700; cursor:pointer;" title="Insert Dramatic Emotion Cue">🎭 Dramatic</button>
-                    <button type="button" onclick="insertEmotionCue('[whisper] ')" style="background:rgba(94,92,230,0.12); color:#5e5ce6; border:1px solid rgba(94,92,230,0.3); border-radius:12px; padding:3px 9px; font-size:0.72rem; font-weight:700; cursor:pointer;" title="Insert Whisper Emotion Cue">🤫 Whisper</button>
-                    <button type="button" onclick="insertEmotionCue('[excited] ')" style="background:rgba(255,149,0,0.12); color:#ff9500; border:1px solid rgba(255,149,0,0.3); border-radius:12px; padding:3px 9px; font-size:0.72rem; font-weight:700; cursor:pointer;" title="Insert Excited Emotion Cue">🔥 Excited</button>
-                    <button type="button" onclick="insertEmotionCue('[suspense] ')" style="background:rgba(175,82,222,0.12); color:#af52de; border:1px solid rgba(175,82,222,0.3); border-radius:12px; padding:3px 9px; font-size:0.72rem; font-weight:700; cursor:pointer;" title="Insert Suspense Emotion Cue">😱 Suspense</button>
-                    <button type="button" onclick="insertEmotionCue('[authoritative] ')" style="background:rgba(0,113,226,0.12); color:#0071e2; border:1px solid rgba(0,113,226,0.3); border-radius:12px; padding:3px 9px; font-size:0.72rem; font-weight:700; cursor:pointer;" title="Insert Authoritative Emotion Cue">💼 Authoritative</button>
-                </div>
+            <!-- Voice Cloner Toolbar -->
+            <div style="display:flex; justify-content:flex-end; align-items:center; margin-bottom:10px;">
                 <button type="button" onclick="openVoiceClonerModal()" style="background:linear-gradient(135deg, #ff2d55, #ff9500); color:#fff; border:none; border-radius:20px; padding:5px 14px; font-size:0.75rem; font-weight:800; cursor:pointer; box-shadow:0 2px 10px rgba(255,45,85,0.3);" title="Upload 3-5s sample to clone custom voice">🎙️ Clone Custom Voice</button>
             </div>
 
@@ -548,7 +540,19 @@
                     <button class="btn-icon-pill btn-green-pill" id="btnUploadBatch" onclick="triggerBatchUpload()" style="display:none;" title="Upload Batch Images">📁</button>
 
                     <button class="btn-icon-pill btn-purple-pill" id="btnGenerateAllFlux" onclick="generateFluxImagesOneByOne()" style="display:none;" title="Generate FLUX AI Images">🎨</button>
-                    <button class="btn-icon-pill btn-purple-pill" id="btnGenerateAllVoice" onclick="generateAllBeatVoiceovers()" style="display:none;" title="Generate All Beat Voiceovers">🎙️</button>
+                    
+                    <!-- Voice Emotion Selector (Appears ONLY during Voice Generation Step) -->
+                    <select id="globalEmotionSelect" style="display:none; background:var(--bg-input); border:1px solid var(--border-accent); color:var(--text-primary); border-radius:var(--radius-md); padding:8px 12px; font-size:0.8rem; font-weight:700; cursor:pointer;" title="Choose voice emotion for speech generation">
+                        <option value="neutral" selected>😐 Voice Emotion: Neutral (Default)</option>
+                        <option value="dramatic">🎭 Voice Emotion: Dramatic (Cinematic)</option>
+                        <option value="whisper">🤫 Voice Emotion: Whisper (Suspenseful)</option>
+                        <option value="excited">🔥 Voice Emotion: Excited (Viral Hype)</option>
+                        <option value="suspense">😱 Voice Emotion: Suspense (Horror / Crime)</option>
+                        <option value="authoritative">💼 Voice Emotion: Authoritative (Deep)</option>
+                        <option value="cheerful">😊 Voice Emotion: Cheerful (Upbeat Shorts)</option>
+                    </select>
+
+                    <button class="btn-icon-pill btn-purple-pill" id="btnGenerateAllVoice" onclick="generateAllBeatVoiceovers()" style="display:none;" title="Generate All Beat Voiceovers">🎙️ Generate All Voiceovers</button>
                     <button class="btn-icon-pill btn-blue-pill" id="btnPushTimeline" onclick="pushClipsToTimeline()" style="display:none;" title="Push Clips to Interactive Timeline">🎞️</button>
                     <input type="file" id="batchImageInput" multiple accept="image/*" style="display:none;" onchange="handleBatchImagesUpload(event)">
                 </div>
@@ -1637,7 +1641,19 @@
             for (let i = 0; i < total; i++) {
                 const item = currentScenesData[i];
                 const currentPct = Math.floor(((i + 1) / total) * 100);
-                updateVoiceProgress(currentPct, `Synthesizing beat voiceover #${item.scene} (${i + 1}/${total})...`);
+                
+                const globalEmotElem = document.getElementById('globalEmotionSelect');
+                const globalEmot = globalEmotElem ? globalEmotElem.value : 'neutral';
+                const beatEmotElem = document.getElementById(`beatEmotion_${item.scene}`);
+                const beatEmot = beatEmotElem ? beatEmotElem.value : globalEmot;
+                const activeEmotion = (beatEmot && beatEmot !== 'neutral') ? beatEmot : globalEmot;
+                
+                let textForVoice = item.text;
+                if (activeEmotion && activeEmotion !== 'neutral') {
+                    textForVoice = `[${activeEmotion}] ${item.text}`;
+                }
+
+                updateVoiceProgress(currentPct, `Synthesizing beat voiceover #${item.scene} [${activeEmotion.toUpperCase()}] (${i + 1}/${total})...`);
                 showNotification(`🎙️ Generating voiceover for Beat #${item.scene} (${i + 1}/${total})...`, 'info');
 
                 try {
@@ -1647,10 +1663,11 @@
                         body: JSON.stringify({
                             job_id: currentJobId,
                             scene_index: item.scene,
-                            scene_text: item.text,
+                            scene_text: textForVoice,
                             voice: voiceParam,
                             rate: '-4%',
-                            tts_engine: engineParam
+                            tts_engine: engineParam,
+                            emotion: activeEmotion
                         })
                     });
                     const data = await res.json();
@@ -2364,23 +2381,24 @@
             currentScenesData = scenes || [];
             
             const countBtn = document.getElementById('totalScenesCountBtn');
-            countBtn.textContent = scenes.length;
-            countBtn.style.display = 'inline-flex';
+            if (countBtn) {
+                countBtn.textContent = scenes.length;
+                countBtn.style.display = 'inline-flex';
+            }
 
             const copyBtn = document.getElementById('btnCopyPrompts');
-            copyBtn.style.display = 'inline-flex';
+            if (copyBtn) copyBtn.style.display = 'inline-flex';
 
             const uploadBtn = document.getElementById('btnUploadBatch');
-            uploadBtn.style.display = 'inline-flex';
-
-            const cleanWatermarkLbl = document.getElementById('lblAutoCleanWatermark');
-            if (cleanWatermarkLbl) cleanWatermarkLbl.style.display = 'inline-flex';
+            if (uploadBtn) uploadBtn.style.display = 'inline-flex';
 
             const fluxBtn = document.getElementById('btnGenerateAllFlux');
-            if (fluxBtn) fluxBtn.style.display = 'none';
+            if (fluxBtn) fluxBtn.style.display = 'inline-flex';
 
             const genVoiceBtn = document.getElementById('btnGenerateAllVoice');
-            genVoiceBtn.style.display = 'none'; // Appears ONLY after images are uploaded/generated!
+            const globalEmotSelect = document.getElementById('globalEmotionSelect');
+            if (genVoiceBtn) genVoiceBtn.style.display = 'inline-flex';
+            if (globalEmotSelect) globalEmotSelect.style.display = 'inline-flex';
 
             const container = document.getElementById('outputContainer');
             const styleSelect = document.getElementById('visualStyleSelect');
@@ -2469,6 +2487,18 @@
                     <div style="font-weight:700; font-size:0.75rem; color:var(--text-secondary);">Script Line:</div>
                     <div style="font-style:italic; font-size:0.88rem; color:var(--text-primary); background:rgba(0,0,0,0.25); padding:10px 12px; border-radius:8px; border-left:3px solid var(--accent-red);">"${item.text}"</div>
 
+                    <!-- Per-Beat Voice Emotion Selection Dropdown -->
+                    <div style="display:flex; align-items:center; justify-content:space-between; background:rgba(255,255,255,0.03); border:1px solid var(--border-subtle); border-radius:8px; padding:6px 10px; margin-top:4px;">
+                        <span style="font-size:0.75rem; font-weight:700; color:var(--text-secondary);">🎭 Voice Emotion:</span>
+                        <select id="beatEmotion_${item.scene}" style="background:var(--bg-input); border:1px solid var(--border-subtle); color:var(--text-primary); border-radius:6px; padding:4px 8px; font-size:0.75rem; font-weight:700; cursor:pointer;">
+                            <option value="neutral" selected>😐 Neutral (Default)</option>
+                            <option value="dramatic">🎭 Dramatic</option>
+                            <option value="whisper">🤫 Whisper</option>
+                            <option value="excited">🔥 Excited</option>
+                            <option value="suspense">😱 Suspense</option>
+                            <option value="authoritative">💼 Authoritative</option>
+                            <option value="cheerful">😊 Cheerful</option>
+                        </select>
                     <div id="beatAudioSlot_${item.scene}"></div>
 
                     <div id="promptBlock_${item.scene}">
