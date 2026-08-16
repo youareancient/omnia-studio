@@ -1571,40 +1571,56 @@ async def append_natural_pause_padding(audio_path, silence_duration_sec=0.28):
     except Exception as e:
         print("Error appending natural silence padding:", e)
 
-async def safe_edge_tts_save(text, voice_id, rate="-4%", out_filepath="", max_retries=3):
+async def safe_edge_tts_save(text, voice_id, rate="-4%", out_filepath="", emotion=None, max_retries=3):
     import re
     # Extract & strip bracketed emotion tags like [authoritative], [dramatic], [whisper], etc.
+    tag_match = re.search(r'\[\s*(dramatic|whisper|excited|suspense|authoritative|sad|cheerful|happy|scary|calm|fast|slow|neutral)\s*\]', text, flags=re.IGNORECASE)
+    if tag_match:
+        emotion = tag_match.group(1).lower()
+
     clean_text = re.sub(r'\[\s*(dramatic|whisper|excited|suspense|authoritative|sad|cheerful|happy|scary|calm|fast|slow|neutral)\s*\]', '', text, flags=re.IGNORECASE)
     clean_text = re.sub(r'\[[a-zA-Z0-9_\-\s]+\]', '', clean_text)
     clean_text = humanize_numbers_in_text(clean_text).strip()
     if not clean_text:
         clean_text = humanize_numbers_in_text(text).strip()
 
-    # Apply specialized pitch & rate audio tuning based on emotion tag
-    lower_orig = text.lower()
+    # Apply STRONG, DRAMATIC pitch, rate, and volume audio modulation for each emotion
     pitch = "+0Hz"
-    if "authoritative" in lower_orig:
-        pitch = "-3Hz"
-        rate = "-6%"
-    elif "dramatic" in lower_orig:
-        pitch = "-2Hz"
-        rate = "-8%"
-    elif "whisper" in lower_orig or "suspense" in lower_orig:
-        pitch = "-4Hz"
+    volume = "+0%"
+    emot_lower = (emotion or "").lower()
+
+    if "authoritative" in emot_lower or "deep" in emot_lower:
+        pitch = "-22Hz"
         rate = "-10%"
-    elif "excited" in lower_orig:
-        pitch = "+3Hz"
-        rate = "+4%"
-    elif "cheerful" in lower_orig:
-        pitch = "+2Hz"
-        rate = "+2%"
+        volume = "+20%"
+    elif "dramatic" in emot_lower or "cinematic" in emot_lower:
+        pitch = "-26Hz"
+        rate = "-14%"
+        volume = "+15%"
+    elif "whisper" in emot_lower or "suspense" in emot_lower or "scary" in emot_lower:
+        pitch = "-30Hz"
+        rate = "-18%"
+        volume = "-5%"
+    elif "excited" in emot_lower or "hype" in emot_lower:
+        pitch = "+22Hz"
+        rate = "+12%"
+        volume = "+25%"
+    elif "cheerful" in emot_lower or "happy" in emot_lower:
+        pitch = "+16Hz"
+        rate = "+8%"
+        volume = "+10%"
+    else:
+        pitch = "+0Hz"
+        rate = "-4%"
+        volume = "+0%"
 
     last_err = None
     for attempt in range(1, max_retries + 1):
         try:
-            communicate = edge_tts.Communicate(clean_text, voice_id, rate=rate, pitch=pitch)
+            communicate = edge_tts.Communicate(clean_text, voice_id, rate=rate, pitch=pitch, volume=volume)
             await communicate.save(out_filepath)
             if os.path.exists(out_filepath) and os.path.getsize(out_filepath) > 100:
+                print(f"[safe_edge_tts_save SUCCESS]: '{clean_text[:30]}...' -> pitch={pitch}, rate={rate}, volume={volume}")
                 return True
         except Exception as e:
             last_err = e
@@ -1653,7 +1669,8 @@ async def handle_generate_beat_audio(request):
             generated_ok = await asyncio.to_thread(generate_kokoro_tts_audio, cleaned_text, tts_engine, out_filepath)
 
         if not generated_ok:
-            await safe_edge_tts_save(cleaned_text, voice_id, rate, out_filepath)
+            emotion_param = data.get("emotion") or ""
+            await safe_edge_tts_save(cleaned_text, voice_id, rate, out_filepath, emotion=emotion_param)
 
         # Trim trailing silence & append natural 0.35s pause
         await trim_trailing_audio_silence(out_filepath)

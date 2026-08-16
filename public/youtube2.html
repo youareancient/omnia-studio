@@ -1682,6 +1682,7 @@
                     });
                     const data = await res.json();
                     if (data.audioUrl) {
+                        const cacheBustUrl = `${data.audioUrl}?t=${Date.now()}`;
                         const slot = document.getElementById(`beatAudioSlot_${item.scene}`);
                         if (slot) {
                             slot.innerHTML = `
@@ -1689,13 +1690,13 @@
                                     <button class="btn-play-pause" id="playBtn_${item.scene}" onclick="togglePlayPause(${item.scene})">▶</button>
                                     <div class="audio-track-info">
                                         <div class="audio-title-bar">
-                                            <span class="audio-title">🎙️ Beat #${item.scene} Voiceover</span>
+                                            <span class="audio-title">🎙️ Beat #${item.scene} Voiceover [${activeEmotion.toUpperCase()}]</span>
                                             <span class="audio-time" id="time_${item.scene}">0:00 / 0:00</span>
                                         </div>
                                         <input type="range" class="audio-seekbar" id="seekbar_${item.scene}" value="0" min="0" max="100" oninput="seekAudio(${item.scene}, this.value)">
                                     </div>
-                                    <a href="${data.audioUrl}" download="beat_${item.scene}.mp3" style="color:var(--text-secondary); text-decoration:none; font-size:1rem; padding:4px;" title="Download MP3">⬇️</a>
-                                    <audio id="audioElement_${item.scene}" src="${data.audioUrl}" ontimeupdate="updateAudioProgress(${item.scene})" onended="onAudioEnded(${item.scene})"></audio>
+                                    <a href="${cacheBustUrl}" download="beat_${item.scene}.mp3" style="color:var(--text-secondary); text-decoration:none; font-size:1rem; padding:4px;" title="Download MP3">⬇️</a>
+                                    <audio id="audioElement_${item.scene}" src="${cacheBustUrl}" ontimeupdate="updateAudioProgress(${item.scene})" onended="onAudioEnded(${item.scene})"></audio>
                                 </div>
                             `;
                         }
