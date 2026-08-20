@@ -483,7 +483,8 @@
             <div style="margin-bottom: 16px;">
                 <label style="font-size:0.8rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:8px;">🎨 Select Visual Art Style:</label>
                 <select id="visualStyleSelect" style="width:100%; background:var(--bg-input); border:1px solid var(--border-subtle); border-radius:var(--radius-md); color:var(--text-primary); padding:12px; font-size:0.9rem; font-weight:600; outline:none; cursor:pointer;">
-                    <option value="omniverse_master_hybrid" selected>🌌 Omniverse Master Hybrid (All 9 Visual Styles Merged)</option>
+                    <option value="cinematic_economic_storyworld" selected>🎬 Cinematic Economic Storyworld (3D The Owner #1 Default)</option>
+                    <option value="omniverse_master_hybrid">🌌 Omniverse Master Hybrid (All 9 Visual Styles Merged)</option>
                     <option value="physical_economics_3d">🏗️ Physical Economics 3D Miniature World (Financial Documentary)</option>
                     <option value="vox_2d">🎨 Hand-Drawn 2D Vector Artwork (Vox / Explainer Style)</option>
                     <option value="photoreal">📸 Hyperrealistic 8K Cinematic Film Photography</option>
@@ -731,12 +732,7 @@
                     </div>
 
                     <!-- Master Render Button -->
-                    <button class="btn-scene-cut" style="background:linear-gradient(135deg, #ff2d55, #ff9500); width:100%; padding:10px; font-size:0.88rem; margin-top:6px;" onclick="renderMasterVideo()">🎬 Export Final Master Video (MP4)</button>
-
-
-
-                    <!-- Master Render Button -->
-                    <button class="btn-scene-cut" style="background:linear-gradient(135deg, #ff2d55, #ff9500); width:100%; padding:10px; font-size:0.88rem; margin-top:6px;" onclick="renderMasterVideo()">🎬 Export Final Master Video (MP4)</button>
+                    <button id="btnRenderMasterVideo" class="btn-scene-cut" style="background:linear-gradient(135deg, #ff2d55, #ff9500); width:100%; padding:10px; font-size:0.88rem; margin-top:6px;" onclick="renderMasterVideo()">🎬 Export Final Master Video (MP4)</button>
                 </div>
             </div>
 
@@ -2325,7 +2321,7 @@
             const btn = document.getElementById('btnRenderMasterVideo');
             if (btn) {
                 btn.disabled = true;
-                btn.innerHTML = '⏳';
+                btn.innerHTML = '⏳ Rendering Master...';
             }
 
             const subStyle = document.getElementById('timelineSubStyle').value;
@@ -2401,8 +2397,10 @@
                 alert('Error rendering master video: ' + err.message);
             }
 
-            btn.disabled = false;
-            btn.innerHTML = '🎬';
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '🎬 Export Final Master Video (MP4)';
+            }
         }
 
         function renderOutputScenes(scenes, topicInfo) {

@@ -1820,7 +1820,8 @@
                 <div style="margin-bottom:16px;">
                     <label style="font-size:var(--text-xs); font-weight:var(--fw-bold); color:var(--text-secondary); display:block; margin-bottom:8px;">SELECT VISUAL ART STYLE FOR SCENES</label>
                     <select id="stylePresetSelect" class="w-full bg-slate-900 border border-rose-500/50 rounded-xl p-2.5 text-slate-100 font-extrabold text-xs sm:text-sm outline-none cursor-pointer" onchange="handleStyleDropdownChange(this.value)">
-                        <option value="omniverse_master_hybrid" selected>🌌 Omniverse Master Hybrid (All 9 Visual Styles Merged)</option>
+                        <option value="cinematic_economic_storyworld" selected>🎬 Cinematic Economic Storyworld (3D The Owner #1 Default)</option>
+                        <option value="omniverse_master_hybrid">🌌 Omniverse Master Hybrid (All 9 Visual Styles Merged)</option>
                         <option value="physical_economics_3d">🏗️ Physical Economics 3D Miniature World</option>
                         <option value="vox_2d">🎨 2D Vox Vector (Flat Clean Vector Animation)</option>
                         <option value="kurzgesagt">🪐 Kurzgesagt Flat Vector (Bold Cosmic Minimalist)</option>
@@ -1858,6 +1859,67 @@
                     <button class="btn-apple w-full max-w-full block text-center break-words overflow-hidden text-xs sm:text-sm font-extrabold py-2.5 px-3 rounded-xl shadow-lg" style="background:linear-gradient(135deg, var(--accent-secondary), #8b5cf6);" onclick="generateStream('breakdown')">
                         ✂️ Break Script into Scenes ➔
                     </button>
+                </div>
+
+                <div class="w-full" style="margin-top:10px;">
+                    <button class="btn-apple w-full max-w-full block text-center break-words overflow-hidden text-xs sm:text-sm font-extrabold py-2.5 px-3 rounded-xl shadow-lg" style="background:linear-gradient(135deg, #ff2d55, #af52de);" onclick="toggleAdaptiveVisualDirectorPanel()">
+                        🎬 Open Adaptive Visual Director (3D Diorama Bible)
+                    </button>
+                </div>
+            </section>
+
+            <!-- Adaptive Visual Director Panel -->
+            <section class="apple-card" id="adaptiveVisualDirectorContainer" style="display:none; margin-top:16px; border:1px solid #ff2d55; background:var(--bg-surface);">
+                <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
+                    <span class="card-title" style="font-size:var(--text-lg); font-weight:800; color:var(--text-primary);">🎬 Adaptive Visual Director (3D Diorama Bible)</span>
+                    <span style="font-size:0.72rem; font-weight:800; background:rgba(255,45,85,0.15); color:var(--accent-primary); border:1px solid var(--accent-primary-glow); padding:2px 10px; border-radius:12px;">Automated Art Director</span>
+                </div>
+
+                <p style="font-size:var(--text-xs); color:var(--text-secondary); line-height:1.5; margin-bottom:14px;">
+                    Reads your entire script, identifies business visual DNA, builds your <strong>Visual Bible</strong> (materials, lighting, green/red color coding), and generates scene-by-scene 3D diorama image prompts.
+                </p>
+
+                <!-- Inputs Row -->
+                <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:16px;">
+                    <div>
+                        <label style="font-size:var(--text-xs); font-weight:800; color:var(--text-secondary); display:block; margin-bottom:6px;">SCRIPT TO ANALYZE</label>
+                        <textarea id="vdScriptInput" rows="4" style="width:100%; background:var(--bg-input); border:1px solid var(--border-subtle); border-radius:12px; padding:10px; color:var(--text-primary); font-size:0.82rem; font-family:var(--font-sans);" placeholder="Paste script here or sync from Voiceover tab..."></textarea>
+                        <button onclick="syncScriptToVisualDirector()" style="margin-top:6px; background:var(--bg-surface-elevated); color:var(--accent-primary); border:1px solid var(--accent-primary-glow); border-radius:8px; padding:4px 10px; font-size:0.75rem; font-weight:700; cursor:pointer;">🔄 Sync Current Script</button>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                        <div>
+                            <label style="font-size:var(--text-xs); font-weight:800; color:var(--text-secondary); display:block; margin-bottom:6px;">STYLE PREFERENCE</label>
+                            <select id="vdStyleSelect" style="width:100%; background:var(--bg-input); border:1px solid var(--border-subtle); border-radius:10px; padding:8px 10px; color:var(--text-primary); font-size:0.8rem; font-weight:700;">
+                                <option value="auto" selected>✨ Auto-Detect Best Style (Recommended)</option>
+                                <option value="Style A — Cinematic Economic Machine">Style A — Economic Machine</option>
+                                <option value="Style B — Cinematic Luxury Diorama">Style B — Luxury Diorama</option>
+                                <option value="Style C — Adventure / Exploration Miniature World">Style C — Adventure World</option>
+                                <option value="Style D — Street-Level Urban Miniature">Style D — Street Urban</option>
+                                <option value="Style E — Industrial Engineering Diorama">Style E — Industrial Cutaway</option>
+                                <option value="Style F — Financial Command Center">Style F — Financial Command</option>
+                                <option value="Style G — Scale / Mega-Structure Diorama">Style G — Mega Structure</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size:var(--text-xs); font-weight:800; color:var(--text-secondary); display:block; margin-bottom:6px;">TARGET GENERATOR</label>
+                            <select id="vdTargetGenSelect" style="width:100%; background:var(--bg-input); border:1px solid var(--border-subtle); border-radius:10px; padding:8px 10px; color:var(--text-primary); font-size:0.8rem; font-weight:700;">
+                                <option value="flux" selected>⚡ Flux.1 (Schnell / Dev)</option>
+                                <option value="midjourney">🎨 Midjourney v6 (--ar 16:9)</option>
+                                <option value="dalle">🖼️ DALL-E 3 / Imagen 3</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <button id="btnRunVisualDirector" onclick="runAdaptiveVisualDirector()" style="width:100%; background:linear-gradient(135deg, #ff2d55, #ff9500); color:white; font-weight:800; font-size:0.88rem; padding:12px; border-radius:12px; border:none; cursor:pointer; box-shadow:var(--shadow-glow-sm);">
+                    ⚡ Analyze Script & Generate 3D Diorama Plan
+                </button>
+
+                <!-- Results Area -->
+                <div id="visualDirectorResultsContainer" style="display:none; margin-top:20px;">
+                    <div id="vdBibleContent"></div>
+                    <div id="vdPromptsContent"></div>
                 </div>
             </section>
 
@@ -4928,6 +4990,152 @@
             document.body.appendChild(s);
             if (typeof showTopNotification === 'function') {
                 showTopNotification('🔍 VisBug Visual Alignment Inspector Loaded! Click any element to measure alignment & margins.', 'success');
+            }
+        }
+
+        function toggleAdaptiveVisualDirectorPanel() {
+            const container = document.getElementById('adaptiveVisualDirectorContainer');
+            if (container) {
+                const isHidden = container.style.display === 'none' || !container.style.display;
+                container.style.display = isHidden ? 'block' : 'none';
+                if (isHidden) {
+                    syncScriptToVisualDirector();
+                }
+            }
+        }
+
+        function syncScriptToVisualDirector() {
+            const mainScript = document.getElementById('scriptInput')?.value || '';
+            const vdScript = document.getElementById('vdScriptInput');
+            if (vdScript) {
+                vdScript.value = mainScript;
+            }
+        }
+
+        async function runAdaptiveVisualDirector() {
+            const scriptText = document.getElementById('vdScriptInput')?.value || document.getElementById('scriptInput')?.value || '';
+            if (!scriptText.trim()) {
+                alert('Please paste or enter a script first!');
+                return;
+            }
+
+            const manualStyle = document.getElementById('vdStyleSelect')?.value || 'auto';
+            const targetGen = document.getElementById('vdTargetGenSelect')?.value || 'flux';
+            
+            const btn = document.getElementById('btnRunVisualDirector');
+            const container = document.getElementById('visualDirectorResultsContainer');
+            const bibleBox = document.getElementById('vdBibleContent');
+            const promptsBox = document.getElementById('vdPromptsContent');
+
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '⏳ Analyzing Script & Building 3D Diorama Bible... (15-30s)';
+            }
+
+            if (container) container.style.display = 'block';
+            if (bibleBox) bibleBox.innerHTML = '<div style="padding:16px; text-align:center; color:#ff9500; font-weight:700;">🤖 Analyzing script economics, operations, revenue streams, and selecting visual diorama styles...</div>';
+            if (promptsBox) promptsBox.innerHTML = '';
+
+            try {
+                const response = await fetch('/api/visual-director/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        script: scriptText,
+                        manual_style: manualStyle,
+                        target_generator: targetGen
+                    })
+                });
+
+                const data = await response.json();
+                if (!response.ok || data.error) {
+                    throw new Error(data.error || 'Visual Director analysis failed');
+                }
+
+                const res = data.result;
+                const bible = res.style_decision || {};
+                const scenes = res.scene_prompts || [];
+
+                // Render Visual Strategy Bible Card
+                const colors = bible.color_coding || {};
+                bibleBox.innerHTML = `
+                    <div style="background:var(--bg-surface); border:1px solid var(--accent-primary-glow); border-radius:16px; padding:20px; margin-bottom:20px; box-shadow:var(--shadow-card);">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+                            <span style="font-size:1.05rem; font-weight:800; color:var(--text-primary);">🎯 MASTER VISUAL STRATEGY BIBLE</span>
+                            <span style="font-size:0.75rem; font-weight:800; background:rgba(255,45,85,0.15); color:var(--accent-primary); border:1px solid var(--accent-primary-glow); padding:4px 12px; border-radius:20px;">${bible.business_type || 'Business & Economics'}</span>
+                        </div>
+                        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:14px;">
+                            <div style="background:var(--bg-input); padding:12px; border-radius:12px;">
+                                <span style="font-size:0.72rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:2px;">PRIMARY STYLE</span>
+                                <span style="font-size:0.88rem; font-weight:800; color:var(--accent-primary);">${bible.primary_style || 'Cinematic Diorama'}</span>
+                            </div>
+                            <div style="background:var(--bg-input); padding:12px; border-radius:12px;">
+                                <span style="font-size:0.72rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:2px;">SECONDARY STYLE</span>
+                                <span style="font-size:0.88rem; font-weight:800; color:var(--accent-secondary);">${bible.secondary_style || 'Economic Machine'}</span>
+                            </div>
+                        </div>
+                        <div style="font-size:0.84rem; color:var(--text-primary); margin-bottom:12px; line-height:1.5;">
+                            <strong>💡 Core Metaphor:</strong> ${bible.core_visual_metaphor || 'N/A'}<br>
+                            <strong>🤔 Why This Style:</strong> ${bible.why_this_style || 'Matches economic narrative.'}
+                        </div>
+                        <div style="background:rgba(0,0,0,0.35); border-radius:12px; padding:12px;">
+                            <span style="font-size:0.75rem; font-weight:800; color:var(--text-secondary); display:block; margin-bottom:6px;">🟢🔴 SEMANTIC COLOR CODING RULES:</span>
+                            <div style="display:flex; flex-wrap:wrap; gap:10px; font-size:0.78rem; font-weight:700;">
+                                <span style="color:#34c759;">🟢 Green: ${colors.green || 'Revenue / Profit'}</span>
+                                <span style="color:#ff3b30;">🔴 Red: ${colors.red || 'Costs / Expenses'}</span>
+                                <span style="color:#0071e2;">🔵 Blue: ${colors.blue_cyan || 'Tech / Infrastructure'}</span>
+                                <span style="color:#ff9500;">🟡 Amber: ${colors.amber || 'Human Operations'}</span>
+                                <span style="color:#af52de;">🟣 Purple: ${colors.purple || 'Luxury / Value'}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // Render Scene-by-Scene Image Prompt Cards
+                let html = `<h3 style="font-size:1rem; font-weight:800; color:var(--text-primary); margin:20px 0 12px;">🎬 Scene-by-Scene 3D Diorama Image Prompts (${scenes.length} Scenes)</h3>`;
+                scenes.forEach((sc, idx) => {
+                    const promptText = sc.image_prompt || '';
+                    html += `
+                        <div style="background:var(--bg-input); border:1px solid var(--border-subtle); border-radius:14px; padding:16px; margin-bottom:14px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+                                <span style="font-size:0.8rem; font-weight:800; color:var(--accent-primary);">Scene #${sc.scene_index || (idx + 1)}</span>
+                                <span style="font-size:0.7rem; font-weight:800; background:rgba(0,113,226,0.15); color:var(--accent-secondary); border:1px solid var(--accent-secondary); padding:2px 8px; border-radius:10px;">${sc.visual_purpose || 'VISUAL'}</span>
+                            </div>
+                            <div style="font-size:0.84rem; font-weight:600; color:var(--text-primary); margin-bottom:10px; background:rgba(255,255,255,0.03); padding:8px 12px; border-radius:8px; border-left:3px solid var(--accent-primary);">
+                                🗣️ <em>"${sc.narration_line || ''}"</em>
+                            </div>
+                            <div id="vdPromptText_${idx}" style="font-size:0.78rem; font-family:monospace; background:rgba(0,0,0,0.5); color:#a1a1aa; padding:12px; border-radius:8px; margin-bottom:10px; line-height:1.5; white-space:pre-wrap;">${promptText}</div>
+                            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                                <button id="btnCopyVdPrompt_${idx}" style="background:var(--bg-surface-elevated); color:var(--text-primary); border:1px solid var(--border-default); border-radius:8px; padding:6px 14px; font-size:0.78rem; font-weight:700; cursor:pointer;">
+                                    📋 Copy Prompt
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+                promptsBox.innerHTML = html;
+
+                // Attach click listeners for copy buttons safely
+                scenes.forEach((sc, idx) => {
+                    const btnCopy = document.getElementById(`btnCopyVdPrompt_${idx}`);
+                    if (btnCopy) {
+                        btnCopy.addEventListener('click', () => {
+                            navigator.clipboard.writeText(sc.image_prompt || '').then(() => {
+                                btnCopy.textContent = '✓ Copied!';
+                                setTimeout(() => { btnCopy.textContent = '📋 Copy Prompt'; }, 2000);
+                            });
+                        });
+                    }
+                });
+
+            } catch (err) {
+                alert('Visual Director Error: ' + err.message);
+                if (bibleBox) bibleBox.innerHTML = `<div style="padding:16px; color:#ff3b30; font-weight:700;">❌ Error: ${err.message}</div>`;
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '⚡ Analyze Script & Generate 3D Diorama Plan';
+                }
             }
         }
 

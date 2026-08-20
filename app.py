@@ -3,6 +3,7 @@ import json
 import os
 import re
 import random
+import time
 import uuid
 import urllib.parse
 import sqlite3
@@ -2456,7 +2457,7 @@ async def handle_render_final_video(request):
             clip_cmd = [
                 "ffmpeg", "-y", "-loop", "1", "-i", assigned_img, "-i", faded_audio_path,
                 "-vf", vf_str,
-                "-c:v", "libx264", "-tune", "stillimage", "-preset", "ultrafast",
+                "-c:v", "libx264", "-tune", "stillimage", "-preset", "ultrafast", "-crf", "22",
                 "-c:a", "aac", "-b:a", "192k", "-shortest", beat_clip_path
             ]
             await run_cmd(clip_cmd)
@@ -2634,7 +2635,8 @@ async def handle_render_final_video(request):
 
         final_render_cmd.extend([
             "-af", "loudnorm=I=-14:LRA=11:TP=-1.5",
-            "-c:v", "libx264", "-preset", "fast", "-crf", "18",
+            "-c:v", "libx264", "-preset", "fast", "-crf", "22", "-pix_fmt", "yuv420p",
+            "-movflags", "+faststart",
             "-c:a", "aac", "-b:a", "192k", out_master_filepath
         ])
         await run_cmd(final_render_cmd)
@@ -2894,6 +2896,33 @@ async def handle_clone_voice(request):
         print("[handle_clone_voice error]:", e)
         return web.json_response({"error": str(e)}, status=500)
 
+async def handle_visual_director_analyze(request):
+    try:
+        data = await request.json()
+        script_text = data.get("script", "").strip()
+        manual_style = data.get("manual_style", "cinematic_economic_storyworld")
+        if not manual_style or manual_style.lower() == "auto":
+            manual_style = "cinematic_economic_storyworld"
+        target_generator = data.get("target_generator", "flux")
+        api_key = data.get("api_key", "").strip() or None
+
+        if not script_text:
+            return web.json_response({"error": "Script text is required"}, status=400)
+
+        from visual_director import analyze_script_with_groq
+        result = await analyze_script_with_groq(
+            script_text=script_text,
+            manual_style=manual_style,
+            target_generator=target_generator,
+            api_key=api_key
+        )
+        return web.json_response({"status": "success", "result": result})
+    except Exception as e:
+        print("[handle_visual_director_analyze error]:", e)
+        import traceback
+        traceback.print_exc()
+        return web.json_response({"error": str(e)}, status=500)
+
 def create_app():
     # Allow large ZIP and batch uploads up to 2GB (2048MB)
     app = web.Application(client_max_size=2048 * 1024 * 1024)
@@ -2918,6 +2947,7 @@ def create_app():
     app.router.add_post("/api/upload-scene-image", handle_upload_scene_image)
     app.router.add_post("/api/upload-channel-logo", handle_upload_channel_logo)
     app.router.add_post("/api/generate-seo-package", handle_generate_seo_package)
+    app.router.add_post("/api/visual-director/analyze", handle_visual_director_analyze)
     app.router.add_post("/api/clone-voice", handle_clone_voice)
     app.router.add_post("/api/verify-passcode", handle_verify_passcode)
     app.router.add_post("/api/render-final-video", handle_render_final_video)
