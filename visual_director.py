@@ -20,10 +20,15 @@ if os.path.exists(env_file):
 
 PROMPT_STORYWORLD_FILE = os.path.join(STUDIO_DIR, "prompts", "cinematic_economic_storyworld.txt")
 PROMPT_MASTER_FILE = os.path.join(STUDIO_DIR, "prompts", "master_visual_director.txt")
+PROMPT_VIKAS_FILE = os.path.join(STUDIO_DIR, "prompts", "vikas_visual_director.txt")
 
-def get_system_prompt(style: str = "cinematic_economic_storyworld"):
-    style_key = (style or "cinematic_economic_storyworld").lower()
+def get_system_prompt(style: str = "vikas"):
+    style_key = (style or "vikas").lower()
     
+    if style_key == "vikas" and os.path.exists(PROMPT_VIKAS_FILE):
+        with open(PROMPT_VIKAS_FILE, "r", encoding="utf-8") as f:
+            return f.read().strip()
+
     if style_key == "adaptive_diorama" and os.path.exists(PROMPT_MASTER_FILE):
         with open(PROMPT_MASTER_FILE, "r", encoding="utf-8") as f:
             return f.read().strip()
@@ -36,14 +41,14 @@ def get_system_prompt(style: str = "cinematic_economic_storyworld"):
         with open(PROMPT_MASTER_FILE, "r", encoding="utf-8") as f:
             return f.read().strip()
             
-    return """You are an elite Visual Director specializing in YouTube business and economics documentaries. Analyze the script, pick the best Cinematic Economic Storyworld 3D visual style, and output scene-by-scene image prompts as valid JSON."""
+    return """You are an expert AI Image Prompt Engineer and Visual Storyboard Director. Output 2D educational vector cartoon image prompts as valid JSON."""
 
-async def analyze_script_with_groq(script_text: str, manual_style: str = "cinematic_economic_storyworld", target_generator: str = "flux", api_key: str = None):
+async def analyze_script_with_groq(script_text: str, manual_style: str = "vikas", target_generator: str = "flux", api_key: str = None):
     groq_key = api_key or os.environ.get("GROQ_API_KEY", "").strip()
     if not groq_key:
         raise ValueError("GROQ_API_KEY is not configured in environment or .env file.")
 
-    effective_style = manual_style if (manual_style and manual_style.lower() != "auto") else "cinematic_economic_storyworld"
+    effective_style = manual_style if (manual_style and manual_style.lower() != "auto") else "vikas"
     system_prompt = get_system_prompt(effective_style)
     
     user_prompt = f"Script to Analyze and Turn into Image Prompts:\n\n{script_text}"

@@ -1820,7 +1820,8 @@
                 <div style="margin-bottom:16px;">
                     <label style="font-size:var(--text-xs); font-weight:var(--fw-bold); color:var(--text-secondary); display:block; margin-bottom:8px;">SELECT VISUAL ART STYLE FOR SCENES</label>
                     <select id="stylePresetSelect" class="w-full bg-slate-900 border border-rose-500/50 rounded-xl p-2.5 text-slate-100 font-extrabold text-xs sm:text-sm outline-none cursor-pointer" onchange="handleStyleDropdownChange(this.value)">
-                        <option value="cinematic_economic_storyworld" selected>🎬 Cinematic Economic Storyworld (3D The Owner #1 Default)</option>
+                        <option value="vikas" selected>🎨 Vikas (2D Educational Vector Cartoon Master — #1 Default)</option>
+                        <option value="cinematic_economic_storyworld">🎬 Cinematic Economic Storyworld (3D The Owner)</option>
                         <option value="omniverse_master_hybrid">🌌 Omniverse Master Hybrid (All 9 Visual Styles Merged)</option>
                         <option value="physical_economics_3d">🏗️ Physical Economics 3D Miniature World</option>
                         <option value="vox_2d">🎨 2D Vox Vector (Flat Clean Vector Animation)</option>
@@ -2346,7 +2347,7 @@
         }
 
         let selectedVoice = 'andrew';
-        let selectedStylePreset = 'vox_2d';
+        let selectedStylePreset = 'vikas';
         let currentRateStr = '+1%';
         let pollInterval = null;
         let lastBreakdownData = [];
@@ -4248,7 +4249,7 @@
                         filename: customFilename || `youtube_voiceover_${Date.now()}.mp3`,
                         mode: mode,
                         niche: (document.getElementById('nicheSelect') ? document.getElementById('nicheSelect').value : 'economics') || 'economics',
-                        visual_style: (document.getElementById('stylePresetSelect') ? document.getElementById('stylePresetSelect').value : selectedStylePreset) || 'vox_2d',
+                        visual_style: (document.getElementById('stylePresetSelect') ? document.getElementById('stylePresetSelect').value : selectedStylePreset) || 'vikas',
                         groq_key: localStorage.getItem('groq_api_key') || (document.getElementById('groqApiKeyInput') ? document.getElementById('groqApiKeyInput').value.trim() : '')
                     })
                 });
@@ -4337,6 +4338,7 @@
             const styleKey = selectEl ? selectEl.value : 'vox_2d';
 
             const styles = {
+                vikas: 'Professional hand-drawn 2D educational vector cartoon illustration, studio-quality digital vector artwork, thick smooth confident black outlines, crisp linework, soft flat colors, subtle flat shading, clean white background with generous negative space --ar 16:9',
                 vox_2d: '2D Vox editorial vector illustration, Vox documentary art style, clean crisp black outlines, flat elegant shading, 60-30-10 color balance on warm cream canvas --ar 16:9',
                 kurzgesagt: 'Kurzgesagt art style, flat vector illustration, vibrant neon colors, clean geometric shapes, high contrast educational graphics --ar 16:9',
                 claymation: '3D claymation stop-motion animation style, tactile plasticine clay figures, dramatic chiaroscuro studio lighting, detailed clay texture --ar 16:9',

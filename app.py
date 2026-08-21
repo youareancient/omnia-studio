@@ -374,6 +374,7 @@ MANDATORY DOMAIN RULE: Every single visual metaphor, store, customer interaction
 """
 
     style_aesthetic_map = {
+        "vikas": "Professional hand-drawn 2D educational vector cartoon illustration. Clean studio-quality digital vector artwork with thick, smooth, confident black outlines, crisp linework, soft flat colors, and subtle flat shading only. Modern polished animation-studio finish with clean geometric shapes, friendly professional cartoon characters, and minimalist financial-explainer aesthetic. High readability with balanced composition, generous negative space, and clean white or light neutral backgrounds. Strictly no photorealism, no 3D CGI, no anime, no clutter.",
         "vox_2d": "Hand-drawn professional educational cartoon illustration, clean studio-quality digital vector artwork with thick, smooth black outlines, crisp linework, soft flat colors, and polished modern explainer-animation aesthetics. Clean white background with generous negative space.",
         "kurzgesagt": "Kurzgesagt flat vector illustration, vibrant neon gradient palette, clean geometric shapes, high contrast educational graphic aesthetic, polished vector finish with bold visual hierarchy.",
         "claymation": "3D claymation stop-motion animation aesthetic, tactile plasticine clay figures, dramatic chiaroscuro studio lighting, detailed handmade clay surface textures and subtle thumb-print details.",
@@ -389,7 +390,48 @@ MANDATORY DOMAIN RULE: Every single visual metaphor, store, customer interaction
     }
     style_directive = style_aesthetic_map.get(visual_style, style_aesthetic_map["omniverse_master_hybrid"])
 
-    if visual_style in ["physical_economics_3d", "omniverse_master_hybrid"]:
+    if visual_style == "vikas":
+        system_prompt = f"""# MASTER PROMPT — PROFESSIONAL VISUAL PROMPT ENGINEER (VIKAS 2D VECTOR STYLE)
+
+You are an expert AI Image Prompt Engineer and Visual Storyboard Director specializing in professional educational, financial, business, economics, documentary, and explainer videos.
+
+Your ONLY task is to convert the user's provided script line, sentence, or scene description into ONE extremely detailed, production-ready IMAGE GENERATION PROMPT.
+
+## CORE OBJECTIVE
+Analyze the exact meaning of the user's line and create a single visual scene that communicates the idea instantly.
+The generated image must visually explain the narration even when the viewer cannot hear the audio.
+Do NOT simply decorate the scene.
+Every object, character, prop, number, chart, diagram, environment, facial expression, pose, and visual detail must have a clear purpose related to the narration.
+The final image should look like a frame taken from a premium educational economics/explainer animation.
+
+## FIXED VISUAL STYLE
+- Professional hand-drawn 2D educational vector cartoon illustration.
+- Clean studio-quality digital vector artwork.
+- Thick, smooth, confident black outlines.
+- Crisp and controlled linework.
+- Soft flat colors.
+- Subtle flat shading only.
+- Modern polished animation-studio finish.
+- Clean geometric shapes.
+- Friendly but professional cartoon characters (when people/characters are required).
+- Minimalist financial-explainer aesthetic.
+- Strong visual hierarchy with balanced composition and generous negative space.
+- Clean white or very light neutral backgrounds whenever appropriate.
+- STRICT NEGATIVE CONSTRAINTS: Avoid childish-looking cartoon aesthetics, overly realistic illustration, photorealism, 3D CGI, anime, comic-book styling, painterly artwork, excessive gradients, cinematic photorealistic lighting, hyper-detailed textures, visual clutter.
+
+## MOST IMPORTANT RULES
+1. VISUALIZE THE EXACT NARRATION: Physically illustrate the main subject, action, and required props described in the sentence. NEVER use generic visuals when a specific visual is possible.
+2. REQUIRED PROPS RULE: Whenever a prop is logically required to communicate the scene, INCLUDE IT (e.g. car wash includes brushes, tunnel, water spray; restaurant includes tables, chef, menu, receipt; retail includes shelves, products, cart, register).
+3. ECONOMICS & FINANCE VISUALIZATION: When narration discusses economics, finance, business, or numbers, translate abstract concepts into visible graphics ($ amounts, %, margins, simple charts, bar graphs, price tags, receipts, cash, break-even lines).
+4. TEXT LABELS: Use short, meaningful, clean, bold, high-contrast labels when helpful (e.g. "REVENUE", "$50,000", "LABOR", "30% MARGIN"). No paragraphs.
+5. MOTION-GRAPHICS FRIENDLY: Keep major objects visually separated, clear silhouettes, usable negative space.
+6. STANDALONE PROMPT: The output must be completely self-contained. Never reference previous scenes.
+
+Respond STRICTLY in JSON format:
+{{
+  "prompt": "Professional hand-drawn 2D educational vector cartoon illustration. [Complete, highly detailed, standalone image prompt describing main subject, character/action if needed, required physical props, numbers/financial graphics, clean white or light neutral background, thick confident black outlines, soft flat colors, subtle flat shading, balanced composition with generous negative space, high readability animation finish, no photorealism, no 3D CGI]"
+}}"""
+    elif visual_style in ["physical_economics_3d", "omniverse_master_hybrid"]:
         if scene_number == 1:
             system_prompt = f"""MASTER PROMPT — ULTRA-CLEAN 8K ECONOMICS DOCUMENTARY HYBRID ART (SCENE 1 HERO HOOK EDITION)
 
@@ -510,7 +552,19 @@ def build_vector_art_scene_prompt_fallback(text, niche="economics", visual_style
     money_match = re.search(r'(\$?\d+[\d,.]*\s*(million|billion|thousand|k|m)?)', clean_line, re.IGNORECASE)
     stat_val = money_match.group(0).upper() if money_match else None
     
-    if visual_style == "omniverse_master_hybrid":
+    if visual_style == "vikas":
+        stat_callout = f" A clean bold vector financial label clearly displays \"{stat_val}\" with high contrast." if stat_val else ""
+        return (
+            f"SCENE: Vikas 2D Educational Vector — {clean_line[:60]}\n\n"
+            f"IMAGE PROMPT: Professional hand-drawn 2D educational vector cartoon illustration visually explaining: \"{clean_line}\". "
+            f"Clean studio-quality digital vector artwork featuring thick, smooth, confident black outlines, crisp linework, soft flat colors, and subtle flat shading. "
+            f"Features clear physical operational props and objects directly representing the action, with strong visual hierarchy and friendly professional cartoon character elements when relevant.{stat_callout} "
+            f"Set against a clean white and light neutral background with generous negative space and balanced composition. Polished modern educational explainer-animation finish, motion-graphics friendly layout, strictly no 3D CGI, no photorealism, no clutter.\n\n"
+            f"EMOTION: Intelligent, educational, clear, professional.\n\n"
+            f"VISUAL PURPOSE: Direct visual explanation of narration: {clean_line}"
+        )
+
+    elif visual_style == "omniverse_master_hybrid":
         if scene_number == 1:
             return (
                 f"SCENE: Omniverse Economics Fusion Hero Reveal — {clean_line[:60]}\n\n"
@@ -808,7 +862,7 @@ def generate_kokoro_tts_audio(text, voice_key="kokoro_adam", out_filepath="outpu
         return False
     return False
 
-async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode, niche="economics", visual_style="vox_2d", groq_key="", tts_engine="edge"):
+async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode, niche="economics", visual_style="vikas", groq_key="", tts_engine="edge"):
     try:
         BACKGROUND_JOBS[job_id] = {
             "status": "processing",
@@ -876,21 +930,33 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
                     "dur_sec": round(dur, 3)
                 })
 
-            BACKGROUND_JOBS[job_id]["progress"] = 55
-            BACKGROUND_JOBS[job_id]["status_text"] = "STEP 1: Script Analyzer Agent identifying core documentary topic..."
-
-            async with ClientSession() as http_session:
-                topic_info = await analyze_script_topic_async(http_session, raw_text, groq_key=groq_key)
-                
-                topic_name = topic_info.get("topic") if (topic_info and topic_info.get("topic")) else "General Business & Economics"
+            if visual_style == "vikas":
+                topic_info = None
                 BACKGROUND_JOBS[job_id]["progress"] = 65
-                BACKGROUND_JOBS[job_id]["status_text"] = f"STEP 2: Topic-Locked Agent ({topic_name[:30]}) mapping {len(scenes_raw)} scene beats..."
+                BACKGROUND_JOBS[job_id]["status_text"] = f"STEP 2: Vikas 2D Vector Prompt Engineer mapping {len(scenes_raw)} scene beats..."
 
-                tasks = [
-                    call_groq_ai_prompt_engineer(http_session, sitem["text"], idx, niche=niche, visual_style=visual_style, groq_key=groq_key, script_topic_info=topic_info)
-                    for idx, (sitem) in enumerate(scenes_raw, start=1)
-                ]
-                ai_prompts = await asyncio.gather(*tasks)
+                async with ClientSession() as http_session:
+                    tasks = [
+                        call_groq_ai_prompt_engineer(http_session, sitem["text"], idx, niche=niche, visual_style=visual_style, groq_key=groq_key, script_topic_info=None)
+                        for idx, (sitem) in enumerate(scenes_raw, start=1)
+                    ]
+                    ai_prompts = await asyncio.gather(*tasks)
+            else:
+                BACKGROUND_JOBS[job_id]["progress"] = 55
+                BACKGROUND_JOBS[job_id]["status_text"] = "STEP 1: Script Analyzer Agent identifying core documentary topic..."
+
+                async with ClientSession() as http_session:
+                    topic_info = await analyze_script_topic_async(http_session, raw_text, groq_key=groq_key)
+                    
+                    topic_name = topic_info.get("topic") if (topic_info and topic_info.get("topic")) else "General Business & Economics"
+                    BACKGROUND_JOBS[job_id]["progress"] = 65
+                    BACKGROUND_JOBS[job_id]["status_text"] = f"STEP 2: Topic-Locked Agent ({topic_name[:30]}) mapping {len(scenes_raw)} scene beats..."
+
+                    tasks = [
+                        call_groq_ai_prompt_engineer(http_session, sitem["text"], idx, niche=niche, visual_style=visual_style, groq_key=groq_key, script_topic_info=topic_info)
+                        for idx, (sitem) in enumerate(scenes_raw, start=1)
+                    ]
+                    ai_prompts = await asyncio.gather(*tasks)
 
             scenes = []
             for idx, (sitem, prompt_res) in enumerate(zip(scenes_raw, ai_prompts), start=1):
@@ -1026,7 +1092,7 @@ async def handle_start_job(request):
         filename = data.get("filename", "").strip()
         mode = data.get("mode", "audio")
         niche = data.get("niche", "economics")
-        visual_style = data.get("visual_style", "physical_economics_3d")
+        visual_style = data.get("visual_style", "vikas")
         groq_key = data.get("groq_key", "").strip()
         tts_engine = data.get("tts_engine", "edge")
 
@@ -2900,9 +2966,9 @@ async def handle_visual_director_analyze(request):
     try:
         data = await request.json()
         script_text = data.get("script", "").strip()
-        manual_style = data.get("manual_style", "cinematic_economic_storyworld")
+        manual_style = data.get("manual_style", "vikas")
         if not manual_style or manual_style.lower() == "auto":
-            manual_style = "cinematic_economic_storyworld"
+            manual_style = "vikas"
         target_generator = data.get("target_generator", "flux")
         api_key = data.get("api_key", "").strip() or None
 
