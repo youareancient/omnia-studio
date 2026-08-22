@@ -910,24 +910,59 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
 
         if mode == "breakdown":
             BACKGROUND_JOBS[job_id]["progress"] = 50
-            BACKGROUND_JOBS[job_id]["status_text"] = "STEP 1: Computing natural scene cuts..."
+            BACKGROUND_JOBS[job_id]["status_text"] = "STEP 1: Synthesizing & frame-locking scene beat audio..."
 
             scene_lines = split_script_into_scenes(raw_text)
             scenes_raw = []
-            est_sec = 0.0
-            for line in scene_lines:
-                dur = max(2.5, (len(line.split()) / 150.0) * 60.0)
-                t_start = format_timestamp(int(est_sec * 1000))
-                t_start_ms = int(est_sec * 1000)
-                est_sec += dur
-                t_end = format_timestamp(int(est_sec * 1000))
-                t_end_ms = int(est_sec * 1000)
+            current_offset_ms = 0
+
+            async def prep_single_scene_audio(idx, line_text):
+                b_name = f"beat_audio_{job_id[:6]}_{idx:02d}.mp3"
+                b_path = os.path.join(DOWNLOADS_DIR, b_name)
+                clean_speech_text = re.sub(r'\[.*?\]', '', line_text).strip()
+                cleaned = humanize_numbers_in_text(clean_speech_text) or clean_speech_text
+                
+                gen_ok = False
+                if tts_engine and tts_engine.startswith("kokoro"):
+                    gen_ok = await asyncio.to_thread(generate_kokoro_tts_audio, cleaned, tts_engine, b_path)
+                if not gen_ok:
+                    await safe_edge_tts_save(cleaned, voice_id, rate, b_path)
+                await trim_trailing_audio_silence(b_path)
+                await append_natural_pause_padding(b_path, 0.28)
+                dur = await get_media_duration_sec(b_path)
+                if dur <= 0.2:
+                    dur = 2.5
+                return idx, b_name, b_path, dur
+
+            prep_tasks = [prep_single_scene_audio(idx, line) for idx, line in enumerate(scene_lines, start=1)]
+            prep_results = await asyncio.gather(*prep_tasks)
+            prep_results.sort(key=lambda x: x[0])
+
+            # Merge all beat audios losslessly into the master voiceover file out_filepath
+            concat_audio_list = os.path.join(DOWNLOADS_DIR, f"concat_beats_{job_id[:6]}.txt")
+            with open(concat_audio_list, "w", encoding="utf-8") as f:
+                for idx, b_name, b_path, dur in prep_results:
+                    esc = b_path.replace("\\", "/")
+                    f.write(f"file '{esc}'\n")
+
+            concat_audio_cmd = ["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", concat_audio_list, "-c:a", "libmp3lame", "-b:a", "192k", out_filepath]
+            await run_cmd(concat_audio_cmd)
+
+            for idx, (line, (s_idx, b_name, b_path, dur)) in enumerate(zip(scene_lines, prep_results), start=1):
+                t_start_ms = current_offset_ms
+                dur_ms = int(round(dur * 1000))
+                t_end_ms = t_start_ms + dur_ms
+                t_start = format_timestamp(t_start_ms)
+                t_end = format_timestamp(t_end_ms)
+                current_offset_ms = t_end_ms
                 scenes_raw.append({
                     "text": line,
                     "time_str": f"{t_start} -> {t_end}",
                     "start_ms": t_start_ms,
                     "end_ms": t_end_ms,
-                    "dur_sec": round(dur, 3)
+                    "dur_sec": round(dur, 3),
+                    "audio_filename": b_name,
+                    "audio_url": f"/static/generated/{b_name}"
                 })
 
             if visual_style == "vikas":
@@ -970,7 +1005,9 @@ async def process_job_async(job_id, raw_text, voice_preset, rate, filename, mode
                     "prompt": prompt_res if isinstance(prompt_res, str) else prompt_res.get("prompt", ""),
                     "start_ms": sitem["start_ms"],
                     "end_ms": sitem["end_ms"],
-                    "dur_sec": sitem["dur_sec"]
+                    "dur_sec": sitem["dur_sec"],
+                    "audio_filename": sitem.get("audio_filename", ""),
+                    "audio_url": sitem.get("audio_url", "")
                 })
 
             BACKGROUND_JOBS[job_id] = {
@@ -1192,19 +1229,41 @@ def parse_timestamp_seconds(ts_str):
         return 3.0
 
 async def get_media_duration_sec(filepath):
+    if not filepath or not os.path.exists(filepath):
+        return 0.0
     try:
-        cmd = [
+        cmd_stream = [
+            "ffprobe", "-v", "error",
+            "-select_streams", "a:0",
+            "-show_entries", "stream=duration",
+            "-of", "default=noprint_wrappers=1:nokey=1",
+            filepath
+        ]
+        proc = await asyncio.create_subprocess_exec(
+            *cmd_stream, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+        )
+        stdout, _ = await proc.communicate()
+        val = stdout.decode().strip()
+        if val and val.lower() != "n/a":
+            try:
+                f_val = float(val)
+                if f_val > 0.0:
+                    return f_val
+            except Exception:
+                pass
+
+        cmd_fmt = [
             "ffprobe", "-v", "error",
             "-show_entries", "format=duration",
             "-of", "default=noprint_wrappers=1:nokey=1",
             filepath
         ]
         proc = await asyncio.create_subprocess_exec(
-            *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+            *cmd_fmt, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
         )
         stdout, _ = await proc.communicate()
         val = stdout.decode().strip()
-        return float(val) if val else 0.0
+        return float(val) if val and val.lower() != "n/a" else 0.0
     except Exception as e:
         print(f"ffprobe error for {filepath}:", e)
         return 0.0
@@ -1331,20 +1390,29 @@ async def process_video_assembly_async(video_job_id, original_job_id, zip_bytes,
                     mini_filename = f"mini_clip_{video_job_id[:6]}_{idx:02d}.mp4"
                     mini_filepath = os.path.join(DOWNLOADS_DIR, mini_filename)
                     
-                    if idx <= len(scenes):
-                        sc = scenes[idx - 1]
-                        st_sec = sc.get("start_ms", 0) / 1000.0
-                    else:
-                        st_sec = (idx - 1) * (total_audio_duration / total_images)
+                    # Direct 1-to-1 beat audio path
+                    beat_audio_filename = f"beat_audio_{original_job_id[:6] if original_job_id else video_job_id[:6]}_{idx:02d}.mp3"
+                    beat_audio_path = os.path.join(DOWNLOADS_DIR, beat_audio_filename)
+
+                    if not os.path.exists(beat_audio_path) or os.path.getsize(beat_audio_path) < 100:
+                        sc_text = scenes[idx - 1].get("text", f"Beat #{idx}") if idx <= len(scenes) else f"Beat #{idx}"
+                        cleaned = humanize_script(sc_text)
+                        await safe_edge_tts_save(cleaned, "en-US-AndrewNeural", "-4%", beat_audio_path)
+                        await trim_trailing_audio_silence(beat_audio_path)
+                        await append_natural_pause_padding(beat_audio_path, 0.28)
+
+                    actual_dur = await get_media_duration_sec(beat_audio_path)
+                    if actual_dur <= 0.2:
+                        actual_dur = dur
 
                     ffmpeg_mini = [
                         "ffmpeg", "-y",
-                        "-loop", "1", "-t", f"{dur:.3f}", "-i", img_path,
-                        "-ss", f"{st_sec:.3f}", "-t", f"{dur:.3f}", "-i", audio_filepath,
+                        "-loop", "1", "-t", f"{actual_dur:.3f}", "-i", img_path,
+                        "-i", beat_audio_path,
                         "-vf", get_ken_burns_vf(idx),
                         "-c:v", "libx264", "-preset", "ultrafast", "-crf", "26",
                         "-c:a", "aac", "-b:a", "192k",
-                        "-t", f"{dur:.3f}",
+                        "-t", f"{actual_dur:.3f}",
                         mini_filepath
                     ]
 
@@ -1358,13 +1426,13 @@ async def process_video_assembly_async(video_job_id, original_job_id, zip_bytes,
                         "sceneIndex": idx,
                         "filename": mini_filename,
                         "url": f"/static/generated/{mini_filename}",
-                        "durSec": dur,
+                        "durSec": round(actual_dur, 3),
                         "text": scene_text
                     }
                     completed_clips += 1
                     pct = 20 + int((completed_clips / total_images) * 55)
                     BACKGROUND_JOBS[video_job_id]["progress"] = pct
-                    BACKGROUND_JOBS[video_job_id]["status_text"] = f"🎬 Synthesizing 16:9 Mini-Clip {completed_clips}/{total_images} for Beat #{idx} ({dur:.1f}s)..."
+                    BACKGROUND_JOBS[video_job_id]["status_text"] = f"🎬 Synthesizing 16:9 Mini-Clip {completed_clips}/{total_images} for Beat #{idx} ({actual_dur:.1f}s)..."
                 except Exception as clip_err:
                     print(f"Non-fatal error encoding mini clip {idx}:", clip_err)
 
@@ -1942,6 +2010,161 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         
         events.append(f"Dialogue: 0,{start_ts},{end_ts},Default,,0,0,0,,{karaoke_text.strip()}")
         current_time += chunk_dur
+
+    with open(out_ass_path, "w", encoding="utf-8") as f:
+        f.write(header + "\n".join(events))
+
+def generate_master_scene_subtitles_ass(
+    scenes_timing_data: list,
+    out_ass_path: str,
+    style_name: str = "hormozi",
+    font_name: str = "Arial",
+    position: str = "bottom",
+    custom_fontsize: int = None,
+    custom_bg_hex: str = None,
+    custom_bg_opacity: float = 0.85
+):
+    import re
+    alignment = 2
+    if position == "middle":
+        alignment = 5
+    elif position == "top":
+        alignment = 8
+
+    if style_name == "hormozi":
+        primary_color = "&H00FFFFFF"     # White
+        secondary_color = "&H0000FFFF"   # Yellow highlight
+        outline_color = "&H00000000"
+        fontsize = 44
+        outline = 4
+        shadow = 2
+    elif style_name == "mrbeast":
+        primary_color = "&H00FFFFFF"     # White
+        secondary_color = "&H00FFFF00"   # Cyan highlight
+        outline_color = "&H00000000"
+        fontsize = 48
+        outline = 5
+        shadow = 2
+    elif style_name == "cyberpunk":
+        primary_color = "&H00FFFF00"     # Cyan base
+        secondary_color = "&H00FF00FF"   # Magenta highlight
+        outline_color = "&H00000000"
+        fontsize = 44
+        outline = 4
+        shadow = 3
+    elif style_name == "vox":
+        primary_color = "&H00FFFFFF"     # White
+        secondary_color = "&H00552DFF"   # Red highlight
+        outline_color = "&H00000000"
+        fontsize = 46
+        outline = 4
+        shadow = 2
+    elif style_name == "retro":
+        primary_color = "&H00D0FDF7"     # Cream base
+        secondary_color = "&H00003300"   # Dark green highlight
+        outline_color = "&H00000000"
+        fontsize = 42
+        outline = 3
+        shadow = 2
+    else:  # 'cinematic'
+        primary_color = "&H00FFFFFF"     # White
+        secondary_color = "&H002997FF"   # Blue highlight
+        outline_color = "&H00000000"
+        fontsize = 38
+        outline = 2
+        shadow = 1
+
+    if custom_fontsize and custom_fontsize > 10:
+        fontsize = custom_fontsize
+
+    back_color = "&H80000000"
+    if custom_bg_hex:
+        clean_hex = custom_bg_hex.lstrip('#')
+        if len(clean_hex) == 6:
+            r_val = clean_hex[0:2]
+            g_val = clean_hex[2:4]
+            b_val = clean_hex[4:6]
+            bgr_hex = f"{b_val}{g_val}{r_val}".upper()
+            alpha_int = max(0, min(255, int((1.0 - max(0.0, min(1.0, custom_bg_opacity))) * 255)))
+            alpha_hex = f"{alpha_int:02X}"
+            back_color = f"&H{alpha_hex}{bgr_hex}"
+
+    font_map = {
+        "gladolia": "Gladolia DEMO",
+        "mileast": "Mileast",
+        "moldie": "Moldie Demo",
+        "montserrat": "Montserrat",
+        "outfit": "Outfit",
+        "impact": "Impact",
+        "bebas neue": "Bebas Neue",
+        "anton": "Anton",
+        "rubik": "Rubik",
+        "poppins": "Poppins",
+        "komika axis": "Komika Axis",
+        "inter": "Inter",
+        "georgia": "Georgia"
+    }
+    actual_font_name = font_map.get(str(font_name).lower().strip(), font_name)
+
+    if custom_bg_opacity is not None and custom_bg_opacity <= 0.05:
+        outline = 0
+        shadow = 0
+        outline_color = "&HFF000000"
+        back_color = "&HFF000000"
+
+    header = f"""[Script Info]
+Title: Studio Animated Subtitles
+ScriptType: v4.00+
+WrapStyle: 0
+ScaledBorderAndShadow: yes
+YCbCr Matrix: None
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,{actual_font_name},{fontsize},{primary_color},{secondary_color},{outline_color},{back_color},-1,0,0,0,100,100,0,0,1,{outline},{shadow},{alignment},20,20,40,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+"""
+
+    events = []
+    for sc_info in scenes_timing_data:
+        sc_text = sc_info.get("text", "")
+        sc_st = sc_info.get("start_sec", 0.0)
+        sc_dur = sc_info.get("dur_sec", 3.0)
+
+        clean_script = re.sub(r'\[(dramatic|whisper|excited|suspense|authoritative|sad|cheerful|happy|scary|calm|fast|slow)\]', '', sc_text, flags=re.IGNORECASE)
+        words = clean_script.strip().split()
+        if not words:
+            continue
+
+        total_words = len(words)
+        time_per_word = sc_dur / max(total_words, 1)
+        dur_cs_per_word = max(1, int(round(time_per_word * 100)))
+
+        if style_name in ["wordbyword", "bounce", "fade"]:
+            chunk_size = 1
+        else:
+            chunk_size = 4
+
+        chunks = [words[i:i + chunk_size] for i in range(0, len(words), chunk_size)]
+        curr_t = sc_st
+        for chunk in chunks:
+            chunk_dur = len(chunk) * time_per_word
+            start_ts = format_ass_timestamp(curr_t)
+            end_ts = format_ass_timestamp(curr_t + chunk_dur)
+
+            karaoke_text = ""
+            for word in chunk:
+                if style_name == "bounce":
+                    karaoke_text += f"{{\\fad(60,60)\\t(0,100,\\fscx120\\fscy120)\\t(100,200,\\fscx100\\fscy100)}}{word} "
+                elif style_name == "fade":
+                    karaoke_text += f"{{\\fad(120,120)}}{word} "
+                else:
+                    karaoke_text += f"{{\\kf{dur_cs_per_word}}}{word} "
+
+            events.append(f"Dialogue: 0,{start_ts},{end_ts},Default,,0,0,0,,{karaoke_text.strip()}")
+            curr_t += chunk_dur
 
     with open(out_ass_path, "w", encoding="utf-8") as f:
         f.write(header + "\n".join(events))
@@ -2571,6 +2794,7 @@ async def handle_render_final_video(request):
                 filter_parts = []
                 accum_offset = durations[0] - 0.5
                 prev_v = "0:v"
+                prev_a = "0:a"
 
                 xfade_inputs = []
                 for idx, cf in enumerate(concat_files):
@@ -2583,17 +2807,17 @@ async def handle_render_final_video(request):
                         trans_kw = xfade_map.get(transition_style, "fade")
 
                     next_v = f"{i}:v"
+                    next_a = f"{i}:a"
                     out_v = f"v{i}" if i < len(concat_files) - 1 else "outv"
+                    out_a = f"a{i}" if i < len(concat_files) - 1 else "outa"
 
                     filter_parts.append(f"[{prev_v}][{next_v}]xfade=transition={trans_kw}:duration=0.5:offset={max(0, accum_offset):.3f}[{out_v}]")
+                    filter_parts.append(f"[{prev_a}][{next_a}]acrossfade=d=0.5:c1=tri:c2=tri[{out_a}]")
 
                     prev_v = out_v
+                    prev_a = out_a
                     if i < len(durations) - 1:
                         accum_offset += max(0, durations[i] - 0.5)
-
-                # Concatenate audio streams end-to-end to protect 100% of audio and natural pauses
-                audio_inputs_str = "".join([f"[{i}:a]" for i in range(len(concat_files))])
-                filter_parts.append(f"{audio_inputs_str}concat=n={len(concat_files)}:v=0:a=1[outa]")
 
                 filter_graph = ";".join(filter_parts)
                 filter_script_path = os.path.join(temp_dir, "xfade_filter.txt")
@@ -2673,11 +2897,26 @@ async def handle_render_final_video(request):
         # Filter chain for final master video
         final_vf_filters = []
         if subtitle_style and subtitle_style.lower() not in ["off", "none", "no_captions", "disabled", "false"]:
-            full_script = " ".join([sc.get("text", "") for sc in scenes])
-            master_dur = await get_media_duration_sec(raw_concat_video)
+            clip_durations = []
+            for cf in concat_files:
+                d = await get_media_duration_sec(cf)
+                clip_durations.append(max(d, 0.5))
+
+            scenes_timing_data = []
+            curr_st = 0.0
+            use_xfade_timing = success and (transition_style != "none")
+            for idx, sc in enumerate(scenes):
+                sc_dur = clip_durations[idx] if idx < len(clip_durations) else 3.0
+                scenes_timing_data.append({
+                    "text": sc.get("text", ""),
+                    "start_sec": curr_st,
+                    "dur_sec": sc_dur
+                })
+                curr_st += (sc_dur - 0.5) if use_xfade_timing else sc_dur
+
             master_ass_path = os.path.join(temp_dir, "master_subtitles.ass")
-            generate_animated_ass_subtitle(
-                full_script, master_dur, master_ass_path,
+            generate_master_scene_subtitles_ass(
+                scenes_timing_data, master_ass_path,
                 style_name=subtitle_style,
                 font_name=subtitle_font,
                 position=subtitle_pos,
