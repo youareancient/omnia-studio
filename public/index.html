@@ -2014,6 +2014,7 @@
                     <div class="bg-slate-900 p-3 rounded-xl border border-slate-800">
                         <div class="text-xs font-extrabold text-slate-200 mb-1.5">🗣️ Subtitle Captions Style</div>
                         <select id="subtitlePresetSelect" class="w-full text-xs font-bold bg-slate-950 text-amber-400 border border-slate-800 p-2 rounded-lg outline-none mb-2" onchange="updateSubtitlePreview()">
+                            <option value="none">🚫 Continue Without Captions (No Subtitles)</option>
                             <option value="hormozi" selected>⚡ Viral Hormozi (Yellow Word Pop)</option>
                             <option value="mrbeast">🔥 MrBeast Kinetic (Neon Cyan/Green)</option>
                             <option value="cinematic">🎬 Minimalist Cinematic (Smooth Fade)</option>
@@ -4468,7 +4469,9 @@
             const box = document.getElementById('subtitlePreviewBox');
             if (!box) return;
 
-            if (preset === 'hormozi') {
+            if (preset === 'none' || preset === 'off') {
+                box.innerHTML = `<span style="color:#94a3b8; font-style:italic; font-weight:600; font-size:0.8rem;">[ 🚫 Captions Disabled — Clean video without subtitles ]</span>`;
+            } else if (preset === 'hormozi') {
                 box.innerHTML = `<span class="sub-pop-hormozi">BECAUSE IN THE <span style="color:#ffffff;">NIGHTCLUB</span></span>`;
             } else if (preset === 'mrbeast') {
                 box.innerHTML = `<span class="sub-jump-mrbeast">BECAUSE IN THE <span style="color:#00ffff;">NIGHTCLUB</span></span>`;

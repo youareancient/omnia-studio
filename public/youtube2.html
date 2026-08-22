@@ -631,7 +631,8 @@
                     <!-- Captions Style Dropdown (9 Options) -->
                     <div>
                         <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:4px;">💬 Subtitle Caption Preset:</label>
-                        <select id="timelineSubStyle" style="width:100%; background:var(--bg-input); border:1px solid var(--border-subtle); border-radius:8px; color:var(--text-primary); padding:8px; font-size:0.82rem; font-weight:600; outline:none;">
+                        <select id="timelineSubStyle" style="width:100%; background:var(--bg-input); border:1px solid var(--border-subtle); border-radius:8px; color:var(--text-primary); padding:8px; font-size:0.82rem; font-weight:600; outline:none;" onchange="updatePreviewCaptionStyles();">
+                            <option value="off">🚫 Continue Without Captions (No Subtitles / Raw Clips)</option>
                             <option value="wordbyword" selected>🗣️ 1-Word Karaoke (Yellow Glow)</option>
                             <option value="bounce">💥 1-Word Pop-Up Bounce (Animated)</option>
                             <option value="fade">✨ 1-Word Fade In/Out (Animated)</option>
@@ -641,7 +642,6 @@
                             <option value="vox">🍿 Viral Vox Sentence (Red Pill Box)</option>
                             <option value="cinematic">🎬 Cinematic Minimal White</option>
                             <option value="retro">🥑 Retro Vintage Cream</option>
-                            <option value="off">🚫 OFF (No Captions / Raw Clips)</option>
                         </select>
                     </div>
 

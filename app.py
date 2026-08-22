@@ -2053,7 +2053,7 @@ async def handle_generate_beat_clip(request):
             vf_filters.append("noise=alls=15:allf=t+u,eq=contrast=1.15:saturation=1.2")
 
         # Subtitle overlay
-        if subtitle_style and subtitle_style != "none":
+        if subtitle_style and subtitle_style.lower() not in ["none", "off", "no_captions", "disabled", "false"]:
             ass_path = os.path.join(temp_dir, "subtitle.ass")
             generate_animated_ass_subtitle(
                 scene_text, dur_sec, ass_path,
@@ -2673,7 +2673,7 @@ async def handle_render_final_video(request):
 
         # Filter chain for final master video
         final_vf_filters = []
-        if subtitle_style != "off":
+        if subtitle_style and subtitle_style.lower() not in ["off", "none", "no_captions", "disabled", "false"]:
             full_script = " ".join([sc.get("text", "") for sc in scenes])
             master_dur = await get_media_duration_sec(raw_concat_video)
             master_ass_path = os.path.join(temp_dir, "master_subtitles.ass")
