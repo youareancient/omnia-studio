@@ -1339,12 +1339,12 @@ async def process_video_assembly_async(video_job_id, original_job_id, zip_bytes,
 
                     ffmpeg_mini = [
                         "ffmpeg", "-y",
+                        "-loop", "1", "-t", f"{dur:.3f}", "-i", img_path,
                         "-ss", f"{st_sec:.3f}", "-t", f"{dur:.3f}", "-i", audio_filepath,
-                        "-loop", "1", "-i", img_path,
                         "-vf", get_ken_burns_vf(idx),
                         "-c:v", "libx264", "-preset", "ultrafast", "-crf", "26",
                         "-c:a", "aac", "-b:a", "192k",
-                        "-shortest",
+                        "-t", f"{dur:.3f}",
                         mini_filepath
                     ]
 
@@ -2068,12 +2068,12 @@ async def handle_generate_beat_clip(request):
 
         ffmpeg_cmd = [
             "ffmpeg", "-y", "-threads", "2",
+            "-loop", "1", "-t", f"{dur_sec:.3f}", "-i", img_filepath,
             "-i", beat_audio_path,
-            "-loop", "1", "-i", img_filepath,
             "-vf", vf_chain,
             "-c:v", "libx264", "-preset", "ultrafast", "-crf", "26",
             "-c:a", "aac", "-b:a", "192k",
-            "-shortest",
+            "-t", f"{dur_sec:.3f}",
             out_clip_filepath
         ]
 
@@ -2487,15 +2487,9 @@ async def handle_render_final_video(request):
             if dur_sec <= 0.2:
                 dur_sec = 3.0
 
-            # 30ms audio micro-fades to eliminate pops
-            faded_audio_path = os.path.join(temp_dir, f"audio_faded_{scene_num:02d}.mp3")
+            # Direct audio micro-fade and parallel frame-locked clip encoding
             fade_out_st = max(0, dur_sec - 0.03)
-            afade_cmd = [
-                "ffmpeg", "-y", "-i", beat_audio_path,
-                "-af", f"afade=t=in:ss=0:d=0.03,afade=t=out:st={fade_out_st:.3f}:d=0.03",
-                "-c:a", "libmp3lame", "-q:a", "2", faded_audio_path
-            ]
-            await run_cmd(afade_cmd)
+            afade_filter = f"afade=t=in:ss=0:d=0.03,afade=t=out:st={fade_out_st:.3f}:d=0.03"
 
             # Segment video clip
             beat_clip_path = os.path.join(temp_dir, f"clip_{scene_num:02d}.mp4")
@@ -2521,10 +2515,15 @@ async def handle_render_final_video(request):
             vf_str = ",".join(vf_filters)
 
             clip_cmd = [
-                "ffmpeg", "-y", "-loop", "1", "-i", assigned_img, "-i", faded_audio_path,
+                "ffmpeg", "-y",
+                "-loop", "1", "-t", f"{dur_sec:.3f}", "-i", assigned_img,
+                "-i", beat_audio_path,
                 "-vf", vf_str,
+                "-af", afade_filter,
                 "-c:v", "libx264", "-tune", "stillimage", "-preset", "ultrafast", "-crf", "22",
-                "-c:a", "aac", "-b:a", "192k", "-shortest", beat_clip_path
+                "-c:a", "aac", "-b:a", "192k",
+                "-t", f"{dur_sec:.3f}",
+                beat_clip_path
             ]
             await run_cmd(clip_cmd)
             concat_files.append(beat_clip_path)
